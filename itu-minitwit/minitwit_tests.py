@@ -8,9 +8,10 @@
     :copyright: (c) 2010 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-import minitwit
-import unittest
 import tempfile
+import unittest
+
+import minitwit
 
 
 class MiniTwitTestCase(unittest.TestCase):
