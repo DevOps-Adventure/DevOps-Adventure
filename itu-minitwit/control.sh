@@ -14,9 +14,17 @@ elif [ "$1" = "stop" ]; then
     echo "Stopping minitwit..."
     pkill -f minitwit
 elif [ "$1" = "inspectdb" ]; then
-    ./flag_tool -i | less
+    if [ "$(uname)" == "Darwin" ]; then
+        ./MAC_flag_tool.out -i | less
+    else
+        ./flag_tool -i | less
+    fi
 elif [ "$1" = "flag" ]; then
-    ./flag_tool "$@"
+    if [ "$(uname)" == "Darwin" ]; then
+        ./MAC_flag_tool.out "$@"
+    else
+        ./flag_tool "$@"
+    fi
 else
   echo "I do not know this command..."
 fi
