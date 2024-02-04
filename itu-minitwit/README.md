@@ -8,7 +8,7 @@
 
 ---
 ### Intro
-- No content yet
+- Not included yet
 
 ---
 ### Setup for Local Development
@@ -59,3 +59,5 @@ We've included a .gitignore file that excludes the venv directory from version c
 This prevents the environment folder from being pushed to the production repository, 
 avoiding potential conflicts and keeping the repository clean.
 
+#### Code Setup
+- Not included yet
