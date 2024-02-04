@@ -31,7 +31,6 @@ feat: add hat wobble
 ```
 For more information please visit [Semantic Commit Messages](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716)
 
-
 #### Pre-requisites
 We recommend setting up a virtual environment for local development to 
 manage dependencies and to keep your system's Python environment clean. 
@@ -61,3 +60,5 @@ avoiding potential conflicts and keeping the repository clean.
 
 #### Code Setup
 - Not included yet
+
+
