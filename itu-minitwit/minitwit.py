@@ -29,7 +29,6 @@ SECRET_KEY = 'development key'
 # create our little application :)
 app = Flask(__name__)
 
-
 def connect_db():
     """Returns a new connection to the database."""
     return sqlite3.connect(DATABASE)
