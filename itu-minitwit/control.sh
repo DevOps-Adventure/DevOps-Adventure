@@ -1,7 +1,7 @@
 #!/bin/bash
 if [ "$1" = "init" ]; then
 
-    if [ -f "/tmp/minitwit.db" ]; then 
+    if [ -f "./tmp/minitwit.db" ]; then 
         echo "Database already exists."
         exit 1
     fi
@@ -14,13 +14,13 @@ elif [ "$1" = "stop" ]; then
     echo "Stopping minitwit..."
     pkill -f minitwit
 elif [ "$1" = "inspectdb" ]; then
-    if [ "$(uname)" == "Darwin" ]; then
+    if [ "$(uname)" == "Darwin" ] || [ "$(uname)" == "x86_64" ]; then
         ./MAC_flag_tool.out -i | less
     else
         ./flag_tool -i | less
     fi
 elif [ "$1" = "flag" ]; then
-    if [ "$(uname)" == "Darwin" ]; then
+    if [ "$(uname)" == "Darwin" ] || [ "$(uname)" == "x86_64" ]; then
         ./MAC_flag_tool.out "$@"
     else
         ./flag_tool "$@"
