@@ -1,0 +1,34 @@
+<!doctype html>
+<title>{{block "title" .}}Welcome{{end}} | MiniTwit</title>
+<link rel="stylesheet" type="text/css" href="https://google.com">
+<div class="page">
+  <h1>MiniTwit</h1>
+  <div class="navigation">
+    {{if .User}}
+      <a href="https://google.com">my timeline</a> |
+      <a href="https://google.com">public timeline</a> |
+      <a href="https://google.com">sign out [{{.User.Username}}]</a>
+    {{else}}
+      <a href="https://google.com">public timeline</a> |
+      <a href="https://google.com">sign up</a> |
+      <a href="https://google.com">sign in</a>
+    {{end}}
+  </div>
+
+  {{with .Flashes}}
+    {{if .}}
+      <ul class="flashes">
+        {{range .}}
+          <li>{{.}}</li>
+        {{end}}
+      </ul>
+    {{end}}
+  {{end}}
+
+  <div class="body">
+    {{template "body" .}}
+  </div>
+  <div class="footer">
+    MiniTwit &mdash; A Flask Application
+  </div>
+</div>
