@@ -14,17 +14,31 @@ elif [ "$1" = "stop" ]; then
     echo "Stopping minitwit..."
     pkill -f minitwit
 elif [ "$1" = "inspectdb" ]; then
-    if [ "$(uname)" == "Darwin" ] || [ "$(uname)" == "x86_64" ]; then
-        ./MAC_flag_tool.out -i | less
+    if [ "$(uname -s)" == "Darwin" ]; then #MacOS
+        if [ "$(uname -m)" == "x86_64" ]; then #intel
+            ./MACIntel_flag_tool.out -i | less
+        elif [ "$(uname -m)" == "arm64" ]; then #M1
+            ./MAC_flag_tool.out -i | less 
+        else
+            echo "Unsupported architecture: $(uname -m)"
+            exit 1
+        fi
     else
         ./flag_tool -i | less
     fi
 elif [ "$1" = "flag" ]; then
-    if [ "$(uname)" == "Darwin" ] || [ "$(uname)" == "x86_64" ]; then
-        ./MAC_flag_tool.out "$@"
+    if [ "$(uname -s)" == "Darwin" ]; then #MacOS
+        if [ "$(uname -m)" == "x86_64" ]; then #intel
+            ./MACIntel_flag_tool.out "$@"
+        elif [ "$(uname -m)" == "arm64" ]; then #M1
+            ./MAC_flag_tool.out "$@"
+        else
+            echo "Unsupported architecture: $(uname -m)"
+            exit 1
+        fi
     else
         ./flag_tool "$@"
-    fi
+fi
 else
   echo "I do not know this command..."
 fi
