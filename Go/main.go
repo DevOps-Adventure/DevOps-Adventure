@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"html/template"
-	"io/ioutil"
+	"os"
 
 	"log"
 	"net/http"
@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	Database string = "/tmp/minitwit.db"
+	Database string = "./tmp/minitwit.db"
 	Per_page int    = 30
 )
 
@@ -53,6 +53,7 @@ func main() {
 	// Create a Gin router and set the parsed templates
 	router := gin.Default()
 	router.SetHTMLTemplate(tmpl)
+	router.Static("/static", "./static")
 
 	// Define routes
 	router.GET("/", timelineHandler)
@@ -74,7 +75,7 @@ func connect_db(dsn string) (*sql.DB, error) {
 // db initialization (2)
 // to keep separate functions of connection and initialization of the db. (here the db is structured with specific schema/format)
 func init_db(db *sql.DB, schemaFile string) error {
-	schema, err := ioutil.ReadFile(schemaFile)
+	schema, err := os.ReadFile(schemaFile)
 	if err != nil {
 		return err
 	}
@@ -185,9 +186,10 @@ type Message struct {
 	Text      string
 	PubDate   time.Time // Assuming it's a time.Time, format as needed
 	// ... other message fields ...
-	User     User
-	Email    string
-	Username string
+	User         User
+	Email        string
+	Username     string
+	Profile_link string
 }
 
 func publicTimelineHandler(c *gin.Context) {
@@ -235,6 +237,8 @@ func publicTimelineHandler(c *gin.Context) {
 		if email, ok := m["email"].(string); ok {
 			msg.Email = email
 		}
+		link := "/" + msg.Username
+		msg.Profile_link = strings.ReplaceAll(link, " ", "%20")
 		formattedMessages = append(formattedMessages, msg)
 	}
 
