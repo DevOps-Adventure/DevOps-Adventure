@@ -56,12 +56,12 @@ func main() {
 	router.Static("/static", "./static")
 
 	// Define routes
-	router.GET("/", timelineHandler)
+	router.GET("/", myTimelineHandler)
 	router.GET("/public", publicTimelineHandler)
+	router.GET("/:username", userTimelineHandler)
 
 	// Start the server
 	router.Run(":8080")
-
 }
 
 func connect_db(dsn string) (*sql.DB, error) {
@@ -142,7 +142,7 @@ func query_db(db *sql.DB, query string, args []interface{}, one bool) ([]map[str
 // }
 
 // endpoint handler (5)
-func timelineHandler(c *gin.Context) {
+func myTimelineHandler(c *gin.Context) {
 	userID, exists := c.Get("userID") // You need to set userID in the context where you handle sessions
 	if !exists {
 		// Handle the case where the user is not logged in
@@ -192,27 +192,7 @@ type Message struct {
 	Profile_link string
 }
 
-func publicTimelineHandler(c *gin.Context) {
-	query := `
-	SELECT message.*, user.* FROM message, user
-	WHERE message.flagged = 0 AND message.author_id = user.user_id
-	ORDER BY message.pub_date DESC LIMIT ?
-	`
-	var db, err = connect_db(Database)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	defer db.Close()
-
-	args := []interface{}{Per_page}
-	messages, err := query_db(db, query, args, false)
-	// fmt.Println(messages)
-	fmt.Println(err)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+func format_messages(messages []map[string]interface{}) []Message {
 	var formattedMessages []Message
 	for _, m := range messages {
 		var msg Message
@@ -242,11 +222,108 @@ func publicTimelineHandler(c *gin.Context) {
 		formattedMessages = append(formattedMessages, msg)
 	}
 
+	return formattedMessages
+}
+
+func publicTimelineHandler(c *gin.Context) {
+	query := `
+	SELECT message.*, user.* FROM message, user
+	WHERE message.flagged = 0 AND message.author_id = user.user_id
+	ORDER BY message.pub_date DESC LIMIT ?
+	`
+	var db, err = connect_db(Database)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	defer db.Close()
+
+	args := []interface{}{Per_page}
+	messages, err := query_db(db, query, args, false)
+	// fmt.Println(messages)
+	fmt.Println(err)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	formattedMessages := format_messages(messages)
+
 	c.HTML(http.StatusOK, "timeline.tmpl", gin.H{
 		"Endpoint": "public_timeline", // or "user_timeline" etc, based on the context
 		"Messages": formattedMessages,
 	})
 
+}
+
+func userTimelineHandler(c *gin.Context) {
+	username := c.Param("username")
+	fmt.Printf("User timeline for: %s", username)
+
+	// get user's info by username
+	query := `select * from user where username = ?`
+	var db, err = connect_db(Database)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	args := []interface{}{username}
+	profile_user, err := query_db(db, query, args, false)
+	fmt.Println(profile_user)
+	//fmt.Println(err)
+	if profile_user == nil {
+		c.AbortWithStatus(404)
+		return
+	}
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	// does the logged in user follow them
+	followed := false
+	pUserId := profile_user[0]["user_id"]
+	fmt.Println(followed)
+	fmt.Println(pUserId)
+	userID, exists := c.Get("userID")
+	if exists {
+		query = `select 1 from follower where
+		follower.who_id = ? and follower.whom_id = ?`
+		var db, err = connect_db(Database)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		args := []interface{}{userID, pUserId}
+		followed, err := query_db(db, query, args, false)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		fmt.Println(followed)
+	}
+
+	query = `
+	select message.*, user.* from message, user where
+    user.user_id = message.author_id and user.user_id = ?
+    order by message.pub_date desc limit ?
+	`
+	args = []interface{}{pUserId, Per_page}
+	messages, err := query_db(db, query, args, false)
+	// fmt.Println(messages)
+	fmt.Println(err)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	defer db.Close()
+
+	formattedMessages := format_messages(messages)
+	c.HTML(http.StatusOK, "timeline.tmpl", gin.H{
+		"Endpoint": "user_timeline", // or "user_timeline" etc, based on the context
+		"Messages": formattedMessages,
+		"Followed": followed,
+	})
 }
 
 func gravatarURL(email string, size int) string {
