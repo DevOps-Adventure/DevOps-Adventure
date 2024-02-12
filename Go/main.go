@@ -23,11 +23,11 @@ const (
 
 func formatLinks() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Set("myTimeline", "/")
-		c.Set("publicTimeline", "/public")
-		c.Set("logout", "/logout")
-		c.Set("register", "/register")
-		c.Set("signin", "/login")
+		c.Set("myTimelineLink", "/")
+		c.Set("publicTimelineLink", "/public")
+		c.Set("logoutLink", "/logout")
+		c.Set("registerLink", "/register")
+		c.Set("signinLink", "/login")
 
 		c.Next()
 	}
@@ -299,8 +299,6 @@ func userTimelineHandler(c *gin.Context) {
 	// does the logged in user follow them
 	followed := false
 	pUserId := profile_user[0]["user_id"]
-	fmt.Println(followed)
-	fmt.Println(pUserId)
 	userID, exists := c.Get("userID")
 	if exists {
 		query = `select 1 from follower where
@@ -327,8 +325,6 @@ func userTimelineHandler(c *gin.Context) {
 	`
 	args = []interface{}{pUserId, Per_page}
 	messages, err := query_db(db, query, args, false)
-	// fmt.Println(messages)
-	fmt.Println(err)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -337,7 +333,8 @@ func userTimelineHandler(c *gin.Context) {
 
 	formattedMessages := format_messages(messages)
 	c.HTML(http.StatusOK, "timeline.tmpl", gin.H{
-		"Endpoint": "user_timeline", // or "user_timeline" etc, based on the context
+		"Endpoint": "user_timeline",
+		"Username": username,
 		"Messages": formattedMessages,
 		"Followed": followed,
 	})
