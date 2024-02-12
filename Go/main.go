@@ -21,6 +21,18 @@ const (
 	Per_page int    = 30
 )
 
+func formatLinks() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("myTimeline", "/")
+		c.Set("publicTimeline", "/public")
+		c.Set("logout", "/logout")
+		c.Set("register", "/register")
+		c.Set("signin", "/login")
+
+		c.Next()
+	}
+}
+
 func main() {
 
 	// # configuration (0) _do we want them public or private?
@@ -53,6 +65,11 @@ func main() {
 	// Create a Gin router and set the parsed templates
 	router := gin.Default()
 	router.SetHTMLTemplate(tmpl)
+
+	// Links
+	router.Use(formatLinks())
+
+	// Static
 	router.Static("/static", "./static")
 
 	// Define routes

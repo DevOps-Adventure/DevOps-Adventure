@@ -5,13 +5,13 @@
   <h1>MiniTwit</h1>
   <div class="navigation">
     {{if .User}}
-      <a href="https://google.com">my timeline</a> |
-      <a href="https://google.com">public timeline</a> |
-      <a href="https://google.com">sign out [{{.User.Username}}]</a>
+      <a href="{{ .myTimelineLink }}">my timeline</a>
+      <a href="{{ .publicTimelineLink }}">public timeline</a>
+      <a href="{{ .logoutLink }}">sign out [{{.User.Username}}]</a>
     {{else}}
-      <a href="https://google.com">public timeline</a> |
-      <a href="https://google.com">sign up</a> |
-      <a href="https://google.com">sign in</a>
+      <a href="{{ .publicTimelineLink }}">public timelines</a> |
+      <a href="{{ .registerLink }}">sign up</a> |
+      <a href="{{ .signinLink }}">sign in</a>
     {{end}}
   </div>
 

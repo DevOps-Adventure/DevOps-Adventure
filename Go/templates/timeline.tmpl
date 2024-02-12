@@ -1,7 +1,7 @@
 {{/* layout.html should be structured to define a "main" block where this content will be inserted */}}
 {{template "layout.tmpl" .}}
 
-{{define "title"}}
+{{define "Title"}}
     {{if eq .RequestEndpoint "public_timeline"}}
         Public Timeline
     {{else if eq .RequestEndpoint "user_timeline"}}
