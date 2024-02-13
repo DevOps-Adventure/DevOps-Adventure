@@ -38,7 +38,7 @@
     {{end}}
     <ul class="messages">
         {{range .Messages}}
-            <li><img src="{{gravatar .Email 48}}">
+            <li><img src="{{ .Gravatar }}">
                 <p>
                     <strong><a href="{{.Profile_link}}">{{.Username}}</a></strong>
                     {{.Text}}

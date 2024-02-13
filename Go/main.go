@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"database/sql"
 	"fmt"
-	"html/template"
 	"os"
 
 	"log"
@@ -17,8 +16,8 @@ import (
 )
 
 const (
-	Database string = "./tmp/minitwit.db"
-	Per_page int    = 30
+	DATABASE string = "./tmp/minitwit.db"
+	PERPAGE  int    = 30
 )
 
 func formatLinks() gin.HandlerFunc {
@@ -43,7 +42,7 @@ func main() {
 	//app aplication ?
 
 	//using db connection (1)
-	db, err := connect_db(Database)
+	db, err := connect_db(DATABASE)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,27 +54,30 @@ func main() {
 	// }
 
 	//after connecting to the db, we can define the handlers
-	funcMap := template.FuncMap{
-		"gravatar": gravatarURL,
-	}
+	// funcMap := template.FuncMap{
+	// 	"gravatar": gravatarURL,
+	// }
 
 	// Load and parse your templates with the FuncMap
-	tmpl := template.Must(template.New("").Funcs(funcMap).ParseGlob("templates/*.tmpl"))
+	// tmpl := template.Must(template.New("").Funcs(funcMap).ParseGlob("templates/*.tmpl"))
 
 	// Create a Gin router and set the parsed templates
 	router := gin.Default()
-	router.SetHTMLTemplate(tmpl)
+	router.LoadHTMLGlob("./templates/*.tmpl")
 
 	// Links
 	router.Use(formatLinks())
 
-	// Static
+	// Static (styling)
 	router.Static("/static", "./static")
 
 	// Define routes
 	router.GET("/", myTimelineHandler)
 	router.GET("/public", publicTimelineHandler)
 	router.GET("/:username", userTimelineHandler)
+	router.GET("/register", registerHandler)
+	router.GET("/login", loginHandler)
+	router.GET("/logout", logoutHandler)
 
 	// Start the server
 	router.Run(":8080")
@@ -174,7 +176,7 @@ func myTimelineHandler(c *gin.Context) {
         user.user_id IN (SELECT whom_id FROM follower WHERE who_id = ?))
     ORDER BY message.pub_date DESC LIMIT ?
     `
-	var db, _ = connect_db(Database)
+	var db, _ = connect_db(DATABASE)
 	// args := []interface{}{userID, userID, perPage}
 	messages, err := query_db(db, query, nil, false)
 	fmt.Println(messages)
@@ -185,7 +187,7 @@ func myTimelineHandler(c *gin.Context) {
 	}
 
 	// For template rendering with Gin
-	c.HTML(http.StatusOK, "templates/timeline.html", gin.H{
+	c.HTML(http.StatusOK, "timeline.html", gin.H{
 		"messages": messages,
 		"user":     userID, // Adjust according to how you manage users
 	})
@@ -207,6 +209,7 @@ type Message struct {
 	Email        string
 	Username     string
 	Profile_link string
+	Gravatar     string
 }
 
 func format_messages(messages []map[string]interface{}) []Message {
@@ -234,8 +237,13 @@ func format_messages(messages []map[string]interface{}) []Message {
 		if email, ok := m["email"].(string); ok {
 			msg.Email = email
 		}
+
 		link := "/" + msg.Username
 		msg.Profile_link = strings.ReplaceAll(link, " ", "%20")
+
+		gravatarURL := gravatarURL(msg.Email, 48)
+		msg.Gravatar = gravatarURL
+
 		formattedMessages = append(formattedMessages, msg)
 	}
 
@@ -248,14 +256,14 @@ func publicTimelineHandler(c *gin.Context) {
 	WHERE message.flagged = 0 AND message.author_id = user.user_id
 	ORDER BY message.pub_date DESC LIMIT ?
 	`
-	var db, err = connect_db(Database)
+	var db, err = connect_db(DATABASE)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 	defer db.Close()
 
-	args := []interface{}{Per_page}
+	args := []interface{}{PERPAGE}
 	messages, err := query_db(db, query, args, false)
 	// fmt.Println(messages)
 	fmt.Println(err)
@@ -269,7 +277,6 @@ func publicTimelineHandler(c *gin.Context) {
 		"Endpoint": "public_timeline", // or "user_timeline" etc, based on the context
 		"Messages": formattedMessages,
 	})
-
 }
 
 func userTimelineHandler(c *gin.Context) {
@@ -278,7 +285,7 @@ func userTimelineHandler(c *gin.Context) {
 
 	// get user's info by username
 	query := `select * from user where username = ?`
-	var db, err = connect_db(Database)
+	var db, err = connect_db(DATABASE)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -303,7 +310,7 @@ func userTimelineHandler(c *gin.Context) {
 	if exists {
 		query = `select 1 from follower where
 		follower.who_id = ? and follower.whom_id = ?`
-		var db, err = connect_db(Database)
+		var db, err = connect_db(DATABASE)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
@@ -323,7 +330,7 @@ func userTimelineHandler(c *gin.Context) {
     user.user_id = message.author_id and user.user_id = ?
     order by message.pub_date desc limit ?
 	`
-	args = []interface{}{pUserId, Per_page}
+	args = []interface{}{pUserId, PERPAGE}
 	messages, err := query_db(db, query, args, false)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -338,6 +345,84 @@ func userTimelineHandler(c *gin.Context) {
 		"Messages": formattedMessages,
 		"Followed": followed,
 	})
+}
+
+func registerUser(username string, email string, password [16]byte, c *gin.Context) error {
+	query := `insert into user (username, email, pw_hash) values (?, ?, ?)`
+	var db, _ = connect_db(DATABASE)
+	args := []interface{}{username, email, password}
+	messages, err := query_db(db, query, args, false)
+	fmt.Println(messages)
+	if err != nil {
+		// Handle error
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return err
+	}
+	return err
+}
+
+func getUserIDByUsername(username string) string {
+	return ""
+}
+
+func registerHandler(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if exists {
+		c.Redirect(http.StatusFound, "/"+userID.(string))
+		return
+	}
+
+	var error string
+
+	if c.Request.Method == http.MethodPost {
+		err := c.Request.ParseForm()
+		if err != nil {
+			error = "Failed to parse form data"
+			c.HTML(http.StatusBadRequest, "register.tmpl", gin.H{"error": error})
+			return
+		}
+
+		// Validate form data
+		username := c.Request.FormValue("username")
+		email := c.Request.FormValue("email")
+		password := c.Request.FormValue("password")
+		password2 := c.Request.FormValue("password2")
+
+		if username == "" {
+			error = "You have to enter a username"
+		} else if email == "" || !strings.Contains(email, "@") {
+			error = "You have to enter a valid email address"
+		} else if password == "" {
+			error = "You have to enter a password"
+		} else if password != password2 {
+			error = "The two passwords do not match"
+		} else if getUserIDByUsername(username) != "" {
+			error = "The username is already taken"
+		} else {
+			hash := md5.Sum([]byte(password))
+			err := registerUser(username, email, hash, c)
+			if err != nil {
+				error = "Failed to register user"
+				c.HTML(http.StatusInternalServerError, "register.tmpl", gin.H{"error": error})
+				return
+			}
+			// Redirect to login page after successful registration
+			c.Redirect(http.StatusSeeOther, "/login")
+			// todo: flash
+			return
+		}
+	}
+	c.HTML(http.StatusOK, "register.tmpl", gin.H{
+		"Error": error,
+	})
+}
+
+func loginHandler(c *gin.Context) {
+
+}
+
+func logoutHandler(c *gin.Context) {
+
 }
 
 func gravatarURL(email string, size int) string {
