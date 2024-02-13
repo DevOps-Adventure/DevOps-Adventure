@@ -54,11 +54,6 @@ func main() {
 	// 	log.Fatal(err)
 	// }
 
-	//after connecting to the db, we can define the handlers
-	// funcMap := template.FuncMap{
-	// 	"gravatar": gravatarURL,
-	// }
-
 	// Load and parse your templates with the FuncMap
 	// tmpl := template.Must(template.New("").Funcs(funcMap).ParseGlob("templates/*.tmpl"))
 
@@ -149,110 +144,7 @@ func query_db(db *sql.DB, query string, args []interface{}, one bool) ([]map[str
 	return result, nil
 }
 
-// // db check for username  and  returns the corresponding id (4)
-// func get_user_id(db *sql.DB, username string) (error, *int) {
-// 	query := "SELECT user_id FROM user WHERE username = ?"
-// 	args := []interface{}{username}
-// 	result, err := query_db(db, query, args, true)
-// 	if err != nil {
-// 		return err, nil
-// 	}
-// 	if len(result) == 0 {
-// 		return nil, nil
-// 	}
-// 	return nil, result[0]["user_id"].(int)
-// }
-
-// endpoint handler (5)
-func myTimelineHandler(c *gin.Context) {
-	userID, exists := c.Get("userID") // You need to set userID in the context where you handle sessions
-	if !exists {
-		// Handle the case where the user is not logged in
-		c.Redirect(http.StatusFound, "/public") // Redirect to public timeline
-		return
-	}
-
-	query := `
-    SELECT message.*, user.* FROM message, user
-    WHERE message.flagged = 0 AND message.author_id = user.user_id AND (
-        user.user_id = ? OR
-        user.user_id IN (SELECT whom_id FROM follower WHERE who_id = ?))
-    ORDER BY message.pub_date DESC LIMIT ?
-    `
-	var db, _ = connect_db(DATABASE)
-	// args := []interface{}{userID, userID, perPage}
-	messages, err := query_db(db, query, nil, false)
-	fmt.Println(messages)
-	if err != nil {
-		// Handle error
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	// For template rendering with Gin
-	c.HTML(http.StatusOK, "timeline.html", gin.H{
-		"messages": messages,
-		"user":     userID, // Adjust according to how you manage users
-	})
-}
-
-type User struct {
-	UserID int
-
-	// ... other user fields ...
-}
-
-type Message struct {
-	MessageID int
-	AuthorID  int
-	Text      string
-	PubDate   time.Time // Assuming it's a time.Time, format as needed
-	// ... other message fields ...
-	User         User
-	Email        string
-	Username     string
-	Profile_link string
-	Gravatar     string
-}
-
-func format_messages(messages []map[string]interface{}) []Message {
-	var formattedMessages []Message
-	for _, m := range messages {
-		var msg Message
-		// Use type assertion for int64, then convert to int
-		if id, ok := m["message_id"].(int64); ok {
-			msg.MessageID = int(id)
-		}
-		if authorID, ok := m["author_id"].(int64); ok {
-			msg.AuthorID = int(authorID)
-		}
-		if userID, ok := m["user_id"].(int64); ok {
-			msg.User.UserID = int(userID)
-		}
-
-		// For strings, direct type assertion is fine
-		if text, ok := m["text"].(string); ok {
-			msg.Text = text
-		}
-		if username, ok := m["username"].(string); ok {
-			msg.Username = username
-		}
-		if email, ok := m["email"].(string); ok {
-			msg.Email = email
-		}
-
-		link := "/" + msg.Username
-		msg.Profile_link = strings.ReplaceAll(link, " ", "%20")
-
-		gravatarURL := gravatarURL(msg.Email, 48)
-		msg.Gravatar = gravatarURL
-
-		formattedMessages = append(formattedMessages, msg)
-	}
-
-	return formattedMessages
-}
-
+// handlers
 func publicTimelineHandler(c *gin.Context) {
 	query := `
 	SELECT message.*, user.* FROM message, user
@@ -284,16 +176,7 @@ func publicTimelineHandler(c *gin.Context) {
 
 func userTimelineHandler(c *gin.Context) {
 	username := c.Param("username")
-
-	// get user's info by username
-	query := `select * from user where username = ?`
-	var db, err = connect_db(DATABASE)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	args := []interface{}{username}
-	profile_user, err := query_db(db, query, args, false)
+	profile_user, err := getUserByUsername(username)
 
 	if profile_user == nil {
 		c.AbortWithStatus(404)
@@ -309,7 +192,7 @@ func userTimelineHandler(c *gin.Context) {
 	pUserId := profile_user[0]["user_id"]
 	userID, exists := c.Get("userID")
 	if exists {
-		query = `select 1 from follower where
+		query := `select 1 from follower where
 		follower.who_id = ? and follower.whom_id = ?`
 		var db, err = connect_db(DATABASE)
 		if err != nil {
@@ -326,12 +209,13 @@ func userTimelineHandler(c *gin.Context) {
 		fmt.Println(followed)
 	}
 
-	query = `
+	query := `
 	select message.*, user.* from message, user where
     user.user_id = message.author_id and user.user_id = ?
     order by message.pub_date desc limit ?
 	`
-	args = []interface{}{pUserId, PERPAGE}
+	args := []interface{}{pUserId, PERPAGE}
+	db, err := connect_db(DATABASE)
 	messages, err := query_db(db, query, args, false)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -349,24 +233,6 @@ func userTimelineHandler(c *gin.Context) {
 	})
 }
 
-func registerUser(username string, email string, password [16]byte, c *gin.Context) error {
-	query := `insert into user (username, email, pw_hash) values (?, ?, ?)`
-	var db, _ = connect_db(DATABASE)
-	args := []interface{}{username, email, pq.Array(password)}
-	messages, err := query_db(db, query, args, false)
-	fmt.Println(messages)
-	if err != nil {
-		// Handle error
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return err
-	}
-	return err
-}
-
-func getUserIDByUsername(username string) string {
-	return ""
-}
-
 func registerHandler(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if exists {
@@ -375,9 +241,7 @@ func registerHandler(c *gin.Context) {
 	}
 
 	var errorData string
-	fmt.Println("pre post")
 	if c.Request.Method == http.MethodPost {
-		fmt.Println("in post")
 		err := c.Request.ParseForm()
 		if err != nil {
 			errorData = "Failed to parse form data"
@@ -428,13 +292,50 @@ func registerHandler(c *gin.Context) {
 }
 
 func loginHandler(c *gin.Context) {
-	c.HTML(http.StatusOK, "login.tmpl", gin.H{"RegisterBody": true})
+	userID, exists := c.Get("userID")
+	if exists {
+		c.Redirect(http.StatusFound, "/timeline")
+		return
+	}
+
+	fmt.Println(userID)
+
+	var errorData string
+
+	fmt.Println("pre post")
+	if c.Request.Method == http.MethodPost {
+		fmt.Println("in post")
+
+		err := c.Request.ParseForm()
+		if err != nil {
+			errorData = "Failed to parse form data"
+			c.HTML(http.StatusBadRequest, "login.tmpl", gin.H{
+				"loginBody": true,
+				"Error":     errorData,
+			})
+			return
+		}
+
+		// Validate form data
+		username := c.Request.FormValue("username")
+		password := c.Request.FormValue("password")
+
+		user, err := getUserByUsername(username)
+
+		if user == nil {
+			errorData = "Invalid username"
+		}
+		fmt.Println(password)
+
+	}
+	c.HTML(http.StatusOK, "login.tmpl", gin.H{"LoginBody": true})
 }
 
 func logoutHandler(c *gin.Context) {
 
 }
 
+// Helper functions
 func gravatarURL(email string, size int) string {
 	if size <= 0 {
 		size = 80 // Default size
@@ -443,4 +344,126 @@ func gravatarURL(email string, size int) string {
 	email = strings.ToLower(strings.TrimSpace(email))
 	hash := md5.Sum([]byte(email))
 	return fmt.Sprintf("http://www.gravatar.com/avatar/%x?d=identicon&s=%d", hash, size)
+}
+
+func getUserIDByUsername(username string) string {
+	// todo
+	return ""
+}
+
+func registerUser(username string, email string, password [16]byte, c *gin.Context) error {
+	query := `insert into user (username, email, pw_hash) values (?, ?, ?)`
+	var db, _ = connect_db(DATABASE)
+	args := []interface{}{username, email, pq.Array(password)}
+	messages, err := query_db(db, query, args, false)
+	fmt.Println(messages)
+	if err != nil {
+		// Handle error
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return err
+	}
+	return err
+}
+
+func getUserByUsername(username string) ([]map[string]interface{}, error) {
+	var db, err = connect_db(DATABASE)
+	if err != nil {
+		return nil, err
+	}
+
+	query := `select * from user where username = ?`
+	args := []interface{}{username}
+	profile_user, err := query_db(db, query, args, false)
+
+	if profile_user == nil {
+		return nil, err
+	}
+
+	return profile_user, err
+}
+
+func myTimelineHandler(c *gin.Context) {
+	userID, exists := c.Get("userID") // You need to set userID in the context where you handle sessions
+	if !exists {
+		// Handle the case where the user is not logged in
+		c.Redirect(http.StatusFound, "/public") // Redirect to public timeline
+		return
+	}
+
+	query := `
+    SELECT message.*, user.* FROM message, user
+    WHERE message.flagged = 0 AND message.author_id = user.user_id AND (
+        user.user_id = ? OR
+        user.user_id IN (SELECT whom_id FROM follower WHERE who_id = ?))
+    ORDER BY message.pub_date DESC LIMIT ?
+    `
+	var db, _ = connect_db(DATABASE)
+	// args := []interface{}{userID, userID, perPage}
+	messages, err := query_db(db, query, nil, false)
+	fmt.Println(messages)
+	if err != nil {
+		// Handle error
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	// For template rendering with Gin
+	c.HTML(http.StatusOK, "timeline.html", gin.H{
+		"messages": messages,
+		"user":     userID, // Adjust according to how you manage users
+	})
+}
+
+type User struct {
+	UserID int
+}
+
+type Message struct {
+	MessageID    int
+	AuthorID     int
+	Text         string
+	PubDate      time.Time
+	User         User
+	Email        string
+	Username     string
+	Profile_link string
+	Gravatar     string
+}
+
+func format_messages(messages []map[string]interface{}) []Message {
+	var formattedMessages []Message
+	for _, m := range messages {
+		var msg Message
+		// Use type assertion for int64, then convert to int
+		if id, ok := m["message_id"].(int64); ok {
+			msg.MessageID = int(id)
+		}
+		if authorID, ok := m["author_id"].(int64); ok {
+			msg.AuthorID = int(authorID)
+		}
+		if userID, ok := m["user_id"].(int64); ok {
+			msg.User.UserID = int(userID)
+		}
+
+		// For strings, direct type assertion is fine
+		if text, ok := m["text"].(string); ok {
+			msg.Text = text
+		}
+		if username, ok := m["username"].(string); ok {
+			msg.Username = username
+		}
+		if email, ok := m["email"].(string); ok {
+			msg.Email = email
+		}
+
+		link := "/" + msg.Username
+		msg.Profile_link = strings.ReplaceAll(link, " ", "%20")
+
+		gravatarURL := gravatarURL(msg.Email, 48)
+		msg.Gravatar = gravatarURL
+
+		formattedMessages = append(formattedMessages, msg)
+	}
+
+	return formattedMessages
 }

@@ -1,11 +1,8 @@
 {{template "layout.tmpl" .}}
 
-{{define "title"}}
-    Sign Up
-{{end}}
+{{define "title"}}Sign Up{{end}}
 
 {{define "RegisterBody"}}
-    {{printf "%#v" . }}
     <h2>{{ template "title" . }}</h2>
     {{if .Error}}
         <div class=error><strong>Error:</strong> {{ .Error }}</div>

@@ -30,6 +30,8 @@
       {{ template "TimelineBody" .}}
     {{ else if .RegisterBody }}
       {{ template "RegisterBody" .}}
+    {{ else if .LoginBody }}
+      {{ template "LoginBody" .}}
     {{ end }}
   </div> 
   
