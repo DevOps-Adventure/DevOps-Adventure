@@ -76,6 +76,7 @@ func main() {
 	router.GET("/logout", logoutHandler)
 
 	router.POST("/register", registerHandler)
+	router.POST("/login", loginHandler)
 
 	// Start the server
 	router.Run(":8080")
@@ -270,7 +271,7 @@ func registerHandler(c *gin.Context) {
 			errorData = "The username is already taken"
 		} else {
 			hash := md5.Sum([]byte(password))
-			err := registerUser(username, email, hash, c)
+			err := registerUser(username, email, hash)
 			if err != nil {
 				errorData = "Failed to register user"
 				c.HTML(http.StatusInternalServerError, "register.tmpl", gin.H{
@@ -319,23 +320,46 @@ func loginHandler(c *gin.Context) {
 		// Validate form data
 		username := c.Request.FormValue("username")
 		password := c.Request.FormValue("password")
-
+		fmt.Println(password)
 		user, err := getUserByUsername(username)
+		if err != nil {
+			// Handle error
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		// this is the pwd received from the db
+		fmt.Println(user[0]["pw_hash"])
+		fmt.Println(pq.Array(md5.Sum([]byte(password))))
 
 		if user == nil {
 			errorData = "Invalid username"
+		} else if !checkPasswordHash(password, user[0]["pw_hash"].(string)) {
+			errorData = "Invalid password"
+		} else {
+			// todo flash
+			userID := getUserIDByUsername(username)
+			c.Set("userID", userID)
+			c.Redirect(http.StatusFound, "/timeline")
+			return
 		}
-		fmt.Println(password)
 
 	}
-	c.HTML(http.StatusOK, "login.tmpl", gin.H{"LoginBody": true})
+	c.HTML(http.StatusOK, "login.tmpl", gin.H{
+		"LoginBody": true,
+		"Error":     errorData,
+	})
 }
 
 func logoutHandler(c *gin.Context) {
-
+	// simon
 }
 
 // Helper functions
+func checkPasswordHash(userEnteredPwd string, hash string) bool {
+	return md5.Sum([]byte(userEnteredPwd)) == hash
+}
+
 func gravatarURL(email string, size int) string {
 	if size <= 0 {
 		size = 80 // Default size
@@ -351,17 +375,15 @@ func getUserIDByUsername(username string) string {
 	return ""
 }
 
-func registerUser(username string, email string, password [16]byte, c *gin.Context) error {
+func registerUser(username string, email string, password [16]byte) error {
 	query := `insert into user (username, email, pw_hash) values (?, ?, ?)`
-	var db, _ = connect_db(DATABASE)
+	var db, err = connect_db(DATABASE)
+	if err != nil {
+		return err
+	}
 	args := []interface{}{username, email, pq.Array(password)}
 	messages, err := query_db(db, query, args, false)
 	fmt.Println(messages)
-	if err != nil {
-		// Handle error
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return err
-	}
 	return err
 }
 
