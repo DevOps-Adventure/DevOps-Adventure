@@ -1,15 +1,16 @@
 {{template "layout.tmpl" .}}
 
-{{define "Title"}}
+{{define "title"}}
     Sign Up
 {{end}}
 
 {{define "RegisterBody"}}
-    <h2>Sign Up</h2>
+    {{printf "%#v" . }}
+    <h2>{{ template "title" . }}</h2>
     {{if .Error}}
         <div class=error><strong>Error:</strong> {{ .Error }}</div>
     {{end}}
-    <form action="" method="post">
+    <form action="/register" method="post">
     <dl>
         <dt>Username:</dt>
             <dd><input type="text" name="username" size="30" value="{{ .request.form.username }}"></dd>

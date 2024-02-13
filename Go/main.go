@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -78,6 +79,8 @@ func main() {
 	router.GET("/register", registerHandler)
 	router.GET("/login", loginHandler)
 	router.GET("/logout", logoutHandler)
+
+	router.POST("/register", registerHandler)
 
 	// Start the server
 	router.Run(":8080")
@@ -265,8 +268,7 @@ func publicTimelineHandler(c *gin.Context) {
 
 	args := []interface{}{PERPAGE}
 	messages, err := query_db(db, query, args, false)
-	// fmt.Println(messages)
-	fmt.Println(err)
+
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -282,7 +284,6 @@ func publicTimelineHandler(c *gin.Context) {
 
 func userTimelineHandler(c *gin.Context) {
 	username := c.Param("username")
-	fmt.Printf("User timeline for: %s", username)
 
 	// get user's info by username
 	query := `select * from user where username = ?`
@@ -293,8 +294,7 @@ func userTimelineHandler(c *gin.Context) {
 	}
 	args := []interface{}{username}
 	profile_user, err := query_db(db, query, args, false)
-	fmt.Println(profile_user)
-	//fmt.Println(err)
+
 	if profile_user == nil {
 		c.AbortWithStatus(404)
 		return
@@ -352,7 +352,7 @@ func userTimelineHandler(c *gin.Context) {
 func registerUser(username string, email string, password [16]byte, c *gin.Context) error {
 	query := `insert into user (username, email, pw_hash) values (?, ?, ?)`
 	var db, _ = connect_db(DATABASE)
-	args := []interface{}{username, email, password}
+	args := []interface{}{username, email, pq.Array(password)}
 	messages, err := query_db(db, query, args, false)
 	fmt.Println(messages)
 	if err != nil {
@@ -374,13 +374,17 @@ func registerHandler(c *gin.Context) {
 		return
 	}
 
-	var error string
-
+	var errorData string
+	fmt.Println("pre post")
 	if c.Request.Method == http.MethodPost {
+		fmt.Println("in post")
 		err := c.Request.ParseForm()
 		if err != nil {
-			error = "Failed to parse form data"
-			c.HTML(http.StatusBadRequest, "register.tmpl", gin.H{"error": error})
+			errorData = "Failed to parse form data"
+			c.HTML(http.StatusBadRequest, "register.tmpl", gin.H{
+				"RegisterBody": true,
+				"Error":        errorData,
+			})
 			return
 		}
 
@@ -391,21 +395,24 @@ func registerHandler(c *gin.Context) {
 		password2 := c.Request.FormValue("password2")
 
 		if username == "" {
-			error = "You have to enter a username"
+			errorData = "You have to enter a username"
 		} else if email == "" || !strings.Contains(email, "@") {
-			error = "You have to enter a valid email address"
+			errorData = "You have to enter a valid email address"
 		} else if password == "" {
-			error = "You have to enter a password"
+			errorData = "You have to enter a password"
 		} else if password != password2 {
-			error = "The two passwords do not match"
+			errorData = "The two passwords do not match"
 		} else if getUserIDByUsername(username) != "" {
-			error = "The username is already taken"
+			errorData = "The username is already taken"
 		} else {
 			hash := md5.Sum([]byte(password))
 			err := registerUser(username, email, hash, c)
 			if err != nil {
-				error = "Failed to register user"
-				c.HTML(http.StatusInternalServerError, "register.tmpl", gin.H{"error": error})
+				errorData = "Failed to register user"
+				c.HTML(http.StatusInternalServerError, "register.tmpl", gin.H{
+					"RegisterBody": true,
+					"Error":        errorData,
+				})
 				return
 			}
 			// Redirect to login page after successful registration
@@ -416,12 +423,12 @@ func registerHandler(c *gin.Context) {
 	}
 	c.HTML(http.StatusOK, "register.tmpl", gin.H{
 		"RegisterBody": true,
-		"Error":        error,
+		"Error":        errorData,
 	})
 }
 
 func loginHandler(c *gin.Context) {
-
+	c.HTML(http.StatusOK, "login.tmpl", gin.H{"RegisterBody": true})
 }
 
 func logoutHandler(c *gin.Context) {
