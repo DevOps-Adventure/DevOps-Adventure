@@ -1,12 +1,11 @@
-{{/* layout.html should be structured to define a "main" block where this content will be inserted */}}
 {{template "layout.tmpl" .}}
 
-{{define "title"}}
+{{define "Title"}}
     Sign Up
 {{end}}
 
-{{define "body"}}
-    <h2>{{template "title" .}}</h2>
+{{define "RegisterBody"}}
+    <h2>Sign Up</h2>
     {{if .Error}}
         <div class=error><strong>Error:</strong> {{ .Error }}</div>
     {{end}}

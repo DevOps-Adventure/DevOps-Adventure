@@ -274,8 +274,9 @@ func publicTimelineHandler(c *gin.Context) {
 	formattedMessages := format_messages(messages)
 
 	c.HTML(http.StatusOK, "timeline.tmpl", gin.H{
-		"Endpoint": "public_timeline", // or "user_timeline" etc, based on the context
-		"Messages": formattedMessages,
+		"TimelineBody": true,
+		"Endpoint":     "public_timeline",
+		"Messages":     formattedMessages,
 	})
 }
 
@@ -340,10 +341,11 @@ func userTimelineHandler(c *gin.Context) {
 
 	formattedMessages := format_messages(messages)
 	c.HTML(http.StatusOK, "timeline.tmpl", gin.H{
-		"Endpoint": "user_timeline",
-		"Username": username,
-		"Messages": formattedMessages,
-		"Followed": followed,
+		"TimelineBody": true,
+		"Endpoint":     "user_timeline",
+		"Username":     username,
+		"Messages":     formattedMessages,
+		"Followed":     followed,
 	})
 }
 
@@ -413,7 +415,8 @@ func registerHandler(c *gin.Context) {
 		}
 	}
 	c.HTML(http.StatusOK, "register.tmpl", gin.H{
-		"Error": error,
+		"RegisterBody": true,
+		"Error":        error,
 	})
 }
 

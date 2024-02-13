@@ -1,7 +1,7 @@
 {{/* layout.html should be structured to define a "main" block where this content will be inserted */}}
 {{template "layout.tmpl" .}}
 
-{{define "title"}}
+{{define "Title"}}
     {{if eq .Endpoint "public_timeline"}}
         Public Timeline
     {{else if eq .Endpoint "user_timeline"}}
@@ -11,8 +11,8 @@
     {{end}}
 {{end}}
 
-{{define "body"}}
-    <h2>{{template "title" .}}</h2>
+{{define "TimelineBody"}}
+    <h2>{{template "Title" .}}</h2>
     {{if .User}}
         {{if eq .RequestEndpoint "user_timeline"}}
             <div class="followstatus">
