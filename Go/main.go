@@ -245,19 +245,15 @@ func userTimelineHandler(c *gin.Context) {
 
 func registerHandler(c *gin.Context) {
 	userID, exists := c.Get("userID")
-	log.Println("in register")
 	if exists {
-		log.Println("User is already logged in. Redirecting to their timeline.")
 		c.Redirect(http.StatusFound, "/"+userID.(string))
 		return
 	}
 
 	var errorData string
 	if c.Request.Method == http.MethodPost {
-		log.Println("in post")
 		err := c.Request.ParseForm()
 		if err != nil {
-			log.Println("Failed to parse form data")
 			errorData = "Failed to parse form data"
 			c.HTML(http.StatusBadRequest, "register.tmpl", gin.H{
 				"RegisterBody": true,
