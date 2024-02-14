@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"encoding/hex"
-
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
