@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"encoding/hex"
+
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
@@ -168,10 +170,14 @@ func publicTimelineHandler(c *gin.Context) {
 	}
 	formattedMessages := format_messages(messages)
 
+	// Render timeline template with the context including link variables
 	c.HTML(http.StatusOK, "timeline.tmpl", gin.H{
-		"TimelineBody": true,
-		"Endpoint":     "public_timeline",
-		"Messages":     formattedMessages,
+		"TimelineBody":       true, // This seems to be a flag you use to render specific parts of your layout
+		"Endpoint":           "public_timeline",
+		"Messages":           formattedMessages,
+		"publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
+		"registerLink":       c.GetString("registerLink"),       // Retrieved from the context
+		"signinLink":         c.GetString("signinLink"),         // Retrieved from the context
 	})
 }
 
@@ -226,25 +232,32 @@ func userTimelineHandler(c *gin.Context) {
 
 	formattedMessages := format_messages(messages)
 	c.HTML(http.StatusOK, "timeline.tmpl", gin.H{
-		"TimelineBody": true,
-		"Endpoint":     "user_timeline",
-		"Username":     username,
-		"Messages":     formattedMessages,
-		"Followed":     followed,
+		"TimelineBody":       true,
+		"Endpoint":           "user_timeline",
+		"Username":           username,
+		"Messages":           formattedMessages,
+		"Followed":           followed,
+		"publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
+		"registerLink":       c.GetString("registerLink"),       // Retrieved from the context
+		"signinLink":         c.GetString("signinLink"),         // Retrieved from the context
 	})
 }
 
 func registerHandler(c *gin.Context) {
 	userID, exists := c.Get("userID")
+	log.Println("in register")
 	if exists {
+		log.Println("User is already logged in. Redirecting to their timeline.")
 		c.Redirect(http.StatusFound, "/"+userID.(string))
 		return
 	}
 
 	var errorData string
 	if c.Request.Method == http.MethodPost {
+		log.Println("in post")
 		err := c.Request.ParseForm()
 		if err != nil {
+			log.Println("Failed to parse form data")
 			errorData = "Failed to parse form data"
 			c.HTML(http.StatusBadRequest, "register.tmpl", gin.H{
 				"RegisterBody": true,
@@ -287,8 +300,11 @@ func registerHandler(c *gin.Context) {
 		}
 	}
 	c.HTML(http.StatusOK, "register.tmpl", gin.H{
-		"RegisterBody": true,
-		"Error":        errorData,
+		"RegisterBody":       true,
+		"Error":              errorData,
+		"publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
+		"registerLink":       c.GetString("registerLink"),       // Retrieved from the context
+		"signinLink":         c.GetString("signinLink"),         // Retrieved from the context
 	})
 }
 
@@ -346,8 +362,11 @@ func loginHandler(c *gin.Context) {
 
 	}
 	c.HTML(http.StatusOK, "login.tmpl", gin.H{
-		"LoginBody": true,
-		"Error":     errorData,
+		"LoginBody":          true,
+		"Error":              errorData,
+		"publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
+		"registerLink":       c.GetString("registerLink"),       // Retrieved from the context
+		"signinLink":         c.GetString("signinLink"),         // Retrieved from the context
 	})
 }
 
@@ -357,7 +376,13 @@ func logoutHandler(c *gin.Context) {
 
 // Helper functions
 func checkPasswordHash(userEnteredPwd string, hash string) bool {
-	return md5.Sum([]byte(userEnteredPwd)) == hash
+	// Notes: SH - not secure, use bcrypt
+	// Calculate MD5 hash of the user-entered password
+	hashBytes := md5.Sum([]byte(userEnteredPwd))
+	// Convert the [16]byte hash to a hexadecimal string
+	hashString := hex.EncodeToString(hashBytes[:])
+	// Compare the generated hash string with the stored hash string
+	return hashString == hash
 }
 
 func gravatarURL(email string, size int) string {
@@ -431,8 +456,13 @@ func myTimelineHandler(c *gin.Context) {
 
 	// For template rendering with Gin
 	c.HTML(http.StatusOK, "timeline.html", gin.H{
-		"messages": messages,
-		"user":     userID, // Adjust according to how you manage users
+		"messages":           messages,
+		"user":               userID,                            // Adjust according to how you manage users
+		"publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
+		"registerLink":       c.GetString("registerLink"),       // Retrieved from the context
+		"signinLink":         c.GetString("signinLink"),         // Retrieved from the context
+		"logoutLink":         c.GetString("logoutLink"),         // Retrieved from the context
+		"myTimelineLink":     c.GetString("myTimelineLink"),     // Retrieved from the context
 	})
 }
 
