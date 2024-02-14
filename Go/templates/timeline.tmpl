@@ -14,7 +14,7 @@
 {{define "TimelineBody"}}
     <h2>{{template "Title" .}}</h2>
     {{if .User}}
-        {{if eq .RequestEndpoint "user_timeline"}}
+        {{if eq .Endpoint "user_timeline"}}
             <div class="followstatus">
                 {{if eq .User.UserID .ProfileUser.UserID}}
                     This is you!
@@ -26,7 +26,7 @@
                     <a class="follow" href="https://google.com">Follow user</a>.
                 {{end}}
             </div>
-        {{else if eq .RequestEndpoint "timeline"}}
+        {{else if eq .Endpoint "my_timeline"}}
             <div class="twitbox">
                 <h3>What's on your mind {{.User.Username}}?</h3>
                 <form action="https://google.com" method="post">

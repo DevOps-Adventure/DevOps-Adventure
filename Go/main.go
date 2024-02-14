@@ -268,6 +268,12 @@ func registerHandler(c *gin.Context) {
 		password := c.Request.FormValue("password")
 		password2 := c.Request.FormValue("password2")
 
+		userID, err := getUserIDByUsername(username)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
 		if username == "" {
 			errorData = "You have to enter a username"
 		} else if email == "" || !strings.Contains(email, "@") {
@@ -276,7 +282,7 @@ func registerHandler(c *gin.Context) {
 			errorData = "You have to enter a password"
 		} else if password != password2 {
 			errorData = "The two passwords do not match"
-		} else if getUserIDByUsername(username) != "" {
+		} else if fmt.Sprint(userID) != "" {
 			errorData = "The username is already taken"
 		} else {
 			hash := md5.Sum([]byte(password))
@@ -307,7 +313,7 @@ func registerHandler(c *gin.Context) {
 func loginHandler(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if exists {
-		c.Redirect(http.StatusFound, "/timeline")
+		c.Redirect(http.StatusFound, "/")
 		return
 	}
 
@@ -329,20 +335,14 @@ func loginHandler(c *gin.Context) {
 			return
 		}
 
-		// Validate form data
 		username := c.Request.FormValue("username")
 		password := c.Request.FormValue("password")
-		fmt.Println(password)
+
 		user, err := getUserByUsername(username)
 		if err != nil {
-			// Handle error
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
-
-		// this is the pwd received from the db
-		fmt.Println(user[0]["pw_hash"])
-		fmt.Println(pq.Array(md5.Sum([]byte(password))))
 
 		if user == nil {
 			errorData = "Invalid username"
@@ -350,9 +350,14 @@ func loginHandler(c *gin.Context) {
 			errorData = "Invalid password"
 		} else {
 			// todo flash
-			userID := getUserIDByUsername(username)
-			c.Set("userID", userID)
-			c.Redirect(http.StatusFound, "/timeline")
+			userID, err := getUserIDByUsername(username)
+			if err != nil {
+				c.AbortWithError(http.StatusInternalServerError, err)
+				return
+			}
+			c.SetCookie("userID", fmt.Sprint(userID), 3600, "/", "", false, true)
+			fmt.Println(userID)
+			c.Redirect(http.StatusFound, "/")
 			return
 		}
 
@@ -370,15 +375,62 @@ func logoutHandler(c *gin.Context) {
 	// simon
 }
 
+func myTimelineHandler(c *gin.Context) {
+	userID, err := c.Cookie("userID")
+	fmt.Println("in my timeline")
+	fmt.Println(userID)
+	if err != nil {
+		c.Redirect(http.StatusFound, "/public") // Redirect to public timeline
+		return
+	}
+
+	query := `
+    SELECT message.*, user.* FROM message, user
+    WHERE message.flagged = 0 AND message.author_id = user.user_id AND (
+        user.user_id = ? OR
+        user.user_id IN (SELECT whom_id FROM follower WHERE who_id = ?))
+    ORDER BY message.pub_date DESC LIMIT ?
+    `
+	var db, _ = connect_db(DATABASE)
+	args := []interface{}{userID, userID, PERPAGE}
+	messages, err := query_db(db, query, args, false)
+	fmt.Println(messages)
+	if err != nil {
+		// Handle error
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	// For template rendering with Gin
+	c.HTML(http.StatusOK, "timeline.tmpl", gin.H{
+		"TimelineBody": true,
+		"Endpoint":     "my_timeline",
+		"messages":     messages,
+		"user":         userID,
+	})
+}
+
 // Helper functions
-func checkPasswordHash(userEnteredPwd string, hash string) bool {
-	// Notes: SH - not secure, use bcrypt
-	// Calculate MD5 hash of the user-entered password
-	hashBytes := md5.Sum([]byte(userEnteredPwd))
-	// Convert the [16]byte hash to a hexadecimal string
-	hashString := hex.EncodeToString(hashBytes[:])
-	// Compare the generated hash string with the stored hash string
-	return hashString == hash
+// maybe there is a better way to do this
+func bytesToString(bytes [16]byte) string {
+	var strBuilder strings.Builder
+
+	strBuilder.WriteString("{")
+	for i, b := range bytes {
+		if i > 0 {
+			strBuilder.WriteString(",")
+		}
+		strBuilder.WriteString(fmt.Sprintf("%d", b))
+	}
+	strBuilder.WriteString("}")
+
+	return strBuilder.String()
+}
+
+func checkPasswordHash(userEnteredPwd string, dbpwd string) bool {
+	bytes := md5.Sum([]byte(userEnteredPwd))
+	str := bytesToString(bytes)
+	return str == dbpwd
 }
 
 func gravatarURL(email string, size int) string {
@@ -391,9 +443,21 @@ func gravatarURL(email string, size int) string {
 	return fmt.Sprintf("http://www.gravatar.com/avatar/%x?d=identicon&s=%d", hash, size)
 }
 
-func getUserIDByUsername(username string) string {
-	// todo
-	return ""
+func getUserIDByUsername(username string) (int64, error) {
+	var db, err = connect_db(DATABASE)
+	if err != nil {
+		return 0, err
+	}
+
+	query := `select * from user where username = ?`
+	args := []interface{}{username}
+	profile_user, err := query_db(db, query, args, false)
+
+	if profile_user == nil {
+		return 0, err
+	}
+	fmt.Println(profile_user)
+	return profile_user[0]["user_id"].(int64), err
 }
 
 func registerUser(username string, email string, password [16]byte) error {
@@ -423,43 +487,6 @@ func getUserByUsername(username string) ([]map[string]interface{}, error) {
 	}
 
 	return profile_user, err
-}
-
-func myTimelineHandler(c *gin.Context) {
-	userID, exists := c.Get("userID") // You need to set userID in the context where you handle sessions
-	if !exists {
-		// Handle the case where the user is not logged in
-		c.Redirect(http.StatusFound, "/public") // Redirect to public timeline
-		return
-	}
-
-	query := `
-    SELECT message.*, user.* FROM message, user
-    WHERE message.flagged = 0 AND message.author_id = user.user_id AND (
-        user.user_id = ? OR
-        user.user_id IN (SELECT whom_id FROM follower WHERE who_id = ?))
-    ORDER BY message.pub_date DESC LIMIT ?
-    `
-	var db, _ = connect_db(DATABASE)
-	// args := []interface{}{userID, userID, perPage}
-	messages, err := query_db(db, query, nil, false)
-	fmt.Println(messages)
-	if err != nil {
-		// Handle error
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	// For template rendering with Gin
-	c.HTML(http.StatusOK, "timeline.html", gin.H{
-		"messages":           messages,
-		"user":               userID,                            // Adjust according to how you manage users
-		"publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
-		"registerLink":       c.GetString("registerLink"),       // Retrieved from the context
-		"signinLink":         c.GetString("signinLink"),         // Retrieved from the context
-		"logoutLink":         c.GetString("logoutLink"),         // Retrieved from the context
-		"myTimelineLink":     c.GetString("myTimelineLink"),     // Retrieved from the context
-	})
 }
 
 type User struct {
