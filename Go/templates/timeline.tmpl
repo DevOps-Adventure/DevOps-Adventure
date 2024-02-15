@@ -13,7 +13,7 @@
 
 {{define "TimelineBody"}}
     <h2>{{template "Title" .}}</h2>
-    {{if .User}}
+    {{if .user}}
         {{if eq .Endpoint "user_timeline"}}
             <div class="followstatus">
                 {{if eq .User.UserID .ProfileUser.UserID}}
