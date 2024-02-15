@@ -153,6 +153,7 @@ func query_db(db *sql.DB, query string, args []interface{}, one bool) ([]map[str
 
 // handlers
 func publicTimelineHandler(c *gin.Context) {
+	// userID, errCookie := c.Cookie("userID")
 	query := `
 	SELECT message.*, user.* FROM message, user
 	WHERE message.flagged = 0 AND message.author_id = user.user_id
@@ -385,7 +386,12 @@ func loginHandler(c *gin.Context) {
 }
 
 func logoutHandler(c *gin.Context) {
-	// simon
+	// Invalidate the cookie by setting its max age to -1
+	// will delete the cookie
+	c.SetCookie("userID", "", -1, "/", "", false, true)
+
+	// redirect the user to the home page or login page
+	c.Redirect(http.StatusFound, "/login")
 }
 
 func myTimelineHandler(c *gin.Context) {

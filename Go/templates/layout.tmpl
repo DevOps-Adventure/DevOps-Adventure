@@ -5,8 +5,8 @@
   <h1>MiniTwit</h1>
   <div class="navigation">
     {{if .user}}
-      <a href="{{ .myTimelineLink }}">my timeline</a>
       <a href="{{ .publicTimelineLink }}">public timeline</a>
+      <a href="{{ .myTimelineLink }}">my timeline</a>
       <a href="{{ .logoutLink }}">sign out [{{.User.Username}}]</a>
     {{else}}
       <a href="{{ .publicTimelineLink }}">public timeline</a> |
