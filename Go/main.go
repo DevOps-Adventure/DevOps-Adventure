@@ -403,10 +403,12 @@ func myTimelineHandler(c *gin.Context) {
 
 	// For template rendering with Gin
 	c.HTML(http.StatusOK, "timeline.tmpl", gin.H{
-		"TimelineBody": true,
-		"Endpoint":     "my_timeline",
-		"messages":     messages,
-		"user":         userID,
+		"TimelineBody":       true,
+		"Endpoint":           "my_timeline",
+		"messages":           messages,
+		"user":               userID,
+		"publicTimelineLink": c.GetString("publicTimelineLink"), // Pass only the links you need for a logged-in user
+		"logoutLink":         c.GetString("logoutLink"),         // Include logout link for logged-in user
 	})
 }
 
