@@ -6,6 +6,12 @@
 - [Intro](#intro)
 - [Setup for Local Development](#setup-for-local-development)
 
+
+- Versionining for release 
+- first num week 
+- second num version of the week 
+- 
+
 ---
 ### Intro
 - Not included yet

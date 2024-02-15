@@ -1,0 +1,42 @@
+{{/* layout.html should be structured to define a "main" block where this
+content will be inserted */}} {{template "layout.html" .}} {{define "Title"}}
+{{if eq .Endpoint "public_timeline"}} Public Timeline 
+{{else if eq .Endpoint "user_timeline"}} {{.Username}}'s Timeline 
+{{else}} My Timeline {{end}} {{end}}
+{{define "TimelineBody"}}
+<h2>{{template "Title" .}}</h2>
+{{if .user}} 
+	{{if eq .Endpoint "user_timeline"}}
+		<div class="followstatus">
+			{{if eq .User.UserID .ProfileUser.UserID}} This is you! {{else if .Followed}}
+			You are currently following this user.
+			<a class="unfollow" href="https://google.com">Unfollow user</a>. {{else}} You
+			are not yet following this user.
+			<a class="follow" href="https://google.com">Follow user</a>. {{end}}
+		</div>
+	{{else if eq .Endpoint "my_timeline"}}
+		<div class="twitbox">
+			<h3>What's on your mind {{.username}}?</h3>
+			<form action="/add_message" method="post">
+				<p>
+					<input type="text" name="text" size="60" value="{{ .request.form.text }}" /><!--
+					--><input type="submit" value="Share" />
+				</p>
+			</form>
+		</div>
+{{end}} {{end}}
+<ul class="messages">
+	{{range .Messages}}
+	<li>
+		<img src="{{ .Gravatar }}" />
+		<p>
+			<strong><a href="{{.Profile_link}}">{{.Username}}</a></strong>
+			{{.Text}}
+			<small>&mdash;</small>
+		</p>
+	</li>
+	{{else}}
+	<li><em>There's no message so far.</em></li>
+	{{end}}
+</ul>
+{{end}}
