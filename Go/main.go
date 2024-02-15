@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
@@ -60,6 +62,10 @@ func main() {
 	// Create a Gin router and set the parsed templates
 	router := gin.Default()
 	router.LoadHTMLGlob("./templates/*.tmpl")
+
+	// sessions, for cookies
+	store := cookie.NewStore([]byte("secret"))
+	router.Use(sessions.Sessions("session", store))
 
 	// Links
 	router.Use(formatLinks())
@@ -311,8 +317,11 @@ func registerHandler(c *gin.Context) {
 }
 
 func loginHandler(c *gin.Context) {
+	session := sessions.Default(c)
+
 	userID, exists := c.Get("userID")
 	if exists {
+		session.AddFlash("You were logged in")
 		c.Redirect(http.StatusFound, "/")
 		return
 	}
@@ -349,7 +358,7 @@ func loginHandler(c *gin.Context) {
 		} else if !checkPasswordHash(password, user[0]["pw_hash"].(string)) {
 			errorData = "Invalid password"
 		} else {
-			// todo flash
+			session.AddFlash("You were logged in")
 			userID, err := getUserIDByUsername(username)
 			if err != nil {
 				c.AbortWithError(http.StatusInternalServerError, err)
@@ -362,9 +371,13 @@ func loginHandler(c *gin.Context) {
 		}
 
 	}
+	flashMessages := session.Flashes()
+	session.Save()
+
 	c.HTML(http.StatusOK, "login.tmpl", gin.H{
 		"LoginBody":          true,
 		"Error":              errorData,
+		"flashes":            flashMessages,
 		"publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
 		"registerLink":       c.GetString("registerLink"),       // Retrieved from the context
 		"signinLink":         c.GetString("signinLink"),         // Retrieved from the context
@@ -383,6 +396,19 @@ func myTimelineHandler(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/public") // Redirect to public timeline
 		return
 	}
+
+	username, err := getUserNameByUserID(userID)
+
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	fmt.Println(username)
+
+	session := sessions.Default(c)
+	flashMessages := session.Flashes()
+	session.Save() // Clear flashes after retrieving
 
 	query := `
     SELECT message.*, user.* FROM message, user
@@ -407,8 +433,10 @@ func myTimelineHandler(c *gin.Context) {
 		"Endpoint":           "my_timeline",
 		"messages":           messages,
 		"user":               userID,
+		"username":           username,
 		"publicTimelineLink": c.GetString("publicTimelineLink"), // Pass only the links you need for a logged-in user
 		"logoutLink":         c.GetString("logoutLink"),         // Include logout link for logged-in user
+		"flashes":            flashMessages,
 	})
 }
 
@@ -460,6 +488,23 @@ func getUserIDByUsername(username string) (int64, error) {
 	}
 	fmt.Println(profile_user)
 	return profile_user[0]["user_id"].(int64), err
+}
+
+func getUserNameByUserID(userID string) (string, error) {
+	var db, err = connect_db(DATABASE)
+	if err != nil {
+		return "", err
+	}
+
+	query := `select * from user where user_id = ?`
+	args := []interface{}{userID}
+	profile_user, err := query_db(db, query, args, false)
+
+	if profile_user == nil {
+		return "no name", err
+	}
+	fmt.Println(profile_user)
+	return profile_user[0]["username"].(string), err
 }
 
 func registerUser(username string, email string, password [16]byte) error {
