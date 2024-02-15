@@ -272,6 +272,8 @@ func registerHandler(c *gin.Context) {
 			return
 		}
 
+		fmt.Println(userID)
+
 		if username == "" {
 			errorData = "You have to enter a username"
 		} else if email == "" || !strings.Contains(email, "@") {
@@ -280,7 +282,7 @@ func registerHandler(c *gin.Context) {
 			errorData = "You have to enter a password"
 		} else if password != password2 {
 			errorData = "The two passwords do not match"
-		} else if fmt.Sprint(userID) != "" {
+		} else if fmt.Sprint(userID) != "0" {
 			errorData = "The username is already taken"
 		} else {
 			hash := md5.Sum([]byte(password))
