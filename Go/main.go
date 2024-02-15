@@ -23,17 +23,19 @@ const (
 	PERPAGE  int    = 30
 )
 
-func formatLinks() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Set("myTimelineLink", "/")
-		c.Set("publicTimelineLink", "/public")
-		c.Set("logoutLink", "/logout")
-		c.Set("registerLink", "/register")
-		c.Set("signinLink", "/login")
+//TODO: I think we don't need this function! u.u
 
-		c.Next()
-	}
-}
+// func formatLinks() gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+// 		c.Set(".myTimelineLink", "/")
+// 		c.Set(".publicTimelineLink", "/public")
+// 		c.Set(".logoutLink", "/logout")
+// 		c.Set(".registerLink", "/register")
+// 		c.Set(".signinLink", "/login")
+
+// 		c.Next()
+// 	}
+// }
 
 func main() {
 
@@ -61,19 +63,19 @@ func main() {
 
 	// Create a Gin router and set the parsed templates
 	router := gin.Default()
-	router.LoadHTMLGlob("./templates/*.tmpl")
+	router.LoadHTMLGlob("./templates/*.html")
 
 	// sessions, for cookies
 	store := cookie.NewStore([]byte("secret"))
 	router.Use(sessions.Sessions("session", store))
 
 	// Links
-	router.Use(formatLinks())
-
+	// router.Use(formatLinks())
+	
 	// Static (styling)
 	router.Static("/static", "./static")
 
-	// Define routes
+	// Define routes -> Here is where the links are being registered! Check the html layout file e.e
 	router.GET("/", myTimelineHandler)
 	router.GET("/public", publicTimelineHandler)
 	router.GET("/:username", userTimelineHandler)
@@ -154,6 +156,7 @@ func query_db(db *sql.DB, query string, args []interface{}, one bool) ([]map[str
 // handlers
 func publicTimelineHandler(c *gin.Context) {
 	// userID, errCookie := c.Cookie("userID")
+	fmt.Println("publicTimelineHandler")
 	query := `
 	SELECT message.*, user.* FROM message, user
 	WHERE message.flagged = 0 AND message.author_id = user.user_id
@@ -176,17 +179,19 @@ func publicTimelineHandler(c *gin.Context) {
 	formattedMessages := format_messages(messages)
 
 	// Render timeline template with the context including link variables
-	c.HTML(http.StatusOK, "timeline.tmpl", gin.H{
+	c.HTML(http.StatusOK, "timeline.html", gin.H{
 		"TimelineBody":       true, // This seems to be a flag you use to render specific parts of your layout
 		"Endpoint":           "public_timeline",
 		"Messages":           formattedMessages,
-		"publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
-		"registerLink":       c.GetString("registerLink"),       // Retrieved from the context
-		"signinLink":         c.GetString("signinLink"),         // Retrieved from the context
+		//TODO: I think we don't need this u.u
+		// "publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
+		// "registerLink":       c.GetString("registerLink"),       // Retrieved from the context
+		// "signinLink":         c.GetString("signinLink"),         // Retrieved from the context
 	})
 }
 
 func userTimelineHandler(c *gin.Context) {
+	fmt.Println("userTimelineHandler")
 	username := c.Param("username")
 	profile_user, err := getUserByUsername(username)
 
@@ -236,19 +241,21 @@ func userTimelineHandler(c *gin.Context) {
 	defer db.Close()
 
 	formattedMessages := format_messages(messages)
-	c.HTML(http.StatusOK, "timeline.tmpl", gin.H{
+	c.HTML(http.StatusOK, "timeline.html", gin.H{
 		"TimelineBody":       true,
 		"Endpoint":           "user_timeline",
 		"Username":           username,
 		"Messages":           formattedMessages,
 		"Followed":           followed,
-		"publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
-		"registerLink":       c.GetString("registerLink"),       // Retrieved from the context
-		"signinLink":         c.GetString("signinLink"),         // Retrieved from the context
+		//TODO: I think we don't need this u.u
+		// "publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
+		// "registerLink":       c.GetString("registerLink"),       // Retrieved from the context
+		// "signinLink":         c.GetString("signinLink"),         // Retrieved from the context
 	})
 }
 
 func registerHandler(c *gin.Context) {
+	fmt.Println("registerHandler")
 	userID, exists := c.Get("userID")
 	if exists {
 		c.Redirect(http.StatusFound, "/"+userID.(string))
@@ -260,7 +267,7 @@ func registerHandler(c *gin.Context) {
 		err := c.Request.ParseForm()
 		if err != nil {
 			errorData = "Failed to parse form data"
-			c.HTML(http.StatusBadRequest, "register.tmpl", gin.H{
+			c.HTML(http.StatusBadRequest, "register.html", gin.H{
 				"RegisterBody": true,
 				"Error":        errorData,
 			})
@@ -296,7 +303,7 @@ func registerHandler(c *gin.Context) {
 			err := registerUser(username, email, hash)
 			if err != nil {
 				errorData = "Failed to register user"
-				c.HTML(http.StatusInternalServerError, "register.tmpl", gin.H{
+				c.HTML(http.StatusInternalServerError, "register.html", gin.H{
 					"RegisterBody": true,
 					"Error":        errorData,
 				})
@@ -308,18 +315,20 @@ func registerHandler(c *gin.Context) {
 			return
 		}
 	}
-	c.HTML(http.StatusOK, "register.tmpl", gin.H{
+	c.HTML(http.StatusOK, "register.html", gin.H{
 		"RegisterBody":       true,
 		"Error":              errorData,
-		"publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
-		"registerLink":       c.GetString("registerLink"),       // Retrieved from the context
-		"signinLink":         c.GetString("signinLink"),         // Retrieved from the context
+		//TODO: I think we don't need this u.u
+		// "publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
+		// "registerLink":       c.GetString("registerLink"),       // Retrieved from the context
+		// "signinLink":         c.GetString("signinLink"),         // Retrieved from the context
 	})
 }
 
 func loginHandler(c *gin.Context) {
 	session := sessions.Default(c)
 
+	fmt.Println("loginHandler")
 	userID, exists := c.Get("userID")
 	if exists {
 		session.AddFlash("You were logged in")
@@ -338,7 +347,7 @@ func loginHandler(c *gin.Context) {
 		err := c.Request.ParseForm()
 		if err != nil {
 			errorData = "Failed to parse form data"
-			c.HTML(http.StatusBadRequest, "login.tmpl", gin.H{
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
 				"loginBody": true,
 				"Error":     errorData,
 			})
@@ -375,13 +384,14 @@ func loginHandler(c *gin.Context) {
 	flashMessages := session.Flashes()
 	session.Save()
 
-	c.HTML(http.StatusOK, "login.tmpl", gin.H{
+	c.HTML(http.StatusOK, "login.html", gin.H{
 		"LoginBody":          true,
 		"Error":              errorData,
 		"flashes":            flashMessages,
-		"publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
-		"registerLink":       c.GetString("registerLink"),       // Retrieved from the context
-		"signinLink":         c.GetString("signinLink"),         // Retrieved from the context
+		//TODO: I think we don't need this u.u
+		// "publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
+		// "registerLink":       c.GetString("registerLink"),       // Retrieved from the context
+		// "signinLink":         c.GetString("signinLink"),         // Retrieved from the context
 	})
 }
 
@@ -434,15 +444,17 @@ func myTimelineHandler(c *gin.Context) {
 	}
 
 	// For template rendering with Gin
-	c.HTML(http.StatusOK, "timeline.tmpl", gin.H{
+	c.HTML(http.StatusOK, "timeline.html", gin.H{
 		"TimelineBody":       true,
 		"Endpoint":           "my_timeline",
 		"messages":           messages,
 		"user":               userID,
 		"username":           username,
-		"publicTimelineLink": c.GetString("publicTimelineLink"), // Pass only the links you need for a logged-in user
-		"logoutLink":         c.GetString("logoutLink"),         // Include logout link for logged-in user
 		"flashes":            flashMessages,
+		//TODO: I think we don't need this u.u
+		// "publicTimelineLink": c.GetString("publicTimelineLink"), // Pass only the links you need for a logged-in user
+		// "logoutLink":         c.GetString("logoutLink"),         // Include logout link for logged-in user
+		
 	})
 }
 
