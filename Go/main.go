@@ -302,10 +302,6 @@ func addMessageHandler(c *gin.Context) {
 	c.HTML(http.StatusOK, "timeline.html", gin.H{
 		"RegisterBody": true,
 		"Error":        errorData,
-		//TODO: I think we don't need this u.u
-		// "publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
-		// "registerLink":       c.GetString("registerLink"),       // Retrieved from the context
-		// "signinLink":         c.GetString("signinLink"),         // Retrieved from the context
 	})
 
 }
