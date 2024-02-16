@@ -65,6 +65,8 @@ func main() {
 	router.GET("/register", registerHandler)
 	router.GET("/login", loginHandler)
 	router.GET("/logout", logoutHandler)
+	router.GET("/:username/*action", userFollowActionHandler)
+
 
 	router.POST("/register", registerHandler)
 	router.POST("/login", loginHandler)
@@ -138,6 +140,45 @@ func query_db(db *sql.DB, query string, args []interface{}, one bool) ([]map[str
 }
 
 // handlers
+
+func userFollowActionHandler(c *gin.Context) {
+	
+	session := sessions.Default(c)
+
+	userID, errID := c.Cookie("UserID")
+	if errID != nil{
+		session.AddFlash("You need to login before continuing to follow or unfollow.")
+		session.Save()
+		c.Redirect(http.StatusFound, "/login")
+		return
+		
+	}
+	profileUserName := c.Param("username")
+	profileUser, err := getUserByUsername(profileUserName)
+	if err != nil {
+		fmt.Println("get user failed with:", err)
+		c.Redirect(http.StatusFound, "/public")
+		return
+	}
+	profileUserID := fmt.Sprintf("%v", profileUser[0]["user_id"])
+
+    action := c.Param("action")
+	
+	if action == "/follow"{
+		fmt.Println("following process triggered")
+		followUser(userID, profileUserID)
+		session.AddFlash("You are now following ", profileUserName)
+		session.Save()
+	}
+	if action == "/unfollow"{
+		fmt.Println("Unfollowing process triggered")
+		unfollowUser(userID, profileUserID)
+		session.AddFlash("You are no longer following ", profileUserName)
+		session.Save()
+	}
+	c.Redirect(http.StatusFound, "/" + profileUserName)
+}
+
 func publicTimelineHandler(c *gin.Context) {
 	
 	query := `
@@ -162,7 +203,6 @@ func publicTimelineHandler(c *gin.Context) {
 	}
 	formattedMessages := format_messages(messages)
 
-
 	context := gin.H{
 		"TimelineBody": true, // This seems to be a flag you use to render specific parts of your layout
 		"Endpoint":     "public_timeline",
@@ -178,14 +218,14 @@ func publicTimelineHandler(c *gin.Context) {
 			context["UserName"] = userName
 		}	
 	}
-
-
 	// Render timeline template with the context including link variables
 	c.HTML(http.StatusOK, "timeline.html", context)
 }
 
 func userTimelineHandler(c *gin.Context) {
-	
+	session := sessions.Default(c)
+	flashMessages := session.Flashes()
+	session.Save()
 	profileUserName := c.Param("username")
 	profileUser, err := getUserByUsername(profileUserName)
 
@@ -207,7 +247,7 @@ func userTimelineHandler(c *gin.Context) {
 	userName, _ := getUserNameByUserID(userID)
 	profileID, _ := pUserId.(string)
 
-	if errID != nil {
+	if errID == nil {
 		query := `select 1 from follower where
 		follower.who_id = ? and follower.whom_id = ?`
 		var db, err = connect_db(DATABASE)
@@ -217,12 +257,12 @@ func userTimelineHandler(c *gin.Context) {
 		}
 
 		args := []interface{}{userID, pUserId}
-		followed, err := query_db(db, query, args, false)
+		follow_status , err := query_db(db, query, args, false)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
-		fmt.Println(followed)
+		followed = len(follow_status) > 0
 	}
 
 	query := `
@@ -251,6 +291,7 @@ func userTimelineHandler(c *gin.Context) {
 		"Followed":     followed,
 		"ProfileUser":  profileID,
 		"ProfileUserName": profileName,
+		"Flashes": flashMessages,
 	})
 }
 
@@ -297,12 +338,10 @@ func addMessageHandler(c *gin.Context) {
 			return
 		}
 	}
-
 	c.HTML(http.StatusOK, "timeline.html", gin.H{
 		"RegisterBody": true,
 		"Error":        errorData,
 	})
-
 }
 
 func addMessage(text string, author_id any) error {
@@ -582,6 +621,30 @@ func registerUser(userName string, email string, password [16]byte) error {
 		return err
 	}
 	args := []interface{}{userName, email, pq.Array(password)}
+	messages, err := query_db(db, query, args, false)
+	fmt.Println(messages)
+	return err
+}
+
+func followUser(userID string, profileUserID string) error{
+	query := `insert into follower (who_id, whom_id) values (?, ?)`
+	var db, err = connect_db(DATABASE)
+	if err != nil {
+		return err
+	}
+	args := []interface{}{userID, profileUserID}
+	messages, err := query_db(db, query, args, false)
+	fmt.Println(messages)
+	return err
+}
+
+func unfollowUser(userID string, profileUserID string) error{
+	query := `delete from follower where who_id=? and whom_id=?`
+	var db, err = connect_db(DATABASE)
+	if err != nil {
+		return err
+	}
+	args := []interface{}{userID, profileUserID}
 	messages, err := query_db(db, query, args, false)
 	fmt.Println(messages)
 	return err
