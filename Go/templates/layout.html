@@ -14,13 +14,11 @@
 		{{end}}
 	</div>
 
-	{{with .Flashes}} {{if .}}
 	<ul class="flashes">
-		{{range .}}
+		{{range .Flashes}}
 		<li>{{.}}</li>
 		{{end}}
 	</ul>
-	{{end}} {{end}}
 
 	<div class="body">
 		{{ if .TimelineBody }} {{ template "TimelineBody" .}} {{ else if

@@ -319,6 +319,8 @@ func addMessage(text string, author_id any) error {
 
 func registerHandler(c *gin.Context) {
 
+	session := sessions.Default(c)
+
 	userID, exists := c.Get("UserID")
 	if exists {
 		c.Redirect(http.StatusFound, "/"+userID.(string))
@@ -371,6 +373,8 @@ func registerHandler(c *gin.Context) {
 				return
 			}
 			// Redirect to login page after successful registration
+			session.AddFlash("You were successfully registered and can login now")
+			session.Save()
 			c.Redirect(http.StatusSeeOther, "/login")
 			// todo: flash
 			return
@@ -384,10 +388,13 @@ func registerHandler(c *gin.Context) {
 
 func loginHandler(c *gin.Context) {
 	session := sessions.Default(c)
+	flashMessages := session.Flashes()
+	session.Save()
 
 	userID, _ := c.Cookie("UserID")
 	if userID != "" {
 		session.AddFlash("You were logged in")
+		session.Save()
 		c.Redirect(http.StatusFound, "/")
 		return
 	}
@@ -420,33 +427,34 @@ func loginHandler(c *gin.Context) {
 		} else if !checkPasswordHash(password, user[0]["pw_hash"].(string)) {
 			errorData = "Invalid password"
 		} else {
-			session.AddFlash("You were logged in")
 			userID, err := getUserIDByUsername(userName)
 			if err != nil {
 				c.AbortWithError(http.StatusInternalServerError, err)
 				return
 			}
 			c.SetCookie("UserID", fmt.Sprint(userID), 3600, "/", "", false, true)
+			session.AddFlash("You were logged in")
+			session.Save()
 			c.Redirect(http.StatusFound, "/")
 			return
 		}
 
-	}
-	flashMessages := session.Flashes()
-	session.Save()
+	}	
 
 	c.HTML(http.StatusOK, "login.html", gin.H{
 		"LoginBody": true,
 		"Error":     errorData,
-		"Flashes":   flashMessages,
+		"Flashes": 	 flashMessages,
 	})
 }
 
 func logoutHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	session.AddFlash("You were logged out")
+	session.Save()
 	// Invalidate the cookie by setting its max age to -1
 	// will delete the cookie <- nice stuff
 	c.SetCookie("UserID", "", -1, "/", "", false, true)
-
 	// redirect the user to the home page or login page
 	c.Redirect(http.StatusFound, "/login")
 }
