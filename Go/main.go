@@ -67,7 +67,6 @@ func main() {
 	router.GET("/logout", logoutHandler)
 	router.GET("/:username/*action", userFollowActionHandler)
 
-
 	router.POST("/register", registerHandler)
 	router.POST("/login", loginHandler)
 	router.POST("/add_message", addMessageHandler)
@@ -167,15 +166,14 @@ func userFollowActionHandler(c *gin.Context) {
 	if action == "/follow"{
 		fmt.Println("following process triggered")
 		followUser(userID, profileUserID)
-		session.AddFlash("You are now following ", profileUserName)
-		session.Save()
+		session.AddFlash("You are now following " + profileUserName)
 	}
 	if action == "/unfollow"{
 		fmt.Println("Unfollowing process triggered")
 		unfollowUser(userID, profileUserID)
-		session.AddFlash("You are no longer following ", profileUserName)
-		session.Save()
+		session.AddFlash("You are no longer following " + profileUserName)
 	}
+	session.Save()
 	c.Redirect(http.StatusFound, "/" + profileUserName)
 }
 
