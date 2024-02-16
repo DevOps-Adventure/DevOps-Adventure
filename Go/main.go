@@ -23,20 +23,6 @@ const (
 	PERPAGE  int    = 30
 )
 
-//TODO: I think we don't need this function! u.u
-
-// func formatLinks() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		c.Set(".myTimelineLink", "/")
-// 		c.Set(".publicTimelineLink", "/public")
-// 		c.Set(".logoutLink", "/logout")
-// 		c.Set(".registerLink", "/register")
-// 		c.Set(".signinLink", "/login")
-
-// 		c.Next()
-// 	}
-// }
-
 func main() {
 
 	// # configuration (0) _do we want them public or private?
@@ -66,16 +52,13 @@ func main() {
 	router.LoadHTMLGlob("./templates/*.html")
 
 	// sessions, for cookies
-	store := cookie.NewStore([]byte("secret"))
+	store := cookie.NewStore([]byte("devops"))
 	router.Use(sessions.Sessions("session", store))
-
-	// Links
-	// router.Use(formatLinks())
 
 	// Static (styling)
 	router.Static("/static", "./static")
 
-	// Define routes -> Here is where the links are being registered! Check the html layout file e.e
+	// Define routes -> Here is where the links are being registered! Check the html layout file
 	router.GET("/", myTimelineHandler)
 	router.GET("/public", publicTimelineHandler)
 	router.GET("/:username", userTimelineHandler)
@@ -156,13 +139,13 @@ func query_db(db *sql.DB, query string, args []interface{}, one bool) ([]map[str
 
 // handlers
 func publicTimelineHandler(c *gin.Context) {
-	// userID, errCookie := c.Cookie("userID")
-	fmt.Println("publicTimelineHandler")
+	
 	query := `
 	SELECT message.*, user.* FROM message, user
 	WHERE message.flagged = 0 AND message.author_id = user.user_id
 	ORDER BY message.pub_date DESC LIMIT ?
 	`
+
 	var db, err = connect_db(DATABASE)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -179,24 +162,34 @@ func publicTimelineHandler(c *gin.Context) {
 	}
 	formattedMessages := format_messages(messages)
 
-	// Render timeline template with the context including link variables
-	c.HTML(http.StatusOK, "timeline.html", gin.H{
+
+	context := gin.H{
 		"TimelineBody": true, // This seems to be a flag you use to render specific parts of your layout
 		"Endpoint":     "public_timeline",
 		"Messages":     formattedMessages,
-		//TODO: I think we don't need this u.u
-		// "publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
-		// "registerLink":       c.GetString("registerLink"),       // Retrieved from the context
-		// "signinLink":         c.GetString("signinLink"),         // Retrieved from the context
-	})
+	}
+
+	userID, errID := c.Cookie("UserID")
+	if errID == nil {
+		context["UserID"] = userID
+		userName, errName := getUserNameByUserID(userID)
+			
+		if errName == nil {
+			context["UserName"] = userName
+		}	
+	}
+
+
+	// Render timeline template with the context including link variables
+	c.HTML(http.StatusOK, "timeline.html", context)
 }
 
 func userTimelineHandler(c *gin.Context) {
-	fmt.Println("userTimelineHandler")
-	username := c.Param("username")
-	profile_user, err := getUserByUsername(username)
+	
+	profileUserName := c.Param("username")
+	profileUser, err := getUserByUsername(profileUserName)
 
-	if profile_user == nil {
+	if profileUser == nil {
 		c.AbortWithStatus(404)
 		return
 	}
@@ -207,9 +200,14 @@ func userTimelineHandler(c *gin.Context) {
 
 	// does the logged in user follow them
 	followed := false
-	pUserId := profile_user[0]["user_id"]
-	userID, exists := c.Get("userID")
-	if exists {
+	pUserId := profileUser[0]["user_id"]
+	profileName := profileUser[0]["username"]
+	userID, errID := c.Cookie("UserID")
+
+	userName, _ := getUserNameByUserID(userID)
+	profileID, _ := pUserId.(string)
+
+	if errID != nil {
 		query := `select 1 from follower where
 		follower.who_id = ? and follower.whom_id = ?`
 		var db, err = connect_db(DATABASE)
@@ -242,22 +240,23 @@ func userTimelineHandler(c *gin.Context) {
 	defer db.Close()
 
 	formattedMessages := format_messages(messages)
+
+	fmt.Println(profileUser, userID)
 	c.HTML(http.StatusOK, "timeline.html", gin.H{
 		"TimelineBody": true,
 		"Endpoint":     "user_timeline",
-		"Username":     username,
+		"UserID": 		userID,
+		"UserName":     userName,
 		"Messages":     formattedMessages,
 		"Followed":     followed,
-		//TODO: I think we don't need this u.u
-		// "publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
-		// "registerLink":       c.GetString("registerLink"),       // Retrieved from the context
-		// "signinLink":         c.GetString("signinLink"),         // Retrieved from the context
+		"ProfileUser":  profileID,
+		"ProfileUserName": profileName,
 	})
 }
 
 func addMessageHandler(c *gin.Context) {
 
-	userID, exists := c.Get("userID")
+	userID, exists := c.Get("UserID")
 	if exists {
 		c.Redirect(http.StatusFound, "/"+userID.(string))
 		return
@@ -319,8 +318,8 @@ func addMessage(text string, author_id any) error {
 }
 
 func registerHandler(c *gin.Context) {
-	fmt.Println("registerHandler")
-	userID, exists := c.Get("userID")
+
+	userID, exists := c.Get("UserID")
 	if exists {
 		c.Redirect(http.StatusFound, "/"+userID.(string))
 		return
@@ -339,18 +338,18 @@ func registerHandler(c *gin.Context) {
 		}
 
 		// Validate form data
-		username := c.Request.FormValue("username")
+		userName := c.Request.FormValue("username")
 		email := c.Request.FormValue("email")
 		password := c.Request.FormValue("password")
 		password2 := c.Request.FormValue("password2")
 
-		userID, err := getUserIDByUsername(username)
+		userID, err := getUserIDByUsername(userName)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
-		if username == "" {
+		if userName == "" {
 			errorData = "You have to enter a username"
 		} else if email == "" || !strings.Contains(email, "@") {
 			errorData = "You have to enter a valid email address"
@@ -362,7 +361,7 @@ func registerHandler(c *gin.Context) {
 			errorData = "The username is already taken"
 		} else {
 			hash := md5.Sum([]byte(password))
-			err := registerUser(username, email, hash)
+			err := registerUser(userName, email, hash)
 			if err != nil {
 				errorData = "Failed to register user"
 				c.HTML(http.StatusInternalServerError, "register.html", gin.H{
@@ -380,31 +379,22 @@ func registerHandler(c *gin.Context) {
 	c.HTML(http.StatusOK, "register.html", gin.H{
 		"RegisterBody": true,
 		"Error":        errorData,
-		//TODO: I think we don't need this u.u
-		// "publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
-		// "registerLink":       c.GetString("registerLink"),       // Retrieved from the context
-		// "signinLink":         c.GetString("signinLink"),         // Retrieved from the context
 	})
 }
 
 func loginHandler(c *gin.Context) {
 	session := sessions.Default(c)
 
-	fmt.Println("loginHandler")
-	userID, exists := c.Get("userID")
-	if exists {
+	userID, _ := c.Cookie("UserID")
+	if userID != "" {
 		session.AddFlash("You were logged in")
 		c.Redirect(http.StatusFound, "/")
 		return
 	}
 
-	fmt.Println(userID)
-
 	var errorData string
 
-	fmt.Println("pre post")
 	if c.Request.Method == http.MethodPost {
-		fmt.Println("in post")
 
 		err := c.Request.ParseForm()
 		if err != nil {
@@ -416,10 +406,10 @@ func loginHandler(c *gin.Context) {
 			return
 		}
 
-		username := c.Request.FormValue("username")
+		userName := c.Request.FormValue("username")
 		password := c.Request.FormValue("password")
 
-		user, err := getUserByUsername(username)
+		user, err := getUserByUsername(userName)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
@@ -431,13 +421,12 @@ func loginHandler(c *gin.Context) {
 			errorData = "Invalid password"
 		} else {
 			session.AddFlash("You were logged in")
-			userID, err := getUserIDByUsername(username)
+			userID, err := getUserIDByUsername(userName)
 			if err != nil {
 				c.AbortWithError(http.StatusInternalServerError, err)
 				return
 			}
-			c.SetCookie("userID", fmt.Sprint(userID), 3600, "/", "", false, true)
-			fmt.Println(userID)
+			c.SetCookie("UserID", fmt.Sprint(userID), 3600, "/", "", false, true)
 			c.Redirect(http.StatusFound, "/")
 			return
 		}
@@ -449,40 +438,35 @@ func loginHandler(c *gin.Context) {
 	c.HTML(http.StatusOK, "login.html", gin.H{
 		"LoginBody": true,
 		"Error":     errorData,
-		"flashes":   flashMessages,
-		//TODO: I think we don't need this u.u
-		// "publicTimelineLink": c.GetString("publicTimelineLink"), // Retrieved from the context
-		// "registerLink":       c.GetString("registerLink"),       // Retrieved from the context
-		// "signinLink":         c.GetString("signinLink"),         // Retrieved from the context
+		"Flashes":   flashMessages,
 	})
 }
 
 func logoutHandler(c *gin.Context) {
 	// Invalidate the cookie by setting its max age to -1
-	// will delete the cookie
-	c.SetCookie("userID", "", -1, "/", "", false, true)
+	// will delete the cookie <- nice stuff
+	c.SetCookie("UserID", "", -1, "/", "", false, true)
 
 	// redirect the user to the home page or login page
 	c.Redirect(http.StatusFound, "/login")
 }
 
 func myTimelineHandler(c *gin.Context) {
-	userID, err := c.Cookie("userID")
-	fmt.Println("in my timeline")
-	fmt.Println(userID)
+	userID, err := c.Cookie("UserID")
+
 	if err != nil {
-		c.Redirect(http.StatusFound, "/public") // Redirect to public timeline
+		c.Redirect(http.StatusFound, "/public")
 		return
 	}
 
-	username, err := getUserNameByUserID(userID)
+	userName, err := getUserNameByUserID(userID)
 
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	fmt.Println(username)
+	fmt.Println(userName)
 
 	session := sessions.Default(c)
 	flashMessages := session.Flashes()
@@ -509,14 +493,10 @@ func myTimelineHandler(c *gin.Context) {
 	c.HTML(http.StatusOK, "timeline.html", gin.H{
 		"TimelineBody": true,
 		"Endpoint":     "my_timeline",
-		"messages":     messages,
-		"user":         userID,
-		"username":     username,
-		"flashes":      flashMessages,
-		//TODO: I think we don't need this u.u
-		// "publicTimelineLink": c.GetString("publicTimelineLink"), // Pass only the links you need for a logged-in user
-		// "logoutLink":         c.GetString("logoutLink"),         // Include logout link for logged-in user
-
+		"Messages":     messages,
+		"UserID":       userID,
+		"UserName":     userName,
+		"Flashes":      flashMessages,
 	})
 }
 
@@ -553,14 +533,14 @@ func gravatarURL(email string, size int) string {
 	return fmt.Sprintf("http://www.gravatar.com/avatar/%x?d=identicon&s=%d", hash, size)
 }
 
-func getUserIDByUsername(username string) (int64, error) {
+func getUserIDByUsername(userName string) (int64, error) {
 	var db, err = connect_db(DATABASE)
 	if err != nil {
 		return 0, err
 	}
 
 	query := `select * from user where username = ?`
-	args := []interface{}{username}
+	args := []interface{}{userName}
 	profile_user, err := query_db(db, query, args, false)
 
 	if profile_user == nil {
@@ -587,26 +567,26 @@ func getUserNameByUserID(userID string) (string, error) {
 	return profile_user[0]["username"].(string), err
 }
 
-func registerUser(username string, email string, password [16]byte) error {
+func registerUser(userName string, email string, password [16]byte) error {
 	query := `insert into user (username, email, pw_hash) values (?, ?, ?)`
 	var db, err = connect_db(DATABASE)
 	if err != nil {
 		return err
 	}
-	args := []interface{}{username, email, pq.Array(password)}
+	args := []interface{}{userName, email, pq.Array(password)}
 	messages, err := query_db(db, query, args, false)
 	fmt.Println(messages)
 	return err
 }
 
-func getUserByUsername(username string) ([]map[string]interface{}, error) {
+func getUserByUsername(userName string) ([]map[string]interface{}, error) {
 	var db, err = connect_db(DATABASE)
 	if err != nil {
 		return nil, err
 	}
 
 	query := `select * from user where username = ?`
-	args := []interface{}{username}
+	args := []interface{}{userName}
 	profile_user, err := query_db(db, query, args, false)
 
 	if profile_user == nil {
@@ -651,8 +631,8 @@ func format_messages(messages []map[string]interface{}) []Message {
 		if text, ok := m["text"].(string); ok {
 			msg.Text = text
 		}
-		if username, ok := m["username"].(string); ok {
-			msg.Username = username
+		if userName, ok := m["username"].(string); ok {
+			msg.Username = userName
 		}
 		if email, ok := m["email"].(string); ok {
 			msg.Email = email
