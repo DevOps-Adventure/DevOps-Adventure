@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"strconv"
 
 	"log"
 	"net/http"
@@ -141,16 +142,16 @@ func query_db(db *sql.DB, query string, args []interface{}, one bool) ([]map[str
 // handlers
 
 func userFollowActionHandler(c *gin.Context) {
-	
+
 	session := sessions.Default(c)
 
 	userID, errID := c.Cookie("UserID")
-	if errID != nil{
+	if errID != nil {
 		session.AddFlash("You need to login before continuing to follow or unfollow.")
 		session.Save()
 		c.Redirect(http.StatusFound, "/login")
 		return
-		
+
 	}
 	profileUserName := c.Param("username")
 	profileUser, err := getUserByUsername(profileUserName)
@@ -161,24 +162,24 @@ func userFollowActionHandler(c *gin.Context) {
 	}
 	profileUserID := fmt.Sprintf("%v", profileUser[0]["user_id"])
 
-    action := c.Param("action")
-	
-	if action == "/follow"{
+	action := c.Param("action")
+
+	if action == "/follow" {
 		fmt.Println("following process triggered")
 		followUser(userID, profileUserID)
 		session.AddFlash("You are now following " + profileUserName)
 	}
-	if action == "/unfollow"{
+	if action == "/unfollow" {
 		fmt.Println("Unfollowing process triggered")
 		unfollowUser(userID, profileUserID)
 		session.AddFlash("You are no longer following " + profileUserName)
 	}
 	session.Save()
-	c.Redirect(http.StatusFound, "/" + profileUserName)
+	c.Redirect(http.StatusFound, "/"+profileUserName)
 }
 
 func publicTimelineHandler(c *gin.Context) {
-	
+
 	query := `
 	SELECT message.*, user.* FROM message, user
 	WHERE message.flagged = 0 AND message.author_id = user.user_id
@@ -211,10 +212,10 @@ func publicTimelineHandler(c *gin.Context) {
 	if errID == nil {
 		context["UserID"] = userID
 		userName, errName := getUserNameByUserID(userID)
-			
+
 		if errName == nil {
 			context["UserName"] = userName
-		}	
+		}
 	}
 	// Render timeline template with the context including link variables
 	c.HTML(http.StatusOK, "timeline.html", context)
@@ -238,12 +239,12 @@ func userTimelineHandler(c *gin.Context) {
 
 	// does the logged in user follow them
 	followed := false
-	pUserId := profileUser[0]["user_id"]
+	pUserId := profileUser[0]["user_id"].(int64)
 	profileName := profileUser[0]["username"]
 	userID, errID := c.Cookie("UserID")
+	userIDInt64, err := strconv.ParseInt(userID, 10, 64)
 
 	userName, _ := getUserNameByUserID(userID)
-	profileID, _ := pUserId.(string)
 
 	if errID == nil {
 		query := `select 1 from follower where
@@ -255,7 +256,7 @@ func userTimelineHandler(c *gin.Context) {
 		}
 
 		args := []interface{}{userID, pUserId}
-		follow_status , err := query_db(db, query, args, false)
+		follow_status, err := query_db(db, query, args, false)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
@@ -279,25 +280,23 @@ func userTimelineHandler(c *gin.Context) {
 
 	formattedMessages := format_messages(messages)
 
-	fmt.Println(profileUser, userID)
 	c.HTML(http.StatusOK, "timeline.html", gin.H{
-		"TimelineBody": true,
-		"Endpoint":     "user_timeline",
-		"UserID": 		userID,
-		"UserName":     userName,
-		"Messages":     formattedMessages,
-		"Followed":     followed,
-		"ProfileUser":  profileID,
+		"TimelineBody":    true,
+		"Endpoint":        "user_timeline",
+		"UserID":          userIDInt64,
+		"UserName":        userName,
+		"Messages":        formattedMessages,
+		"Followed":        followed,
+		"ProfileUser":     pUserId,
 		"ProfileUserName": profileName,
-		"Flashes": flashMessages,
+		"Flashes":         flashMessages,
 	})
 }
 
 func addMessageHandler(c *gin.Context) {
-
-	userID, exists := c.Get("UserID")
-	if exists {
-		c.Redirect(http.StatusFound, "/"+userID.(string))
+	userID, err := c.Cookie("UserID")
+	if err != nil {
+		c.Redirect(http.StatusFound, "/public")
 		return
 	}
 
@@ -306,7 +305,7 @@ func addMessageHandler(c *gin.Context) {
 		err := c.Request.ParseForm()
 		if err != nil {
 			errorData = "Failed to parse form data"
-			c.HTML(http.StatusBadRequest, "register.html", gin.H{
+			c.HTML(http.StatusBadRequest, "timeline.html", gin.H{
 				"RegisterBody": true,
 				"Error":        errorData,
 			})
@@ -315,12 +314,11 @@ func addMessageHandler(c *gin.Context) {
 
 		// Validate form data
 		text := c.Request.FormValue("text")
-		author_id := userID
 
 		if text == "" {
 			errorData = "You have to enter a value"
 		} else {
-			err := addMessage(text, author_id)
+			err := addMessage(text, userID)
 			if err != nil {
 				errorData = "Failed to register user"
 				c.HTML(http.StatusInternalServerError, "timeline.html", gin.H{
@@ -329,7 +327,6 @@ func addMessageHandler(c *gin.Context) {
 				})
 				return
 			}
-
 			// Redirect to login page after successful registration
 			c.Redirect(http.StatusSeeOther, "/")
 			// todo: flash
@@ -342,15 +339,18 @@ func addMessageHandler(c *gin.Context) {
 	})
 }
 
-func addMessage(text string, author_id any) error {
-	query := `insert into message (author_id, text) values (?, ?)`
+func addMessage(text string, author_id string) error {
+	query := `insert into message (author_id, text, pub_date, flagged) values (?, ?, ?, 0)`
 	var db, err = connect_db(DATABASE)
 	if err != nil {
+		fmt.Println("error in addMessage query")
 		return err
 	}
-	args := []interface{}{author_id, text}
-	messages, err := query_db(db, query, args, false)
-	fmt.Println(messages)
+	currentTime := time.Now().UTC()
+	unixTimestamp := currentTime.Unix()
+
+	args := []interface{}{author_id, text, unixTimestamp, 0}
+	query_db(db, query, args, false)
 	return err
 }
 
@@ -476,12 +476,12 @@ func loginHandler(c *gin.Context) {
 			return
 		}
 
-	}	
+	}
 
 	c.HTML(http.StatusOK, "login.html", gin.H{
 		"LoginBody": true,
 		"Error":     errorData,
-		"Flashes": 	 flashMessages,
+		"Flashes":   flashMessages,
 	})
 }
 
@@ -511,8 +511,6 @@ func myTimelineHandler(c *gin.Context) {
 		return
 	}
 
-	fmt.Println(userName)
-
 	session := sessions.Default(c)
 	flashMessages := session.Flashes()
 	session.Save() // Clear flashes after retrieving
@@ -527,20 +525,23 @@ func myTimelineHandler(c *gin.Context) {
 	var db, _ = connect_db(DATABASE)
 	args := []interface{}{userID, userID, PERPAGE}
 	messages, err := query_db(db, query, args, false)
-	fmt.Println(messages)
 	if err != nil {
 		// Handle error
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
+	formattedMessages := format_messages(messages)
+
 	// For template rendering with Gin
 	c.HTML(http.StatusOK, "timeline.html", gin.H{
 		"TimelineBody": true,
 		"Endpoint":     "my_timeline",
-		"Messages":     messages,
 		"UserID":       userID,
 		"UserName":     userName,
+		"Messages":     formattedMessages,
+		"Followed":     false,
+		"ProfileUser":  userID,
 		"Flashes":      flashMessages,
 	})
 }
@@ -591,7 +592,7 @@ func getUserIDByUsername(userName string) (int64, error) {
 	if profile_user == nil {
 		return 0, err
 	}
-	fmt.Println(profile_user)
+
 	return profile_user[0]["user_id"].(int64), err
 }
 
@@ -608,7 +609,6 @@ func getUserNameByUserID(userID string) (string, error) {
 	if profile_user == nil {
 		return "no name", err
 	}
-	fmt.Println(profile_user)
 	return profile_user[0]["username"].(string), err
 }
 
@@ -620,11 +620,11 @@ func registerUser(userName string, email string, password [16]byte) error {
 	}
 	args := []interface{}{userName, email, pq.Array(password)}
 	messages, err := query_db(db, query, args, false)
-	fmt.Println(messages)
+	fmt.Println("this is the messages", messages)
 	return err
 }
 
-func followUser(userID string, profileUserID string) error{
+func followUser(userID string, profileUserID string) error {
 	query := `insert into follower (who_id, whom_id) values (?, ?)`
 	var db, err = connect_db(DATABASE)
 	if err != nil {
@@ -636,7 +636,7 @@ func followUser(userID string, profileUserID string) error{
 	return err
 }
 
-func unfollowUser(userID string, profileUserID string) error{
+func unfollowUser(userID string, profileUserID string) error {
 	query := `delete from follower where who_id=? and whom_id=?`
 	var db, err = connect_db(DATABASE)
 	if err != nil {
