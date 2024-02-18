@@ -4,23 +4,22 @@
 <div class="page">
 	<h1>MiniTwit</h1>
 	<div class="navigation">
-		{{if .user}}
-		<a href="/">my timeline</a>
-		<a href="/public">public timeline</a>
-		<a href="/logout">sign out [{{.User.Username}}]</a>
+		{{if .UserID}}
+		<a href="/">my timeline</a> |
+		<a href="/public">public timeline</a> |
+		<a href="/logout">sign out [{{.UserName}}]</a>
 		{{else}}
-		<a href="/public">public timeline</a> | <a href="/register">sign up</a> |
+		<a href="/public">public timeline</a> | 
+		<a href="/register">sign up</a> |
 		<a href="/login">sign in</a>
 		{{end}}
 	</div>
 
-	{{with .Flashes}} {{if .}}
 	<ul class="flashes">
-		{{range .}}
+		{{range .Flashes}}
 		<li>{{.}}</li>
 		{{end}}
 	</ul>
-	{{end}} {{end}}
 
 	<div class="body">
 		{{ if .TimelineBody }} {{ template "TimelineBody" .}} {{ else if
