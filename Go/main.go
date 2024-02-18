@@ -673,7 +673,7 @@ type Message struct {
 	MessageID    int
 	AuthorID     int
 	Text         string
-	PubDate      time.Time
+	PubDate      string
 	User         User
 	Email        string
 	Username     string
@@ -705,6 +705,11 @@ func format_messages(messages []map[string]interface{}) []Message {
 		}
 		if email, ok := m["email"].(string); ok {
 			msg.Email = email
+		}
+
+		if pubDate, ok := m["pub_date"].(int64) ; ok {
+			pubDateTime := time.Unix(pubDate,0)
+			msg.PubDate = pubDateTime.Format("02/01/2006 15:04:05") // go time layout format is weird 1,2,3,4,5,6 ¬¬
 		}
 
 		link := "/" + msg.Username
