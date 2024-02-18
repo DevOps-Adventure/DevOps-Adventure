@@ -5,11 +5,12 @@
 	<h1>MiniTwit</h1>
 	<div class="navigation">
 		{{if .UserID}}
-		<a href="/">my timeline</a>
-		<a href="/public">public timeline</a>
+		<a href="/">my timeline</a> |
+		<a href="/public">public timeline</a> |
 		<a href="/logout">sign out [{{.UserName}}]</a>
 		{{else}}
-		<a href="/public">public timeline</a> | <a href="/register">sign up</a> |
+		<a href="/public">public timeline</a> | 
+		<a href="/register">sign up</a> |
 		<a href="/login">sign in</a>
 		{{end}}
 	</div>
