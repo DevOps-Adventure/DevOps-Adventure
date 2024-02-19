@@ -24,6 +24,22 @@ const (
 	PERPAGE  int    = 30
 )
 
+type User struct {
+	UserID int
+}
+
+type Message struct {
+	MessageID    int
+	AuthorID     int
+	Text         string
+	PubDate      time.Time
+	User         User
+	Email        string
+	Username     string
+	Profile_link string
+	Gravatar     string
+}
+
 func main() {
 
 	//using db connection (1)
@@ -58,7 +74,7 @@ func main() {
 	router.POST("/add_message", addMessageHandler)
 
 	//adding simulatorAPI
-	registerSimulatorApi(router)
+	//registerSimulatorApi(router)
 
 	// Start the server
 	router.Run(":8080")
@@ -128,7 +144,7 @@ func query_db(db *sql.DB, query string, args []interface{}, one bool) ([]map[str
 	return result, nil
 }
 
-// handlers
+// Handlers
 
 func userFollowActionHandler(c *gin.Context) {
 
@@ -143,7 +159,7 @@ func userFollowActionHandler(c *gin.Context) {
 
 	}
 	profileUserName := c.Param("username")
-	profileUser, err := getUserByUsername(profileUserName)
+	profileUser, err := getUserByUsername2(profileUserName)
 	if err != nil {
 		fmt.Println("get user failed with:", err)
 		c.Redirect(http.StatusFound, "/public")
@@ -155,12 +171,12 @@ func userFollowActionHandler(c *gin.Context) {
 
 	if action == "/follow" {
 		fmt.Println("following process triggered")
-		followUser(userID, profileUserID)
+		followUser2(userID, profileUserID)
 		session.AddFlash("You are now following " + profileUserName)
 	}
 	if action == "/unfollow" {
 		fmt.Println("Unfollowing process triggered")
-		unfollowUser(userID, profileUserID)
+		unfollowUser2(userID, profileUserID)
 		session.AddFlash("You are no longer following " + profileUserName)
 	}
 	session.Save()
@@ -169,24 +185,8 @@ func userFollowActionHandler(c *gin.Context) {
 
 func publicTimelineHandler(c *gin.Context) {
 
-	query := `
-	SELECT message.*, user.* FROM message, user
-	WHERE message.flagged = 0 AND message.author_id = user.user_id
-	ORDER BY message.pub_date DESC LIMIT ?
-	`
-
-	var db, err = connect_db(DATABASE)
+	messages, err := getPublicMessages()
 	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	defer db.Close()
-
-	args := []interface{}{PERPAGE}
-	messages, err := query_db(db, query, args, false)
-
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 	formattedMessages := format_messages(messages)
@@ -200,7 +200,7 @@ func publicTimelineHandler(c *gin.Context) {
 	userID, errID := c.Cookie("UserID")
 	if errID == nil {
 		context["UserID"] = userID
-		userName, errName := getUserNameByUserID(userID)
+		userName, errName := getUserNameByUserID2(userID)
 
 		if errName == nil {
 			context["UserName"] = userName
@@ -215,7 +215,7 @@ func userTimelineHandler(c *gin.Context) {
 	flashMessages := session.Flashes()
 	session.Save()
 	profileUserName := c.Param("username")
-	profileUser, err := getUserByUsername(profileUserName)
+	profileUser, err := getUserByUsername2(profileUserName)
 
 	if profileUser == nil {
 		c.AbortWithStatus(404)
@@ -233,39 +233,18 @@ func userTimelineHandler(c *gin.Context) {
 	userID, errID := c.Cookie("UserID")
 	userIDInt64, err := strconv.ParseInt(userID, 10, 64)
 
-	userName, _ := getUserNameByUserID(userID)
+	userName, _ := getUserNameByUserID2(userID)
 
 	if errID == nil {
-		query := `select 1 from follower where
-		follower.who_id = ? and follower.whom_id = ?`
-		var db, err = connect_db(DATABASE)
-		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
-			return
-		}
-
-		args := []interface{}{userID, pUserId}
-		follow_status, err := query_db(db, query, args, false)
-		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
-			return
-		}
-		followed = len(follow_status) > 0
+		followed = checkFollowStatus(userIDInt64, pUserId)
 	}
 
-	query := `
-	select message.*, user.* from message, user where
-    user.user_id = message.author_id and user.user_id = ?
-    order by message.pub_date desc limit ?
-	`
-	args := []interface{}{pUserId, PERPAGE}
-	db, err := connect_db(DATABASE)
-	messages, err := query_db(db, query, args, false)
+	messages, err := getUserMessages(pUserId)
+
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	defer db.Close()
 
 	formattedMessages := format_messages(messages)
 
@@ -279,6 +258,47 @@ func userTimelineHandler(c *gin.Context) {
 		"ProfileUser":     pUserId,
 		"ProfileUserName": profileName,
 		"Flashes":         flashMessages,
+	})
+}
+
+func myTimelineHandler(c *gin.Context) {
+	userID, err := c.Cookie("UserID")
+
+	if err != nil {
+		c.Redirect(http.StatusFound, "/public")
+		return
+	}
+
+	userName, err := getUserNameByUserID2(userID)
+
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	session := sessions.Default(c)
+	flashMessages := session.Flashes()
+	session.Save() // Clear flashes after retrieving
+
+	messages, err := getMyMessages(userID)
+
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	formattedMessages := format_messages(messages)
+
+	// For template rendering with Gin
+	c.HTML(http.StatusOK, "timeline.html", gin.H{
+		"TimelineBody": true,
+		"Endpoint":     "my_timeline",
+		"UserID":       userID,
+		"UserName":     userName,
+		"Messages":     formattedMessages,
+		"Followed":     false,
+		"ProfileUser":  userID,
+		"Flashes":      flashMessages,
 	})
 }
 
@@ -307,8 +327,9 @@ func addMessageHandler(c *gin.Context) {
 		if text == "" {
 			errorData = "You have to enter a value"
 		} else {
-			err := addMessage(text, userID)
+			err := addMessage2(text, userID)
 			if err != nil {
+				fmt.Println("fuck my life")
 				errorData = "Failed to register user"
 				c.HTML(http.StatusInternalServerError, "timeline.html", gin.H{
 					"RegisterBody": true,
@@ -326,21 +347,6 @@ func addMessageHandler(c *gin.Context) {
 		"RegisterBody": true,
 		"Error":        errorData,
 	})
-}
-
-func addMessage(text string, author_id string) error {
-	query := `insert into message (author_id, text, pub_date, flagged) values (?, ?, ?, 0)`
-	var db, err = connect_db(DATABASE)
-	if err != nil {
-		fmt.Println("error in addMessage query")
-		return err
-	}
-	currentTime := time.Now().UTC()
-	unixTimestamp := currentTime.Unix()
-
-	args := []interface{}{author_id, text, unixTimestamp, 0}
-	query_db(db, query, args, false)
-	return err
 }
 
 func registerHandler(c *gin.Context) {
@@ -371,7 +377,7 @@ func registerHandler(c *gin.Context) {
 		password := c.Request.FormValue("password")
 		password2 := c.Request.FormValue("password2")
 
-		userID, err := getUserIDByUsername(userName)
+		userID, err := getUserIDByUsername2(userName)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
@@ -389,7 +395,7 @@ func registerHandler(c *gin.Context) {
 			errorData = "The username is already taken"
 		} else {
 			hash := md5.Sum([]byte(password))
-			err := registerUser(userName, email, hash)
+			err := registerUser2(userName, email, hash)
 			if err != nil {
 				errorData = "Failed to register user"
 				c.HTML(http.StatusInternalServerError, "register.html", gin.H{
@@ -442,7 +448,7 @@ func loginHandler(c *gin.Context) {
 		userName := c.Request.FormValue("username")
 		password := c.Request.FormValue("password")
 
-		user, err := getUserByUsername(userName)
+		user, err := getUserByUsername2(userName)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
@@ -453,7 +459,7 @@ func loginHandler(c *gin.Context) {
 		} else if !checkPasswordHash(password, user[0]["pw_hash"].(string)) {
 			errorData = "Invalid password"
 		} else {
-			userID, err := getUserIDByUsername(userName)
+			userID, err := getUserIDByUsername2(userName)
 			if err != nil {
 				c.AbortWithError(http.StatusInternalServerError, err)
 				return
@@ -483,56 +489,6 @@ func logoutHandler(c *gin.Context) {
 	c.SetCookie("UserID", "", -1, "/", "", false, true)
 	// redirect the user to the home page or login page
 	c.Redirect(http.StatusFound, "/login")
-}
-
-func myTimelineHandler(c *gin.Context) {
-	userID, err := c.Cookie("UserID")
-
-	if err != nil {
-		c.Redirect(http.StatusFound, "/public")
-		return
-	}
-
-	userName, err := getUserNameByUserID(userID)
-
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	session := sessions.Default(c)
-	flashMessages := session.Flashes()
-	session.Save() // Clear flashes after retrieving
-
-	query := `
-    SELECT message.*, user.* FROM message, user
-    WHERE message.flagged = 0 AND message.author_id = user.user_id AND (
-        user.user_id = ? OR
-        user.user_id IN (SELECT whom_id FROM follower WHERE who_id = ?))
-    ORDER BY message.pub_date DESC LIMIT ?
-    `
-	var db, _ = connect_db(DATABASE)
-	args := []interface{}{userID, userID, PERPAGE}
-	messages, err := query_db(db, query, args, false)
-	if err != nil {
-		// Handle error
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	formattedMessages := format_messages(messages)
-
-	// For template rendering with Gin
-	c.HTML(http.StatusOK, "timeline.html", gin.H{
-		"TimelineBody": true,
-		"Endpoint":     "my_timeline",
-		"UserID":       userID,
-		"UserName":     userName,
-		"Messages":     formattedMessages,
-		"Followed":     false,
-		"ProfileUser":  userID,
-		"Flashes":      flashMessages,
-	})
 }
 
 // Helper functions
@@ -601,6 +557,23 @@ func getUserNameByUserID(userID string) (string, error) {
 	return profile_user[0]["username"].(string), err
 }
 
+func getUserByUsername(userName string) ([]map[string]interface{}, error) {
+	var db, err = connect_db(DATABASE)
+	if err != nil {
+		return nil, err
+	}
+
+	query := `select * from user where username = ?`
+	args := []interface{}{userName}
+	profile_user, err := query_db(db, query, args, false)
+
+	if profile_user == nil {
+		return nil, err
+	}
+
+	return profile_user, err
+}
+
 func registerUser(userName string, email string, password [16]byte) error {
 	query := `insert into user (username, email, pw_hash) values (?, ?, ?)`
 	var db, err = connect_db(DATABASE)
@@ -635,39 +608,6 @@ func unfollowUser(userID string, profileUserID string) error {
 	messages, err := query_db(db, query, args, false)
 	fmt.Println(messages)
 	return err
-}
-
-func getUserByUsername(userName string) ([]map[string]interface{}, error) {
-	var db, err = connect_db(DATABASE)
-	if err != nil {
-		return nil, err
-	}
-
-	query := `select * from user where username = ?`
-	args := []interface{}{userName}
-	profile_user, err := query_db(db, query, args, false)
-
-	if profile_user == nil {
-		return nil, err
-	}
-
-	return profile_user, err
-}
-
-type User struct {
-	UserID int
-}
-
-type Message struct {
-	MessageID    int
-	AuthorID     int
-	Text         string
-	PubDate      time.Time
-	User         User
-	Email        string
-	Username     string
-	Profile_link string
-	Gravatar     string
 }
 
 func format_messages(messages []map[string]interface{}) []Message {
@@ -706,5 +646,4 @@ func format_messages(messages []map[string]interface{}) []Message {
 	}
 
 	return formattedMessages
-
 }
