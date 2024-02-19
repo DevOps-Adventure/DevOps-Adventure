@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3" // Import the SQLite3 driver
 )
 
@@ -117,7 +118,15 @@ func getPublicMessages(db *sql.DB, limit int) ([]Message, error) {
 // registerUser registers a new user
 // (Copy from existing code)
 func registerUser2(userName string, email string, password [16]byte) error {
-	return nil
+	query := `insert into user (username, email, pw_hash) values (?, ?, ?)`
+	var db, err = connect_db(DATABASE)
+	if err != nil {
+		return err
+	}
+	args := []interface{}{userName, email, pq.Array(password)}
+	messages, err := query_db(db, query, args, false)
+	fmt.Println("this is the messages", messages)
+	return err
 }
 
 // followUser adds a new follower to the database
