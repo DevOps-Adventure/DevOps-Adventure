@@ -12,10 +12,9 @@ import (
 	_ "github.com/mattn/go-sqlite3" // Import the SQLite3 driver
 )
 
-// Global constants (if needed, else define them where they are used)
-const (
-	DATABASE2 string = "./tmp/minitwit.db"
-)
+/*
+	CONNECT, INIT AND QUERY DB
+*/
 
 // connect_db creates and returns a new database connection
 func connect_db2(dsn string) (*sql.DB, error) {
@@ -76,36 +75,164 @@ func query_db2(db *sql.DB, query string, args []interface{}, one bool) ([]map[st
 	return result, nil
 }
 
-// addUser adds a new user to the database
-// needs to be implemented
-// example usage of query_db
-func addUser(db *sql.DB, username, email, hashedPassword string) error {
-	// query to insert a new user
-	query := `INSERT INTO user (username, email, pw_hash) VALUES (?, ?, ?)`
+/*
+	GET DATA
+*/
 
-	// statement with the user details
-	_, err := db.Exec(query, username, email, hashedPassword)
+// fetches all public messages for display.
+func getPublicMessages() ([]map[string]interface{}, error) {
+
+	query := `
+	SELECT message.*, user.* FROM message, user
+	WHERE message.flagged = 0 AND message.author_id = user.user_id
+	ORDER BY message.pub_date DESC LIMIT ?
+	`
+
+	var db, err = connect_db(DATABASE)
 	if err != nil {
-		return fmt.Errorf("addUser: %v", err)
+		return nil, err
+	}
+	defer db.Close()
+
+	args := []interface{}{PERPAGE}
+	messages, err := query_db(db, query, args, false)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	return messages, nil
 }
 
-// getUserByID fetches a user by their ID
-// (Copy from existing code)
+// fetches all messages from picked user
+func getUserMessages(pUserId int64) ([]map[string]interface{}, error) {
+
+	query := `
+	select message.*, user.* from message, user where
+    user.user_id = message.author_id and user.user_id = ?
+    order by message.pub_date desc limit ?
+	`
+	args := []interface{}{pUserId, PERPAGE}
+	db, err := connect_db(DATABASE)
+	messages, err := query_db(db, query, args, false)
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+	return messages, nil
+}
+
+// check whether the given user is followed by logged in
+func checkFollowStatus(userID int64, pUserID int64) bool {
+
+	query := `select 1 from follower where
+	follower.who_id = ? and follower.whom_id = ?`
+
+	var db, err = connect_db(DATABASE)
+
+	if err != nil {
+		return false
+	}
+
+	args := []interface{}{userID, pUserID}
+	follow_status, err := query_db(db, query, args, false)
+
+	if err != nil {
+		return false
+	}
+
+	return len(follow_status) > 0
+}
+
+// fetches all messages for the current logged in user for 'My Timeline'
+func getMyMessages(userID string) ([]map[string]interface{}, error) {
+	query := `
+    SELECT message.*, user.* FROM message, user
+    WHERE message.flagged = 0 AND message.author_id = user.user_id AND (
+        user.user_id = ? OR
+        user.user_id IN (SELECT whom_id FROM follower WHERE who_id = ?))
+    ORDER BY message.pub_date DESC LIMIT ?
+    `
+	var db, _ = connect_db(DATABASE)
+	args := []interface{}{userID, userID, PERPAGE}
+	messages, err := query_db(db, query, args, false)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return messages, nil
+}
+
+// fetches a user by their ID
 func getUserIDByUsername2(userName string) (int64, error) {
-	return 0, nil
+	var db, err = connect_db(DATABASE)
+	if err != nil {
+		return 0, err
+	}
+
+	query := `select * from user where username = ?`
+	args := []interface{}{userName}
+	profile_user, err := query_db(db, query, args, false)
+
+	if profile_user == nil {
+		return 0, err
+	}
+
+	return profile_user[0]["user_id"].(int64), err
 }
 
-// checkUserCredentials verifies a user login details
-// (Copy from existing code)
+// fetches a username by their ID
 func getUserNameByUserID2(userID string) (string, error) {
-	return "", nil
+	var db, err = connect_db(DATABASE)
+	if err != nil {
+		return "", err
+	}
+
+	query := `select * from user where user_id = ?`
+	args := []interface{}{userID}
+	profile_user, err := query_db(db, query, args, false)
+
+	if profile_user == nil {
+		return "no name", err
+	}
+	return profile_user[0]["username"].(string), err
 }
 
-// addMessage adds a new message to the database
-// (Copy from existing code)
+func getUserByUsername2(userName string) ([]map[string]interface{}, error) {
+	var db, err = connect_db(DATABASE)
+	if err != nil {
+		return nil, err
+	}
+
+	query := `select * from user where username = ?`
+	args := []interface{}{userName}
+	profile_user, err := query_db(db, query, args, false)
+
+	if profile_user == nil {
+		return nil, err
+	}
+
+	return profile_user, err
+}
+
+/*
+	POST DATA
+*/
+
+// registers a new user
+func registerUser2(userName string, email string, password [16]byte) error {
+	query := `insert into user (username, email, pw_hash) values (?, ?, ?)`
+	var db, err = connect_db(DATABASE)
+	if err != nil {
+		return err
+	}
+	args := []interface{}{userName, email, pq.Array(password)}
+	messages, err := query_db2(db, query, args, false)
+	fmt.Println("this is the messages", messages)
+	return err
+}
+
+// adds a new message to the database
 func addMessage2(text string, author_id string) error {
 	query := `insert into message (author_id, text, pub_date, flagged) values (?, ?, ?, 0)`
 	var db, err = connect_db(DATABASE)
@@ -121,34 +248,28 @@ func addMessage2(text string, author_id string) error {
 	return err
 }
 
-// getPublicMessages fetches messages for display.
-// (Copy from existing code)
-func getPublicMessages(db *sql.DB, limit int) ([]Message, error) {
-	return nil, nil
-}
-
-// registerUser registers a new user
-// (Copy from existing code)
-func registerUser2(userName string, email string, password [16]byte) error {
-	query := `insert into user (username, email, pw_hash) values (?, ?, ?)`
+// followUser adds a new follower to the database
+func followUser2(userID string, profileUserID string) error {
+	query := `insert into follower (who_id, whom_id) values (?, ?)`
 	var db, err = connect_db(DATABASE)
 	if err != nil {
 		return err
 	}
-	args := []interface{}{userName, email, pq.Array(password)}
-	messages, err := query_db2(db, query, args, false)
-	fmt.Println("this is the messages", messages)
+	args := []interface{}{userID, profileUserID}
+	messages, err := query_db(db, query, args, false)
+	fmt.Println(messages)
 	return err
 }
 
-// followUser adds a new follower to the database
-// (Copy from existing code)
-func followUser2(userID string, profileUserID string) error {
-	return nil
-}
-
 // unfollowUser removes a follower from the database
-// (Copy from existing code)
 func unfollowUser2(userID string, profileUserID string) error {
-	return nil
+	query := `delete from follower where who_id=? and whom_id=?`
+	var db, err = connect_db(DATABASE)
+	if err != nil {
+		return err
+	}
+	args := []interface{}{userID, profileUserID}
+	messages, err := query_db(db, query, args, false)
+	fmt.Println(messages)
+	return err
 }
