@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3" // Import the SQLite3 driver
@@ -105,8 +106,19 @@ func getUserNameByUserID2(userID string) (string, error) {
 
 // addMessage adds a new message to the database
 // (Copy from existing code)
-func addMessage2(db *sql.DB, author string, text string, pubDate string) error {
-	return nil
+func addMessage2(text string, author_id string) error {
+	query := `insert into message (author_id, text, pub_date, flagged) values (?, ?, ?, 0)`
+	var db, err = connect_db(DATABASE)
+	if err != nil {
+		fmt.Println("error in addMessage query")
+		return err
+	}
+	currentTime := time.Now().UTC()
+	unixTimestamp := currentTime.Unix()
+
+	args := []interface{}{author_id, text, unixTimestamp, 0}
+	query_db2(db, query, args, false)
+	return err
 }
 
 // getPublicMessages fetches messages for display.
@@ -124,7 +136,7 @@ func registerUser2(userName string, email string, password [16]byte) error {
 		return err
 	}
 	args := []interface{}{userName, email, pq.Array(password)}
-	messages, err := query_db(db, query, args, false)
+	messages, err := query_db2(db, query, args, false)
 	fmt.Println("this is the messages", messages)
 	return err
 }
