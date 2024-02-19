@@ -26,27 +26,12 @@ const (
 
 func main() {
 
-	// # configuration (0) _do we want them public or private?
-
-	// var Debug bool = true
-	// var Key string = "development key"
-
-	//app aplication ?
-
 	//using db connection (1)
 	db, err := connect_db(DATABASE)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
-
-	//db initialization (2)
-	// if err := init_db(db, "schema.sql"); err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// Load and parse your templates with the FuncMap
-	// tmpl := template.Must(template.New("").Funcs(funcMap).ParseGlob("templates/*.tmpl"))
 
 	// Create a Gin router and set the parsed templates
 	router := gin.Default()
@@ -72,8 +57,12 @@ func main() {
 	router.POST("/login", loginHandler)
 	router.POST("/add_message", addMessageHandler)
 
+	//adding simulatorAPI
+	registerSimulatorApi(router)
+
 	// Start the server
 	router.Run(":8080")
+
 }
 
 func connect_db(dsn string) (*sql.DB, error) {
@@ -717,4 +706,5 @@ func format_messages(messages []map[string]interface{}) []Message {
 	}
 
 	return formattedMessages
+
 }
