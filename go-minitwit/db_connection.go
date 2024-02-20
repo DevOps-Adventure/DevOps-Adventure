@@ -17,7 +17,7 @@ import (
 */
 
 // connect_db creates and returns a new database connection
-func connect_db2(dsn string) (*sql.DB, error) {
+func connect_DB2(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", dsn)
 	if err != nil {
 		return nil, err
@@ -272,4 +272,23 @@ func unfollowUser2(userID string, profileUserID string) error {
 	messages, err := query_db(db, query, args, false)
 	fmt.Println(messages)
 	return err
+}
+
+// userExists checks if a user with the given username already exists in the database.
+func userExists(username string) (bool, error) {
+	query := "SELECT COUNT(*) FROM user WHERE username = ?"
+	db, err := connect_db(DATABASE)
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
+
+	var count int
+	err = db.QueryRow(query, username).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	// If count is greater than 0, the user exists
+	return count > 0, nil
 }
