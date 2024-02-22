@@ -68,10 +68,20 @@ func mainAPI() {
 
 // Define your route handlers here
 func myTimelineHandlerAPI(c *gin.Context) {
-	// Not implemented
 	if IsSimulatorRequest(c) {
+		messages, err := getPublicMessages()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			return
+		}
+		formattedMessages := format_messages(messages)
+		c.HTML(http.StatusOK, "test_timeline.html", gin.H{
+			"TimelineBody": true,
+			"Endpoint":     "test_public_timeline",
+			"Messages":     formattedMessages,
+		})
 	} else {
-		messages, err := getPublicMessages() // Assume this function exists in db_connection.go
+		messages, err := getPublicMessages()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 			return
@@ -89,12 +99,12 @@ func publicTimelineHandlerAPI(c *gin.Context) {
 	if IsSimulatorRequest(c) {
 
 	} else {
-		messages, err := getPublicMessages() // Assume this function exists in db_connection.go
+		messages, err := getPublicMessages()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 			return
 		}
-		formattedMessages := format_messages(messages) // format_messages needs to be implemented
+		formattedMessages := format_messages(messages)
 		c.HTML(http.StatusOK, "timeline.html", gin.H{
 			"TimelineBody": true,
 			"Endpoint":     "public_timeline",
@@ -104,7 +114,6 @@ func publicTimelineHandlerAPI(c *gin.Context) {
 }
 
 func userTimelineHandlerAPI(c *gin.Context) {
-	// Not implemented
 	if IsSimulatorRequest(c) {
 	} else {
 		username := c.Param("username")
@@ -138,7 +147,7 @@ func userTimelineHandlerAPI(c *gin.Context) {
 			return
 		}
 
-		formattedMessages := format_messages(messages) // Assumes format_messages is defined
+		formattedMessages := format_messages(messages)
 		c.HTML(http.StatusOK, "timeline.html", gin.H{
 			"TimelineBody": true,
 			"Endpoint":     "user_timeline",
