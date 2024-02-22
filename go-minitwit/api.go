@@ -87,6 +87,7 @@ func myTimelineHandlerAPI(c *gin.Context) {
 
 func publicTimelineHandlerAPI(c *gin.Context) {
 	if IsSimulatorRequest(c) {
+
 	} else {
 		messages, err := getPublicMessages() // Assume this function exists in db_connection.go
 		if err != nil {
@@ -106,6 +107,45 @@ func userTimelineHandlerAPI(c *gin.Context) {
 	// Not implemented
 	if IsSimulatorRequest(c) {
 	} else {
+		username := c.Param("username")
+		profileUser, err := getUserByUsername2(username)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			return
+		}
+		if len(profileUser) == 0 {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+
+		pUserID := profileUser[0]["user_id"].(int64)
+
+		var followed bool
+		if userIDValue, exists := c.Get("userID"); exists {
+			// Safely assert userIDValue to int64
+			userID, ok := userIDValue.(int64)
+			if !ok {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+				return
+			}
+			followed = checkFollowStatus(userID, pUserID)
+
+		}
+
+		messages, err := getUserMessages(pUserID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			return
+		}
+
+		formattedMessages := format_messages(messages) // Assumes format_messages is defined
+		c.HTML(http.StatusOK, "timeline.html", gin.H{
+			"TimelineBody": true,
+			"Endpoint":     "user_timeline",
+			"Username":     username,
+			"Messages":     formattedMessages,
+			"Followed":     followed,
+		})
 	}
 }
 
