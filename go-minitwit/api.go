@@ -69,6 +69,7 @@ func mainAPI() {
 // Define your route handlers here
 func myTimelineHandlerAPI(c *gin.Context) {
 	if IsSimulatorRequest(c) {
+		log.Println("Simulator request")
 		messages, err := getPublicMessages()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
@@ -97,7 +98,7 @@ func myTimelineHandlerAPI(c *gin.Context) {
 
 func publicTimelineHandlerAPI(c *gin.Context) {
 	if IsSimulatorRequest(c) {
-
+		log.Println("Simulator request")
 	} else {
 		messages, err := getPublicMessages()
 		if err != nil {
@@ -115,6 +116,7 @@ func publicTimelineHandlerAPI(c *gin.Context) {
 
 func userTimelineHandlerAPI(c *gin.Context) {
 	if IsSimulatorRequest(c) {
+		log.Println("Simulator request")
 	} else {
 		username := c.Param("username")
 		profileUser, err := getUserByUsername2(username)
