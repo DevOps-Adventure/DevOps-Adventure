@@ -74,10 +74,10 @@ func main() {
 	router.POST("/add_message", addMessageHandler)
 
 	//adding simulatorAPI
-	//registerSimulatorApi(router)
+	registerSimulatorApi(router)
 
 	// Start the server
-	router.Run(":8080")
+	router.Run(":8081")
 
 }
 

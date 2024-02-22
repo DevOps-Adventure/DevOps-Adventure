@@ -8,16 +8,17 @@ import (
 // mathing the endpoints with the handlers for the simulator
 func registerSimulatorApi(router *gin.Engine) {
 
-	router.GET("/", myTimelineHandler).Use(simulatorApi())
-	router.GET("/public", publicTimelineHandler).Use(simulatorApi())
-	router.GET("/:username", userTimelineHandler).Use(simulatorApi())
-	router.GET("/register", registerHandler).Use(simulatorApi())
-	router.GET("/login", loginHandler).Use(simulatorApi())
-	router.GET("/logout", logoutHandler).Use(simulatorApi())
-	router.POST("/register", registerHandler).Use(simulatorApi())
-	router.POST("/login", loginHandler).Use(simulatorApi())
-	router.POST("/add_message", addMessageHandler).Use(simulatorApi())
-
+	//instead of using middleware, I am using separate handlers(specifically designed for simulator API) for cleaner code
+	//	router.GET("/", myTimelineHandlerAPI).Use(simulatorApi())
+	// Use API handlers specifically designed for the simulator
+	router.GET("/", myTimelineHandlerAPI)
+	router.GET("/public", publicTimelineHandlerAPI)
+	router.GET("/:username", userTimelineHandlerAPI)
+	router.GET("/register", registerHandlerAPI)
+	router.GET("/login", loginHandlerAPI)
+	router.GET("/logout", logoutHandlerAPI)
+	router.POST("/login", loginHandlerAPI)
+	router.POST("/add_message", addMessageHandlerAPI)
 }
 
 func simulatorApi() gin.HandlerFunc {

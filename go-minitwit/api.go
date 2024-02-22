@@ -59,6 +59,9 @@ func mainAPI() {
 	router.POST("/login", loginHandler)
 	router.POST("/add_message", addMessageHandler)
 
+	//adding the simulatorApi
+	registerSimulatorApi(router)
+
 	// Start the server
 	router.Run(":8081")
 }
@@ -66,14 +69,44 @@ func mainAPI() {
 // Define your route handlers here
 func myTimelineHandlerAPI(c *gin.Context) {
 	// Not implemented
+	if IsSimulatorRequest(c) {
+	} else {
+		messages, err := getPublicMessages() // Assume this function exists in db_connection.go
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			return
+		}
+		formattedMessages := format_messages(messages)
+		c.HTML(http.StatusOK, "timeline.html", gin.H{
+			"TimelineBody": true,
+			"Endpoint":     "public_timeline",
+			"Messages":     formattedMessages,
+		})
+	}
 }
 
 func publicTimelineHandlerAPI(c *gin.Context) {
-	// Not implemented
+	if IsSimulatorRequest(c) {
+	} else {
+		messages, err := getPublicMessages() // Assume this function exists in db_connection.go
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			return
+		}
+		formattedMessages := format_messages(messages) // format_messages needs to be implemented
+		c.HTML(http.StatusOK, "timeline.html", gin.H{
+			"TimelineBody": true,
+			"Endpoint":     "public_timeline",
+			"Messages":     formattedMessages,
+		})
+	}
 }
 
 func userTimelineHandlerAPI(c *gin.Context) {
 	// Not implemented
+	if IsSimulatorRequest(c) {
+	} else {
+	}
 }
 
 func registerHandlerAPI(c *gin.Context) (string, int) {
