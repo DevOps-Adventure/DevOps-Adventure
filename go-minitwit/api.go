@@ -46,7 +46,7 @@ func mainAPI() {
 	// Static (styling)
 	router.Static("/static", "./static")
 
-	// Define routes
+	// Define routes -> Here is where the links are being registered! Check the html layout file
 	router.GET("/", myTimelineHandler)
 	router.GET("/public", publicTimelineHandler)
 	router.GET("/:username", userTimelineHandler)
@@ -70,17 +70,6 @@ func mainAPI() {
 func myTimelineHandlerAPI(c *gin.Context) {
 	if IsSimulatorRequest(c) {
 		log.Println("Simulator request")
-		messages, err := getPublicMessages()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
-			return
-		}
-		formattedMessages := format_messages(messages)
-		c.HTML(http.StatusOK, "test_timeline.html", gin.H{
-			"TimelineBody": true,
-			"Endpoint":     "test_public_timeline",
-			"Messages":     formattedMessages,
-		})
 	} else {
 		messages, err := getPublicMessages()
 		if err != nil {
@@ -99,6 +88,7 @@ func myTimelineHandlerAPI(c *gin.Context) {
 func publicTimelineHandlerAPI(c *gin.Context) {
 	if IsSimulatorRequest(c) {
 		log.Println("Simulator request")
+		//do we need something else?
 	} else {
 		messages, err := getPublicMessages()
 		if err != nil {
@@ -218,4 +208,41 @@ func userFollowActionHandlerAPI(c *gin.Context) {
 
 func addMessageHandlerAPI(c *gin.Context) {
 	// Not implemented
+}
+
+// simulator logic is moved here now
+// mathing the endpoints with the handlers for the simulator
+func registerSimulatorApi(router *gin.Engine) {
+
+	router.GET("/", myTimelineHandler).Use(simulatorApi())
+	router.GET("/public", publicTimelineHandler).Use(simulatorApi())
+	router.GET("/:username", userTimelineHandler).Use(simulatorApi())
+	router.GET("/register", registerHandler).Use(simulatorApi())
+	router.GET("/login", loginHandler).Use(simulatorApi())
+	router.GET("/logout", logoutHandler).Use(simulatorApi())
+	router.GET("/:username/*action", userFollowActionHandler).Use(simulatorApi())
+
+	router.POST("/register", registerHandler).Use(simulatorApi())
+	router.POST("/login", loginHandler).Use(simulatorApi())
+	router.POST("/add_message", addMessageHandler).Use(simulatorApi())
+
+}
+
+func simulatorApi() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.GetHeader("simulatorApi") == "true" {
+			c.Set("simulator", true)
+		} else {
+			c.Set("simulator", false)
+		}
+		c.Next()
+	}
+}
+
+// use this function to make sure that the request is coming from the simulator
+func IsSimulatorRequest(c *gin.Context) bool {
+	if isSumulator, exists := c.Get("simulator"); exists {
+		return isSumulator.(bool)
+	}
+	return false
 }
