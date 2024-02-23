@@ -74,7 +74,7 @@ func main() {
 	router.POST("/add_message", addMessageHandler)
 
 	//adding simulatorAPI
-	registerSimulatorApi(router)
+	// registerSimulatorApi(router)
 
 	// Start the server
 	router.Run(":8081")
@@ -159,7 +159,7 @@ func userFollowActionHandler(c *gin.Context) {
 
 	}
 	profileUserName := c.Param("username")
-	profileUser, err := getUserByUsername2(profileUserName)
+	profileUser, err := getUserByUsername(profileUserName)
 	if err != nil {
 		fmt.Println("get user failed with:", err)
 		c.Redirect(http.StatusFound, "/public")
@@ -171,12 +171,12 @@ func userFollowActionHandler(c *gin.Context) {
 
 	if action == "/follow" {
 		fmt.Println("following process triggered")
-		followUser2(userID, profileUserID)
+		followUser(userID, profileUserID)
 		session.AddFlash("You are now following " + profileUserName)
 	}
 	if action == "/unfollow" {
 		fmt.Println("Unfollowing process triggered")
-		unfollowUser2(userID, profileUserID)
+		unfollowUser(userID, profileUserID)
 		session.AddFlash("You are no longer following " + profileUserName)
 	}
 	session.Save()
@@ -200,7 +200,7 @@ func publicTimelineHandler(c *gin.Context) {
 	userID, errID := c.Cookie("UserID")
 	if errID == nil {
 		context["UserID"] = userID
-		userName, errName := getUserNameByUserID2(userID)
+		userName, errName := getUserNameByUserID(userID)
 
 		if errName == nil {
 			context["UserName"] = userName
@@ -215,7 +215,7 @@ func userTimelineHandler(c *gin.Context) {
 	flashMessages := session.Flashes()
 	session.Save()
 	profileUserName := c.Param("username")
-	profileUser, err := getUserByUsername2(profileUserName)
+	profileUser, err := getUserByUsername(profileUserName)
 
 	if profileUser == nil {
 		c.AbortWithStatus(404)
@@ -233,7 +233,7 @@ func userTimelineHandler(c *gin.Context) {
 	userID, errID := c.Cookie("UserID")
 	userIDInt64, err := strconv.ParseInt(userID, 10, 64)
 
-	userName, _ := getUserNameByUserID2(userID)
+	userName, _ := getUserNameByUserID(userID)
 
 	if errID == nil {
 		followed = checkFollowStatus(userIDInt64, pUserId)
@@ -269,7 +269,7 @@ func myTimelineHandler(c *gin.Context) {
 		return
 	}
 
-	userName, err := getUserNameByUserID2(userID)
+	userName, err := getUserNameByUserID(userID)
 
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -327,7 +327,7 @@ func addMessageHandler(c *gin.Context) {
 		if text == "" {
 			errorData = "You have to enter a value"
 		} else {
-			err := addMessage2(text, userID)
+			err := addMessage(text, userID)
 			if err != nil {
 				fmt.Println("fuck my life")
 				errorData = "Failed to register user"
@@ -375,9 +375,9 @@ func registerHandler(c *gin.Context) {
 		userName := c.Request.FormValue("username")
 		email := c.Request.FormValue("email")
 		password := c.Request.FormValue("password")
-		password2 := c.Request.FormValue("password2")
+		passwordConfirm := c.Request.FormValue("passwordConfirm")
 
-		userID, err := getUserIDByUsername2(userName)
+		userID, err := getUserIDByUsername(userName)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
@@ -389,13 +389,13 @@ func registerHandler(c *gin.Context) {
 			errorData = "You have to enter a valid email address"
 		} else if password == "" {
 			errorData = "You have to enter a password"
-		} else if password != password2 {
+		} else if password != passwordConfirm {
 			errorData = "The two passwords do not match"
 		} else if fmt.Sprint(userID) != "0" {
 			errorData = "The username is already taken"
 		} else {
 			hash := md5.Sum([]byte(password))
-			err := registerUser2(userName, email, hash)
+			err := registerUser(userName, email, hash)
 			if err != nil {
 				errorData = "Failed to register user"
 				c.HTML(http.StatusInternalServerError, "register.html", gin.H{
@@ -448,7 +448,7 @@ func loginHandler(c *gin.Context) {
 		userName := c.Request.FormValue("username")
 		password := c.Request.FormValue("password")
 
-		user, err := getUserByUsername2(userName)
+		user, err := getUserByUsername(userName)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
@@ -459,7 +459,7 @@ func loginHandler(c *gin.Context) {
 		} else if !checkPasswordHash(password, user[0]["pw_hash"].(string)) {
 			errorData = "Invalid password"
 		} else {
-			userID, err := getUserIDByUsername2(userName)
+			userID, err := getUserIDByUsername(userName)
 			if err != nil {
 				c.AbortWithError(http.StatusInternalServerError, err)
 				return
