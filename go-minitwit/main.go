@@ -2,9 +2,7 @@ package main
 
 import (
 	"crypto/md5"
-	"database/sql"
 	"fmt"
-	"os"
 	"strconv"
 
 	"log"
@@ -15,7 +13,6 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
-	"github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -79,69 +76,6 @@ func main() {
 	// Start the server
 	router.Run(":8081")
 
-}
-
-func connect_db(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", dsn)
-	if err != nil {
-		return nil, err
-	}
-	return db, nil
-}
-
-// db initialization (2)
-// to keep separate functions of connection and initialization of the db. (here the db is structured with specific schema/format)
-func init_db(db *sql.DB, schemaFile string) error {
-	schema, err := os.ReadFile(schemaFile)
-	if err != nil {
-		return err
-	}
-
-	// Executing the schema SQL after it is being read in the previous step
-	_, err = db.Exec(string(schema))
-	if err != nil {
-		return err
-	}
-	return err
-}
-
-// db query that returns list of dictionaries (3)
-func query_db(db *sql.DB, query string, args []interface{}, one bool) ([]map[string]interface{}, error) {
-	rows, err := db.Query(query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	columns, err := rows.Columns()
-	if err != nil {
-		return nil, err
-	}
-
-	var result []map[string]interface{}
-	for rows.Next() {
-		values := make([]interface{}, len(columns))
-		columnPointers := make([]interface{}, len(columns))
-		for i := range columns {
-			columnPointers[i] = &values[i]
-		}
-
-		if err := rows.Scan(columnPointers...); err != nil {
-			return nil, err
-		}
-
-		rowMap := make(map[string]interface{})
-		for i, colName := range columns {
-			val := columnPointers[i].(*interface{})
-			rowMap[colName] = *val
-		}
-
-		result = append(result, rowMap)
-		if one {
-			break
-		}
-	}
-	return result, nil
 }
 
 // Handlers
@@ -522,92 +456,6 @@ func gravatarURL(email string, size int) string {
 	email = strings.ToLower(strings.TrimSpace(email))
 	hash := md5.Sum([]byte(email))
 	return fmt.Sprintf("http://www.gravatar.com/avatar/%x?d=identicon&s=%d", hash, size)
-}
-
-func getUserIDByUsername(userName string) (int64, error) {
-	var db, err = connect_db(DATABASE)
-	if err != nil {
-		return 0, err
-	}
-
-	query := `select * from user where username = ?`
-	args := []interface{}{userName}
-	profile_user, err := query_db(db, query, args, false)
-
-	if profile_user == nil {
-		return 0, err
-	}
-
-	return profile_user[0]["user_id"].(int64), err
-}
-
-func getUserNameByUserID(userID string) (string, error) {
-	var db, err = connect_db(DATABASE)
-	if err != nil {
-		return "", err
-	}
-
-	query := `select * from user where user_id = ?`
-	args := []interface{}{userID}
-	profile_user, err := query_db(db, query, args, false)
-
-	if profile_user == nil {
-		return "no name", err
-	}
-	return profile_user[0]["username"].(string), err
-}
-
-func getUserByUsername(userName string) ([]map[string]interface{}, error) {
-	var db, err = connect_db(DATABASE)
-	if err != nil {
-		return nil, err
-	}
-
-	query := `select * from user where username = ?`
-	args := []interface{}{userName}
-	profile_user, err := query_db(db, query, args, false)
-
-	if profile_user == nil {
-		return nil, err
-	}
-
-	return profile_user, err
-}
-
-func registerUser(userName string, email string, password [16]byte) error {
-	query := `insert into user (username, email, pw_hash) values (?, ?, ?)`
-	var db, err = connect_db(DATABASE)
-	if err != nil {
-		return err
-	}
-	args := []interface{}{userName, email, pq.Array(password)}
-	messages, err := query_db(db, query, args, false)
-	fmt.Println("this is the messages", messages)
-	return err
-}
-
-func followUser(userID string, profileUserID string) error {
-	query := `insert into follower (who_id, whom_id) values (?, ?)`
-	var db, err = connect_db(DATABASE)
-	if err != nil {
-		return err
-	}
-	args := []interface{}{userID, profileUserID}
-	messages, err := query_db(db, query, args, false)
-	fmt.Println(messages)
-	return err
-}
-
-func unfollowUser(userID string, profileUserID string) error {
-	query := `delete from follower where who_id=? and whom_id=?`
-	var db, err = connect_db(DATABASE)
-	if err != nil {
-		return err
-	}
-	args := []interface{}{userID, profileUserID}
-	messages, err := query_db(db, query, args, false)
-	fmt.Println(messages)
-	return err
 }
 
 func format_messages(messages []map[string]interface{}) []Message {

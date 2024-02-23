@@ -29,7 +29,7 @@ const (
 func mainAPI() {
 
 	// Connect to the database
-	db, err := connect_DB2(DATABASE)
+	db, err := connect_db(DATABASE)
 	if err != nil {
 		log.Fatal("Error connecting to the database:", err)
 	}
@@ -109,7 +109,7 @@ func userTimelineHandlerAPI(c *gin.Context) {
 		log.Println("Simulator request")
 	} else {
 		username := c.Param("username")
-		profileUser, err := getUserByUsername2(username)
+		profileUser, err := getUserByUsername(username)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 			return
@@ -185,7 +185,7 @@ func registerHandlerAPI(c *gin.Context) (string, int) {
 	hashedPassword := md5.Sum([]byte(requestJSON.Password))
 
 	// Register the user
-	if err := registerUser2(requestJSON.Username, requestJSON.Email, hashedPassword); err != nil {
+	if err := registerUser(requestJSON.Username, requestJSON.Email, hashedPassword); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
 		return "Failed to register user", http.StatusInternalServerError
 	}

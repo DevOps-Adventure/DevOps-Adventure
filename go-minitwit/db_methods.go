@@ -17,7 +17,7 @@ import (
 */
 
 // connect_db creates and returns a new database connection
-func connect_DB(dsn string) (*sql.DB, error) {
+func connect_db(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", dsn)
 	if err != nil {
 		return nil, err
