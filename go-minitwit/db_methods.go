@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/lib/pq"
@@ -23,14 +24,14 @@ func connect_db(dsn string) (*sql.DB, error) {
 }
 
 // to keep separate functions of connection and initialization of the db. (here the db is structured with specific schema/format)
-// func init_db(db *sql.DB, schemaFile string) error {
-// 	schema, err := os.ReadFile(schemaFile)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	_, err = db.Exec(string(schema))
-// 	return err
-// }
+func init_db(db *sql.DB, schemaFile string) error {
+	schema, err := os.ReadFile(schemaFile)
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(string(schema))
+	return err
+}
 
 // query_db executes a query on the database and returns a list of dictionaries (maps)
 func query_db(db *sql.DB, query string, args []interface{}, one bool) ([]map[string]interface{}, error) {
@@ -68,6 +69,7 @@ func query_db(db *sql.DB, query string, args []interface{}, one bool) ([]map[str
 			break
 		}
 	}
+	fmt.Println(result)
 	return result, nil
 }
 
@@ -77,6 +79,8 @@ func query_db(db *sql.DB, query string, args []interface{}, one bool) ([]map[str
 
 // fetches all public messages for display.
 func getPublicMessages() ([]map[string]interface{}, error) {
+
+	fmt.Println("getPublicMessages")
 
 	query := `
 	SELECT message.*, user.* FROM message, user
@@ -164,8 +168,11 @@ func getMyMessages(userID string) ([]map[string]interface{}, error) {
 
 // fetches a user by their ID
 func getUserIDByUsername(userName string) (int64, error) {
+	fmt.Println("getUserIDByUsername")
+	fmt.Println(userName)
 	var db, err = connect_db(DATABASE)
 	if err != nil {
+		fmt.Println("db connection failed")
 		return -1, err
 	}
 
@@ -174,6 +181,7 @@ func getUserIDByUsername(userName string) (int64, error) {
 	profile_user, err := query_db(db, query, args, false)
 
 	if profile_user == nil {
+		fmt.Println("no profile user")
 		return -1, err
 	}
 
@@ -274,20 +282,22 @@ func unfollowUser(userID string, profileUserID string) error {
 }
 
 // userExists checks if a user with the given username already exists in the database.
-// func userExists(username string) (bool, error) {
-// 	query := "SELECT COUNT(*) FROM user WHERE username = ?"
-// 	db, err := connect_db(DATABASE)
-// 	if err != nil {
-// 		return false, err
-// 	}
-// 	defer db.Close()
+func userExists(username string) (bool, error) {
+	query := "SELECT COUNT(*) FROM user WHERE username = ?"
+	db, err := connect_db(DATABASE)
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
 
-// 	var count int
-// 	err = db.QueryRow(query, username).Scan(&count)
-// 	if err != nil {
-// 		return false, err
-// 	}
+	var count int
+	err = db.QueryRow(query, username).Scan(&count)
+	if err != nil {
+		return false, err
+	}
 
-// 	// If count is greater than 0, the user exists
-// 	return count > 0, nil
-// }
+	// 	// If count is greater than 0, the user exists
+	// 	return count > 0, nil
+	// }
+	return true, nil
+}

@@ -197,7 +197,6 @@ func addMessageHandler(c *gin.Context) {
 		} else {
 			err := addMessage(text, userID)
 			if err != nil {
-				fmt.Println("fuck my life")
 				errorData = "Failed to register user"
 				c.HTML(http.StatusInternalServerError, "timeline.html", gin.H{
 					"RegisterBody": true,
@@ -219,11 +218,14 @@ func addMessageHandler(c *gin.Context) {
 
 func registerHandler(c *gin.Context) {
 
+	fmt.Println("registerHandler")
+
 	session := sessions.Default(c)
 
 	userID, exists := c.Get("UserID")
+	fmt.Println("userID:", userID)
 	if exists {
-		c.Redirect(http.StatusFound, "/"+userID.(string))
+		fmt.Println("userID:", userID)
 		return
 	}
 
@@ -246,6 +248,7 @@ func registerHandler(c *gin.Context) {
 		passwordConfirm := c.Request.FormValue("passwordConfirm")
 
 		userID, err := getUserIDByUsername(userName)
+		fmt.Println(userID)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
@@ -291,6 +294,7 @@ func loginHandler(c *gin.Context) {
 	flashMessages := session.Flashes()
 	session.Save()
 
+	fmt.Println("loginHandler")
 	userID, _ := c.Cookie("UserID")
 	if userID != "" {
 		session.AddFlash("You were logged in")

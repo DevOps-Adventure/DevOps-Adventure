@@ -10,9 +10,20 @@ c.Request.Body gives you the request body, which you can parse according to the 
 package main
 
 import (
+	"crypto/md5"
+	"fmt"
+	"net/http"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
 )
+
+// struct for error data (need to be JSON before return)
+type ErrorData struct {
+	status    int
+	error_msg string
+}
 
 func updateLatest() {
 	return
@@ -28,7 +39,70 @@ Takes data from the POST and registers a user in the db
 returns: ("", 204) or ({"status": 404, "error_msg": error}, 404)
 */
 func apiRegisterHandler(c *gin.Context) {
-	return
+	fmt.Println("apiRegisterHandler!")
+	userID, exists := c.Get("UserID")
+	fmt.Println("userID:", userID)
+	if exists {
+		fmt.Println("userID:", userID)
+		return
+	}
+
+	errorData := ErrorData{
+		status:    0,
+		error_msg: "",
+	}
+
+	if c.Request.Method == http.MethodPost {
+		err := c.Request.ParseForm()
+		if err != nil {
+			errorData.status = http.StatusBadRequest
+			errorData.error_msg = "could not parse the request"
+		}
+
+		// Validate form data
+		userName := c.Request.FormValue("username")
+		email := c.Request.FormValue("email")
+		password := c.Request.FormValue("password")
+		passwordConfirm := c.Request.FormValue("passwordConfirm")
+
+		//Get user ID
+		userID, err := getUserIDByUsername(userName)
+		if err != nil {
+			errorData.status = http.StatusBadRequest
+			errorData.error_msg = "Failed to get userID"
+		}
+
+		if userName == "" {
+			errorData.status = http.StatusBadRequest
+			errorData.error_msg = "You have to enter a username"
+		} else if email == "" || !strings.Contains(email, "@") {
+			errorData.status = http.StatusBadRequest
+			errorData.error_msg = "You have to enter a valid email address"
+		} else if password == "" {
+			errorData.status = http.StatusBadRequest
+			errorData.error_msg = "You have to enter a password"
+		} else if password != passwordConfirm {
+			errorData.status = http.StatusBadRequest
+			errorData.error_msg = "The two passwords do not match"
+		} else if fmt.Sprint(userID) != "0" {
+			errorData.status = http.StatusBadRequest
+			errorData.error_msg = "The username is already taken"
+		} else {
+			hash := md5.Sum([]byte(password))
+			err := registerUser(userName, email, hash)
+			if err != nil {
+				errorData.status = http.StatusBadRequest
+				errorData.error_msg = "Failed to register user"
+			}
+		}
+	}
+
+	if errorData.error_msg != "" {
+		c.JSON(errorData.status, errorData)
+		return
+	}
+
+	c.String(204, "")
 }
 
 /*
