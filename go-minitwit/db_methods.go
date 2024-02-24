@@ -1,11 +1,8 @@
-// db_connection.go
-// 2 in function is used to differentiate from the main.go file - needs to be removed when final
 package main
 
 import (
 	"database/sql"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/lib/pq"
@@ -26,17 +23,16 @@ func connect_db(dsn string) (*sql.DB, error) {
 }
 
 // to keep separate functions of connection and initialization of the db. (here the db is structured with specific schema/format)
-func init_db(db *sql.DB, schemaFile string) error {
-	schema, err := os.ReadFile(schemaFile)
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec(string(schema))
-	return err
-}
+// func init_db(db *sql.DB, schemaFile string) error {
+// 	schema, err := os.ReadFile(schemaFile)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	_, err = db.Exec(string(schema))
+// 	return err
+// }
 
 // query_db executes a query on the database and returns a list of dictionaries (maps)
-// db query that returns list of dictionaries (3)
 func query_db(db *sql.DB, query string, args []interface{}, one bool) ([]map[string]interface{}, error) {
 	rows, err := db.Query(query, args...)
 	if err != nil {
@@ -113,6 +109,10 @@ func getUserMessages(pUserId int64) ([]map[string]interface{}, error) {
 	`
 	args := []interface{}{pUserId, PERPAGE}
 	db, err := connect_db(DATABASE)
+	if err != nil {
+		return nil, err
+	}
+
 	messages, err := query_db(db, query, args, false)
 	if err != nil {
 		return nil, err
@@ -127,8 +127,7 @@ func checkFollowStatus(userID int64, pUserID int64) bool {
 	query := `select 1 from follower where
 	follower.who_id = ? and follower.whom_id = ?`
 
-	var db, err = connect_db(DATABASE)
-
+	db, err := connect_db(DATABASE)
 	if err != nil {
 		return false
 	}
@@ -167,7 +166,7 @@ func getMyMessages(userID string) ([]map[string]interface{}, error) {
 func getUserIDByUsername(userName string) (int64, error) {
 	var db, err = connect_db(DATABASE)
 	if err != nil {
-		return 0, err
+		return -1, err
 	}
 
 	query := `select * from user where username = ?`
@@ -175,7 +174,7 @@ func getUserIDByUsername(userName string) (int64, error) {
 	profile_user, err := query_db(db, query, args, false)
 
 	if profile_user == nil {
-		return 0, err
+		return -1, err
 	}
 
 	return profile_user[0]["user_id"].(int64), err
@@ -193,7 +192,7 @@ func getUserNameByUserID(userID string) (string, error) {
 	profile_user, err := query_db(db, query, args, false)
 
 	if profile_user == nil {
-		return "no name", err
+		return "", err
 	}
 	return profile_user[0]["username"].(string), err
 }
@@ -275,20 +274,20 @@ func unfollowUser(userID string, profileUserID string) error {
 }
 
 // userExists checks if a user with the given username already exists in the database.
-func userExists(username string) (bool, error) {
-	query := "SELECT COUNT(*) FROM user WHERE username = ?"
-	db, err := connect_db(DATABASE)
-	if err != nil {
-		return false, err
-	}
-	defer db.Close()
+// func userExists(username string) (bool, error) {
+// 	query := "SELECT COUNT(*) FROM user WHERE username = ?"
+// 	db, err := connect_db(DATABASE)
+// 	if err != nil {
+// 		return false, err
+// 	}
+// 	defer db.Close()
 
-	var count int
-	err = db.QueryRow(query, username).Scan(&count)
-	if err != nil {
-		return false, err
-	}
+// 	var count int
+// 	err = db.QueryRow(query, username).Scan(&count)
+// 	if err != nil {
+// 		return false, err
+// 	}
 
-	// If count is greater than 0, the user exists
-	return count > 0, nil
-}
+// 	// If count is greater than 0, the user exists
+// 	return count > 0, nil
+// }
