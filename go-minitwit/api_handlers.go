@@ -11,7 +11,9 @@ package main
 
 import (
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -24,6 +26,12 @@ import (
 type ErrorData struct {
 	status    int
 	error_msg string
+}
+
+type UserData struct {
+	Username string
+	Email    string
+	Pwd      string
 }
 
 func updateLatest() {
@@ -40,74 +48,82 @@ Takes data from the POST and registers a user in the db
 returns: ("", 204) or ({"status": 404, "error_msg": error}, 404)
 */
 func apiRegisterHandler(c *gin.Context) {
-	fmt.Println("apiRegisterHandler!")
-	userID, exists := c.Get("UserID")
-	fmt.Println("userID:", userID)
-	if exists {
-		fmt.Println("userID:", userID)
-		return
-	}
 
 	errorData := ErrorData{
 		status:    0,
 		error_msg: "",
 	}
 
+	//Check if user already exists
+	userID, exists := c.Get("UserID")
+	if exists {
+		errorData.status = 400
+		errorData.error_msg = "User already exists"
+		fmt.Println("userID:", userID)
+	}
+
 	if c.Request.Method == http.MethodPost {
-		err := c.Request.ParseForm()
+
+		// Read the request body
+		var registerReq UserData
+		body, err := ioutil.ReadAll(c.Request.Body)
 		if err != nil {
-			errorData.status = http.StatusBadRequest
-			errorData.error_msg = "Could not parse the request"
-			// we need to crash the program here, otherwise the rest of the method may fail
+			errorData.status = 400
+			errorData.error_msg = "Failed to read JSON"
 		}
 
-		// Validate form data
-		userName := c.Request.FormValue("username")
-		email := c.Request.FormValue("email")
-		password := c.Request.FormValue("password")
-		passwordConfirm := c.Request.FormValue("passwordConfirm")
+		// Parse the request body from JSON
+		// Unmarshal parses the JSON and stores it in a pointer (registerReq)
+		if err := json.Unmarshal(body, &registerReq); err != nil {
+			errorData.status = 400
+			errorData.error_msg = "Failed to parse JSON"
+		}
 
-		//Get user ID
-		userID, err := getUserIDByUsername(userName)
+		//Set the user data
+		username := registerReq.Username
+		email := registerReq.Email
+		password := registerReq.Pwd
+
+		// Get user ID
+		userID, err := getUserIDByUsername(username)
 		if err != nil {
-			errorData.status = http.StatusBadRequest
+			errorData.status = 400
 			errorData.error_msg = "Failed to get userID"
-			// we need to crash the program here, otherwise the rest of the method may fail
 		}
 
-		if userName == "" {
-			errorData.status = http.StatusBadRequest
+		// Check for errors
+		if username == "" {
+			errorData.status = 400
 			errorData.error_msg = "You have to enter a username"
+
 		} else if email == "" || !strings.Contains(email, "@") {
-			errorData.status = http.StatusBadRequest
+			errorData.status = 400
 			errorData.error_msg = "You have to enter a valid email address"
+
 		} else if password == "" {
-			errorData.status = http.StatusBadRequest
+			errorData.status = 400
 			errorData.error_msg = "You have to enter a password"
-		} else if password != passwordConfirm {
-			errorData.status = http.StatusBadRequest
-			errorData.error_msg = "The two passwords do not match"
+
 		} else if fmt.Sprint(userID) != "-1" {
-			errorData.status = http.StatusBadRequest
+			errorData.status = 400
 			errorData.error_msg = "The username is already taken"
+
 		} else {
 			hash := md5.Sum([]byte(password))
-			err := registerUser(userName, email, hash)
+			err := registerUser(username, email, hash)
 			if err != nil {
-				errorData.status = http.StatusBadRequest
+				errorData.status = 400
 				errorData.error_msg = "Failed to register user"
 			}
 		}
 
-		// we need to crash the program here, otherwise the rest of the method may fail
+		if errorData.error_msg != "" {
+			c.String(400, errorData.error_msg)
+			return
+		} else {
+			c.String(200, "Success!")
+		}
 	}
-
-	if errorData.error_msg != "" {
-		c.JSON(errorData.status, errorData)
-		return
-	}
-
-	c.String(http.StatusOK, "")
 }
 
 /*
