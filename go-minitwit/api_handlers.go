@@ -84,7 +84,7 @@ func apiRegisterHandler(c *gin.Context) {
 		} else if password != passwordConfirm {
 			errorData.status = http.StatusBadRequest
 			errorData.error_msg = "The two passwords do not match"
-		} else if fmt.Sprint(userID) != "0" {
+		} else if fmt.Sprint(userID) != "-1" {
 			errorData.status = http.StatusBadRequest
 			errorData.error_msg = "The username is already taken"
 		} else {

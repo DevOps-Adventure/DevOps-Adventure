@@ -262,7 +262,7 @@ func registerHandler(c *gin.Context) {
 			errorData = "You have to enter a password"
 		} else if password != passwordConfirm {
 			errorData = "The two passwords do not match"
-		} else if fmt.Sprint(userID) != "0" {
+		} else if fmt.Sprint(userID) != "-1" {
 			errorData = "The username is already taken"
 		} else {
 			hash := md5.Sum([]byte(password))
