@@ -53,7 +53,8 @@ func userFollowActionHandler(c *gin.Context) {
 
 func publicTimelineHandler(c *gin.Context) {
 
-	messages, err := getPublicMessages()
+	// need to pass a default value to getPublicMessages (GoLang doesn't support default values for arguments)
+	messages, err := getPublicMessages(0)
 	if err != nil {
 		return
 	}

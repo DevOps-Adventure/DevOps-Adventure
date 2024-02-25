@@ -13,6 +13,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -56,7 +57,8 @@ func apiRegisterHandler(c *gin.Context) {
 		err := c.Request.ParseForm()
 		if err != nil {
 			errorData.status = http.StatusBadRequest
-			errorData.error_msg = "could not parse the request"
+			errorData.error_msg = "Could not parse the request"
+			// we need to crash the program here, otherwise the rest of the method may fail
 		}
 
 		// Validate form data
@@ -70,6 +72,7 @@ func apiRegisterHandler(c *gin.Context) {
 		if err != nil {
 			errorData.status = http.StatusBadRequest
 			errorData.error_msg = "Failed to get userID"
+			// we need to crash the program here, otherwise the rest of the method may fail
 		}
 
 		if userName == "" {
@@ -95,6 +98,8 @@ func apiRegisterHandler(c *gin.Context) {
 				errorData.error_msg = "Failed to register user"
 			}
 		}
+
+		// we need to crash the program here, otherwise the rest of the method may fail
 	}
 
 	if errorData.error_msg != "" {
@@ -102,7 +107,7 @@ func apiRegisterHandler(c *gin.Context) {
 		return
 	}
 
-	c.String(204, "")
+	c.String(http.StatusOK, "")
 }
 
 /*
@@ -119,7 +124,61 @@ else if POST:
 	write message to db
 	return: status code
 */
+type FilteredMsg struct {
+	content  string
+	pub_date string
+	user     string
+}
+
 func apiMsgsHandler(c *gin.Context) {
+	// todo: update this request to be the latest
+	// todo: check if this is not from sim response
+	var filteredMessages []FilteredMsg
+
+	errorData := ErrorData{
+		status:    0,
+		error_msg: "",
+	}
+
+	numMsgs := c.Request.Header.Get("no")
+	numMsgsInt, err := strconv.Atoi(numMsgs)
+	// fallback on default value
+	if err != nil {
+		numMsgsInt = 100
+	}
+
+	messages, err := getPublicMessages(numMsgsInt)
+	if err != nil {
+		errorData.status = http.StatusBadRequest
+		errorData.error_msg = "Failed to get userID"
+		c.AbortWithStatusJSON(404, errorData)
+	}
+
+	for _, m := range messages {
+		var filteredMsg FilteredMsg
+
+		// content
+		if text, ok := m["text"].(string); ok {
+			filteredMsg.content = text
+		}
+
+		// publication date
+		if pubDate, ok := m["pub_date"].(string); ok {
+			filteredMsg.pub_date = pubDate
+		}
+
+		// user
+		if userName, ok := m["username"].(string); ok {
+			filteredMsg.user = userName
+		}
+
+		filteredMessages = append(filteredMessages, filteredMsg)
+	}
+
+	c.JSON(http.StatusOK, filteredMessages)
+}
+
+func apiMsgsPerUserHandler(c *gin.Context) {
 	return
 }
 

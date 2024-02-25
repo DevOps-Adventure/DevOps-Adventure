@@ -74,11 +74,11 @@ func main() {
 	// API routes
 	// is it easier to separate the next two routes into two handlers?
 	router.GET("/api/msgs", apiMsgsHandler)
-	router.GET("/api/msgs/:username", apiMsgsHandler)
+	router.GET("/api/msgs/:username", apiMsgsPerUserHandler)
 	router.GET("/api/fllws/:username", apiFllwsHandler)
 
 	router.POST("/api/register", apiRegisterHandler)
-	router.POST("/api/msgs/:username", apiMsgsHandler)
+	router.POST("/api/msgs/:username", apiMsgsPerUserHandler)
 	router.POST("/api/fllws/:username", apiFllwsHandler)
 
 	// some helper method to "cache" what was the latest simulator action

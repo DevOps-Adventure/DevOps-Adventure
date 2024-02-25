@@ -78,7 +78,7 @@ func query_db(db *sql.DB, query string, args []interface{}, one bool) ([]map[str
 */
 
 // fetches all public messages for display.
-func getPublicMessages() ([]map[string]interface{}, error) {
+func getPublicMessages(numMsgs int) ([]map[string]interface{}, error) {
 
 	fmt.Println("getPublicMessages")
 
@@ -95,6 +95,10 @@ func getPublicMessages() ([]map[string]interface{}, error) {
 	defer db.Close()
 
 	args := []interface{}{PERPAGE}
+	if numMsgs > 0 {
+		args = []interface{}{numMsgs}
+	}
+
 	messages, err := query_db(db, query, args, false)
 	if err != nil {
 		return nil, err
