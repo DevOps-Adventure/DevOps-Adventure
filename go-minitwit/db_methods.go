@@ -108,7 +108,7 @@ func getPublicMessages(numMsgs int) ([]map[string]interface{}, error) {
 }
 
 // fetches all messages from picked user
-func getUserMessages(pUserId int64) ([]map[string]interface{}, error) {
+func getUserMessages(pUserId int64, numMsgs int) ([]map[string]interface{}, error) {
 
 	query := `
 	select message.*, user.* from message, user where
@@ -116,6 +116,9 @@ func getUserMessages(pUserId int64) ([]map[string]interface{}, error) {
     order by message.pub_date desc limit ?
 	`
 	args := []interface{}{pUserId, PERPAGE}
+	if numMsgs > 0 {
+		args = []interface{}{pUserId, numMsgs}
+	}
 	db, err := connect_db(DATABASE)
 	if err != nil {
 		return nil, err

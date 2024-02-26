@@ -13,7 +13,7 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -32,6 +32,11 @@ type UserData struct {
 	Username string
 	Email    string
 	Pwd      string
+}
+
+type MessageData struct {
+	authorId string
+	text     string
 }
 
 func updateLatest() {
@@ -66,7 +71,7 @@ func apiRegisterHandler(c *gin.Context) {
 
 		// Read the request body
 		var registerReq UserData
-		body, err := ioutil.ReadAll(c.Request.Body)
+		body, err := io.ReadAll(c.Request.Body)
 		if err != nil {
 			errorData.status = 400
 			errorData.error_msg = "Failed to read JSON"
@@ -79,7 +84,7 @@ func apiRegisterHandler(c *gin.Context) {
 			errorData.error_msg = "Failed to parse JSON"
 		}
 
-		//Set the user data
+		// Set the user data
 		username := registerReq.Username
 		email := registerReq.Email
 		password := registerReq.Pwd
@@ -140,17 +145,10 @@ else if POST:
 	write message to db
 	return: status code
 */
-type FilteredMsg struct {
-	content  string
-	pub_date string
-	user     string
-}
 
 func apiMsgsHandler(c *gin.Context) {
 	// todo: update this request to be the latest
 	// todo: check if this is not from sim response
-	var filteredMessages []FilteredMsg
-
 	errorData := ErrorData{
 		status:    0,
 		error_msg: "",
@@ -166,36 +164,86 @@ func apiMsgsHandler(c *gin.Context) {
 	messages, err := getPublicMessages(numMsgsInt)
 	if err != nil {
 		errorData.status = http.StatusBadRequest
-		errorData.error_msg = "Failed to get userID"
-		c.AbortWithStatusJSON(404, errorData)
+		errorData.error_msg = "Failed to fetch messages from DB"
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
 	}
 
-	for _, m := range messages {
-		var filteredMsg FilteredMsg
-
-		// content
-		if text, ok := m["text"].(string); ok {
-			filteredMsg.content = text
-		}
-
-		// publication date
-		if pubDate, ok := m["pub_date"].(string); ok {
-			filteredMsg.pub_date = pubDate
-		}
-
-		// user
-		if userName, ok := m["username"].(string); ok {
-			filteredMsg.user = userName
-		}
-
-		filteredMessages = append(filteredMessages, filteredMsg)
-	}
-
+	filteredMessages := filterMessages(messages)
 	c.JSON(http.StatusOK, filteredMessages)
 }
 
 func apiMsgsPerUserHandler(c *gin.Context) {
-	return
+	// todo: update this request to be the latest
+	// todo: check if this is not from sim response
+
+	errorData := ErrorData{
+		status:    0,
+		error_msg: "",
+	}
+
+	if c.Request.Method == http.MethodGet {
+		numMsgs := c.Request.Header.Get("no")
+		numMsgsInt, err := strconv.Atoi(numMsgs)
+		// fallback on default value
+		if err != nil {
+			numMsgsInt = 100
+		}
+
+		profileUserName := c.Param("username")
+		userId, err := getUserIDByUsername(profileUserName)
+
+		if userId == -1 {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		messages, err := getUserMessages(userId, numMsgsInt)
+		if err != nil {
+			errorData.status = http.StatusBadRequest
+			errorData.error_msg = "Failed to fetch messages from DB"
+			c.AbortWithStatusJSON(http.StatusInternalServerError, errorData)
+		}
+
+		filteredMessages := filterMessages(messages)
+		c.JSON(http.StatusOK, filteredMessages)
+
+	} else if c.Request.Method == http.MethodPost {
+		// Read the request body
+		var messageReq MessageData
+		body, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			errorData.status = 400
+			errorData.error_msg = "Failed to read JSON"
+			c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
+		}
+
+		if err := json.Unmarshal(body, &messageReq); err != nil {
+			errorData.status = 400
+			errorData.error_msg = "Failed to parse JSON"
+		}
+
+		// Set the user data
+		text := messageReq.text
+		authorId, err := getUserIDByUsername(messageReq.authorId)
+		if err != nil {
+			errorData.status = http.StatusBadRequest
+			errorData.error_msg = "Failed to read JSON"
+			c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
+		}
+
+		err = addMessage(text, strconv.Itoa(int(authorId)))
+		if err != nil {
+			errorData.status = http.StatusInternalServerError
+			errorData.error_msg = "Failed to upload message"
+			c.AbortWithStatusJSON(http.StatusInternalServerError, errorData)
+		}
+
+		c.String(http.StatusNoContent, "")
+	}
 }
 
 /*

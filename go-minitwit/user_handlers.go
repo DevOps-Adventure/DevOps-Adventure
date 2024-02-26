@@ -58,7 +58,7 @@ func publicTimelineHandler(c *gin.Context) {
 	if err != nil {
 		return
 	}
-	formattedMessages := format_messages(messages)
+	formattedMessages := formatMessages(messages)
 
 	context := gin.H{
 		"TimelineBody": true, // This seems to be a flag you use to render specific parts of your layout
@@ -108,14 +108,14 @@ func userTimelineHandler(c *gin.Context) {
 		followed = checkFollowStatus(userIDInt64, pUserId)
 	}
 
-	messages, err := getUserMessages(pUserId)
+	messages, err := getUserMessages(pUserId, 0)
 
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	formattedMessages := format_messages(messages)
+	formattedMessages := formatMessages(messages)
 
 	c.HTML(http.StatusOK, "timeline.html", gin.H{
 		"TimelineBody":    true,
@@ -156,7 +156,7 @@ func myTimelineHandler(c *gin.Context) {
 		return
 	}
 
-	formattedMessages := format_messages(messages)
+	formattedMessages := formatMessages(messages)
 
 	// For template rendering with Gin
 	c.HTML(http.StatusOK, "timeline.html", gin.H{

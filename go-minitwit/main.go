@@ -37,6 +37,12 @@ type Message struct {
 	Gravatar     string
 }
 
+type FilteredMsg struct {
+	content  string
+	pub_date string
+	user     string
+}
+
 func main() {
 
 	//using db connection (1)
@@ -125,7 +131,7 @@ func gravatarURL(email string, size int) string {
 	return fmt.Sprintf("http://www.gravatar.com/avatar/%x?d=identicon&s=%d", hash, size)
 }
 
-func format_messages(messages []map[string]interface{}) []Message {
+func formatMessages(messages []map[string]interface{}) []Message {
 	var formattedMessages []Message
 	for _, m := range messages {
 		var msg Message
@@ -161,4 +167,30 @@ func format_messages(messages []map[string]interface{}) []Message {
 	}
 
 	return formattedMessages
+}
+
+func filterMessages(messages []map[string]interface{}) []FilteredMsg {
+	var filteredMessages []FilteredMsg
+	for _, m := range messages {
+		var filteredMsg FilteredMsg
+
+		// content
+		if text, ok := m["text"].(string); ok {
+			filteredMsg.content = text
+		}
+
+		// publication date
+		if pubDate, ok := m["pub_date"].(string); ok {
+			filteredMsg.pub_date = pubDate
+		}
+
+		// user
+		if userName, ok := m["username"].(string); ok {
+			filteredMsg.user = userName
+		}
+
+		filteredMessages = append(filteredMessages, filteredMsg)
+	}
+
+	return filteredMessages
 }
