@@ -192,8 +192,23 @@ func apiMsgsHandler(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
 	}
 
+	// All Messages
 	filteredMessages := filterMessages(messages)
-	c.JSON(http.StatusOK, filteredMessages)
+
+	// Prepare response
+	var responseMessages []gin.H
+	for _, msg := range filteredMessages {
+		// Include content along with other message details
+		responseMsg := gin.H{
+			"content":  msg.Content,
+			"pub_date": msg.pub_date,
+			"user":     msg.User,
+		}
+		responseMessages = append(responseMessages, responseMsg)
+	}
+
+	// Send JSON response of all followers
+	c.JSON(http.StatusOK, responseMessages)
 }
 
 func apiMsgsPerUserHandler(c *gin.Context) {
