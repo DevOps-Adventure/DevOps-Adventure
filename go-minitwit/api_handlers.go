@@ -35,16 +35,22 @@ type UserData struct {
 }
 
 type MessageData struct {
-	authorId string
-	text     string
+	Username string
+	Content  string
 }
 
-func updateLatest() {
-	return
+type LatestRequest struct {
+	Latest string
+}
+
+var latestRequest LatestRequest
+
+func updateLatest(request string) {
+	latestRequest.Latest = request
 }
 
 func getLatest(c *gin.Context) {
-	return
+	c.String(200, "", latestRequest)
 }
 
 /*
@@ -62,29 +68,33 @@ func apiRegisterHandler(c *gin.Context) {
 	//Check if user already exists
 	userID, exists := c.Get("UserID")
 	if exists {
-		errorData.status = 400
-		errorData.error_msg = "User already exists"
-		fmt.Println("userID:", userID)
+		errorData.status = 404
+		errorData.error_msg = "User already exists: " + fmt.Sprintf("%v", userID)
+		c.AbortWithStatusJSON(404, errorData)
+		return
 	}
 
 	if c.Request.Method == http.MethodPost {
-
 		// Read the request body
 		var registerReq UserData
 		body, err := io.ReadAll(c.Request.Body)
 		if err != nil {
-			errorData.status = 400
+			errorData.status = 404
 			errorData.error_msg = "Failed to read JSON"
+			c.AbortWithStatusJSON(404, errorData)
+			return
 		}
 
 		// Parse the request body from JSON
 		// Unmarshal parses the JSON and stores it in a pointer (registerReq)
 		if err := json.Unmarshal(body, &registerReq); err != nil {
-			errorData.status = 400
+			errorData.status = 404
 			errorData.error_msg = "Failed to parse JSON"
+			c.AbortWithStatusJSON(404, errorData)
+			return
 		}
 
-		// Set the user data
+		//Set the user data
 		username := registerReq.Username
 		email := registerReq.Email
 		password := registerReq.Pwd
@@ -92,41 +102,55 @@ func apiRegisterHandler(c *gin.Context) {
 		// Get user ID
 		userID, err := getUserIDByUsername(username)
 		if err != nil {
-			errorData.status = 400
+			errorData.status = 404
 			errorData.error_msg = "Failed to get userID"
+			c.AbortWithStatusJSON(404, errorData)
+			return
 		}
+
+		updateLatest(fmt.Sprintf("%#v", registerReq))
 
 		// Check for errors
 		if username == "" {
-			errorData.status = 400
+			errorData.status = 404
 			errorData.error_msg = "You have to enter a username"
+			c.AbortWithStatusJSON(404, errorData.error_msg)
+			return
 
 		} else if email == "" || !strings.Contains(email, "@") {
-			errorData.status = 400
+			errorData.status = 404
 			errorData.error_msg = "You have to enter a valid email address"
+			c.AbortWithStatusJSON(404, errorData.error_msg)
+			return
 
 		} else if password == "" {
-			errorData.status = 400
+			errorData.status = 404
 			errorData.error_msg = "You have to enter a password"
+			c.AbortWithStatusJSON(404, errorData.error_msg)
+			return
 
 		} else if fmt.Sprint(userID) != "-1" {
-			errorData.status = 400
+			errorData.status = 404
 			errorData.error_msg = "The username is already taken"
+			c.AbortWithStatusJSON(404, errorData.error_msg)
+			return
 
 		} else {
 			hash := md5.Sum([]byte(password))
 			err := registerUser(username, email, hash)
 			if err != nil {
-				errorData.status = 400
+				errorData.status = 404
 				errorData.error_msg = "Failed to register user"
+				c.AbortWithStatusJSON(404, errorData.error_msg)
+				return
 			}
 		}
 
 		if errorData.error_msg != "" {
-			c.String(400, errorData.error_msg)
+			c.AbortWithStatusJSON(404, errorData.error_msg)
 			return
 		} else {
-			c.String(200, "Success!")
+			c.JSON(204, "")
 		}
 	}
 }
@@ -227,15 +251,15 @@ func apiMsgsPerUserHandler(c *gin.Context) {
 		}
 
 		// Set the user data
-		text := messageReq.text
-		authorId, err := getUserIDByUsername(messageReq.authorId)
+		content := messageReq.Content
+		authorId, err := getUserIDByUsername(messageReq.Username)
 		if err != nil {
 			errorData.status = http.StatusBadRequest
 			errorData.error_msg = "Failed to read JSON"
 			c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
 		}
 
-		err = addMessage(text, strconv.Itoa(int(authorId)))
+		err = addMessage(content, strconv.Itoa(int(authorId)))
 		if err != nil {
 			errorData.status = http.StatusInternalServerError
 			errorData.error_msg = "Failed to upload message"

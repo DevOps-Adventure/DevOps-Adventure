@@ -71,12 +71,12 @@ func myTimelineHandlerAPI(c *gin.Context) {
 	if IsSimulatorRequest(c) {
 		log.Println("Simulator request")
 	} else {
-		messages, err := getPublicMessages()
+		messages, err := getPublicMessages(1)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 			return
 		}
-		formattedMessages := format_messages(messages)
+		formattedMessages := formatMessages(messages)
 		c.HTML(http.StatusOK, "timeline.html", gin.H{
 			"TimelineBody": true,
 			"Endpoint":     "public_timeline",
@@ -90,12 +90,12 @@ func publicTimelineHandlerAPI(c *gin.Context) {
 		log.Println("Simulator request")
 		//do we need something else?
 	} else {
-		messages, err := getPublicMessages()
+		messages, err := getPublicMessages(1)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 			return
 		}
-		formattedMessages := format_messages(messages)
+		formattedMessages := formatMessages(messages)
 		c.HTML(http.StatusOK, "timeline.html", gin.H{
 			"TimelineBody": true,
 			"Endpoint":     "public_timeline",
@@ -133,13 +133,13 @@ func userTimelineHandlerAPI(c *gin.Context) {
 
 		}
 
-		messages, err := getUserMessages(pUserID)
+		messages, err := getUserMessages(pUserID, 1)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 			return
 		}
 
-		formattedMessages := format_messages(messages)
+		formattedMessages := formatMessages(messages)
 		c.HTML(http.StatusOK, "timeline.html", gin.H{
 			"TimelineBody": true,
 			"Endpoint":     "user_timeline",
