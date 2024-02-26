@@ -15,18 +15,20 @@ import requests
 # import schema
 # import data
 # otherwise use the database that you got previously
-BASE_URL = "http://localhost:5000"
+BASE_URL = "http://localhost:8081"
 
-def register(username, password, password2=None, email=None):
+print("Running tests...")
+
+def register(username, password, passwordConfirm=None, email=None):
     """Helper function to register a user"""
-    if password2 is None:
-        password2 = password
+    if passwordConfirm is None:
+        passwordConfirm = password
     if email is None:
         email = username + '@example.com'
     return requests.post(f'{BASE_URL}/register', data={
         'username':     username,
         'password':     password,
-        'password2':    password2,
+        'passwordConfirm':    passwordConfirm,
         'email':        email,
     }, allow_redirects=True)
 
@@ -61,8 +63,7 @@ def add_message(http_session, text):
 def test_register():
     """Make sure registering works"""
     r = register('user1', 'default')
-    assert 'You were successfully registered ' \
-           'and can login now' in r.text
+    assert 'You were successfully registered and can login now' in r.text
     r = register('user1', 'default')
     assert 'The username is already taken' in r.text
     r = register('', 'default')
@@ -112,7 +113,7 @@ def test_timelines():
 
     # now let's follow foo
     r = http_session.get(f'{BASE_URL}/foo/follow', allow_redirects=True)
-    assert 'You are now following &#34;foo&#34;' in r.text
+    assert 'You are now following foo' in r.text
 
     # we should now see foo's message
     r = http_session.get(f'{BASE_URL}/')
@@ -129,8 +130,12 @@ def test_timelines():
 
     # now unfollow and check if that worked
     r = http_session.get(f'{BASE_URL}/foo/unfollow', allow_redirects=True)
-    assert 'You are no longer following &#34;foo&#34;' in r.text
+    assert 'You are no longer following foo' in r.text
     r = http_session.get(f'{BASE_URL}/')
     assert 'the message by foo' not in r.text
     assert 'the message by bar' in r.text
 
+test_register()
+test_login_logout()
+test_message_recording()
+test_timelines()
