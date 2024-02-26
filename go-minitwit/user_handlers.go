@@ -172,6 +172,9 @@ func myTimelineHandler(c *gin.Context) {
 }
 
 func addMessageHandler(c *gin.Context) {
+
+	session := sessions.Default(c)
+
 	userID, err := c.Cookie("UserID")
 	if err != nil {
 		c.Redirect(http.StatusFound, "/public")
@@ -207,8 +210,8 @@ func addMessageHandler(c *gin.Context) {
 			}
 			// Redirect to login page after successful registration
 			c.Redirect(http.StatusSeeOther, "/")
-			// todo: flash
-			return
+			session.AddFlash("Your message was recorded")
+			session.Save()
 		}
 	}
 	c.HTML(http.StatusOK, "timeline.html", gin.H{
@@ -280,7 +283,6 @@ func registerHandler(c *gin.Context) {
 			session.AddFlash("You were successfully registered and can login now")
 			session.Save()
 			c.Redirect(http.StatusSeeOther, "/login")
-			// todo: flash
 			return
 		}
 	}
