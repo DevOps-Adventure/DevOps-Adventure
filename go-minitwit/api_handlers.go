@@ -34,13 +34,12 @@ type UserData struct {
 	Pwd      string
 }
 
-type MessageData struct {
-	Username string
-	Content  string
-}
-
 type LatestRequest struct {
 	Latest string
+}
+
+type MessageData struct {
+	Content string `json:"content"`
 }
 
 var latestRequest LatestRequest
@@ -195,21 +194,9 @@ func apiMsgsHandler(c *gin.Context) {
 	// All Messages
 
 	filteredMessages := filterMessages(messages)
-
-	// Prepare response
-	var responseMessages []gin.H
-	for _, msg := range filteredMessages {
-		// Include content along with other message details
-		responseMsg := gin.H{
-			"content":  msg.Content,
-			"pub_date": msg.pub_date,
-			"user":     msg.User,
-		}
-		responseMessages = append(responseMessages, responseMsg)
-	}
-
-	// Send JSON response of all followers
-	c.JSON(http.StatusOK, responseMessages)
+	jsonFilteredMessages, _ := json.Marshal(filteredMessages)
+	c.Header("Content-Type", "application/json")
+	c.String(http.StatusOK, string(jsonFilteredMessages))
 }
 
 func apiMsgsPerUserHandler(c *gin.Context) {
@@ -221,24 +208,23 @@ func apiMsgsPerUserHandler(c *gin.Context) {
 		error_msg: "",
 	}
 
+	profileUserName := c.Param("username")
+	userId, err := getUserIDByUsername(profileUserName)
+	if userId == -1 {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
 	if c.Request.Method == http.MethodGet {
 		numMsgs := c.Request.Header.Get("no")
 		numMsgsInt, err := strconv.Atoi(numMsgs)
 		// fallback on default value
 		if err != nil {
 			numMsgsInt = 100
-		}
-
-		profileUserName := c.Param("username")
-		userId, err := getUserIDByUsername(profileUserName)
-
-		if userId == -1 {
-			c.AbortWithStatus(http.StatusBadRequest)
-			return
-		}
-		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
-			return
 		}
 
 		messages, err := getUserMessages(userId, numMsgsInt)
@@ -249,12 +235,15 @@ func apiMsgsPerUserHandler(c *gin.Context) {
 		}
 
 		filteredMessages := filterMessages(messages)
-		c.JSON(http.StatusOK, filteredMessages)
+		jsonFilteredMessages, _ := json.Marshal(filteredMessages)
+		c.Header("Content-Type", "application/json")
+		c.String(http.StatusOK, string(jsonFilteredMessages))
 
 	} else if c.Request.Method == http.MethodPost {
 		// Read the request body
 		var messageReq MessageData
 		body, err := io.ReadAll(c.Request.Body)
+
 		if err != nil {
 			errorData.status = 400
 			errorData.error_msg = "Failed to read JSON"
@@ -266,16 +255,16 @@ func apiMsgsPerUserHandler(c *gin.Context) {
 			errorData.error_msg = "Failed to parse JSON"
 		}
 
-		// Set the user data
-		content := messageReq.Content
-		authorId, err := getUserIDByUsername(messageReq.Username)
+		text := messageReq.Content
+		fmt.Println(text)
+		authorId, err := getUserIDByUsername(profileUserName)
 		if err != nil {
 			errorData.status = http.StatusBadRequest
-			errorData.error_msg = "Failed to read JSON"
+			errorData.error_msg = "Failed to get userID"
 			c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
 		}
 
-		err = addMessage(content, strconv.Itoa(int(authorId)))
+		err = addMessage(text, strconv.Itoa(int(authorId)))
 		if err != nil {
 			errorData.status = http.StatusInternalServerError
 			errorData.error_msg = "Failed to upload message"
