@@ -69,7 +69,6 @@ func query_db(db *sql.DB, query string, args []interface{}, one bool) ([]map[str
 			break
 		}
 	}
-	fmt.Println(result)
 	return result, nil
 }
 
@@ -79,8 +78,6 @@ func query_db(db *sql.DB, query string, args []interface{}, one bool) ([]map[str
 
 // fetches all public messages for display.
 func getPublicMessages(numMsgs int) ([]map[string]interface{}, error) {
-
-	fmt.Println("getPublicMessages")
 
 	query := `
 	SELECT message.*, user.* FROM message, user
@@ -175,8 +172,6 @@ func getMyMessages(userID string) ([]map[string]interface{}, error) {
 
 // fetches a user by their ID
 func getUserIDByUsername(userName string) (int64, error) {
-	fmt.Println("getUserIDByUsername")
-	fmt.Println(userName)
 	var db, err = connect_db(DATABASE)
 	if err != nil {
 		fmt.Println("db connection failed")

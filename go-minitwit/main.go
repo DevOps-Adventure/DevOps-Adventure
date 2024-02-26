@@ -171,7 +171,6 @@ func formatMessages(messages []map[string]interface{}) []Message {
 }
 
 func filterMessages(messages []map[string]interface{}) []FilteredMsg {
-	fmt.Println(messages)
 	var filteredMessages []FilteredMsg
 	for _, m := range messages {
 		var filteredMsg FilteredMsg
