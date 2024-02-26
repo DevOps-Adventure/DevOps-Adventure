@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"fmt"
+	"strconv"
 
 	"log"
 	"strings"
@@ -38,9 +39,9 @@ type Message struct {
 }
 
 type FilteredMsg struct {
-	content  string
+	Content  string
 	pub_date string
-	user     string
+	User     string
 }
 
 func main() {
@@ -170,27 +171,27 @@ func formatMessages(messages []map[string]interface{}) []Message {
 }
 
 func filterMessages(messages []map[string]interface{}) []FilteredMsg {
+	fmt.Println(messages)
 	var filteredMessages []FilteredMsg
 	for _, m := range messages {
 		var filteredMsg FilteredMsg
-
 		// content
 		if text, ok := m["text"].(string); ok {
-			filteredMsg.content = text
+			filteredMsg.Content = text
 		}
 
 		// publication date
-		if pubDate, ok := m["pub_date"].(string); ok {
-			filteredMsg.pub_date = pubDate
+		if pubDate, ok := m["pub_date"].(int64); ok {
+			// Convert int64 to string
+			filteredMsg.pub_date = strconv.FormatInt(pubDate, 10)
 		}
 
 		// user
 		if userName, ok := m["username"].(string); ok {
-			filteredMsg.user = userName
+			filteredMsg.User = userName
 		}
 
 		filteredMessages = append(filteredMessages, filteredMsg)
 	}
-
 	return filteredMessages
 }
