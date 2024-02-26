@@ -288,6 +288,22 @@ func unfollowUser(userID string, profileUserID string) error {
 	return err
 }
 
+// getFollowers fetches up to `limit` followers for the user identified by userID
+func getFollowers(userID string, limit int) ([]map[string]interface{}, error) {
+	query := `SELECT user.* FROM user 
+               INNER JOIN follower ON user.user_id = follower.who_id
+               WHERE follower.whom_id = ?
+               LIMIT ?`
+
+	var db, err = connect_db(DATABASE)
+	if err != nil {
+		return nil, err
+	}
+	args := []interface{}{userID, limit}
+	followers, err := query_db(db, query, args, false)
+	return followers, err
+}
+
 // userExists checks if a user with the given username already exists in the database.
 func userExists(username string) (bool, error) {
 	query := "SELECT COUNT(*) FROM user WHERE username = ?"

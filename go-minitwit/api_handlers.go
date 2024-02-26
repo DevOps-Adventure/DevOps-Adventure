@@ -294,10 +294,11 @@ func apiFllwsHandler(c *gin.Context) {
 
 	if c.Request.Method == http.MethodGet {
 		profileUserName := c.Param("username")
-		noFollowersStr := c.Query("no")
-		noFollowers, err := strconv.Atoi(noFollowersStr)
+		numFollr := c.Request.Header.Get("no")
+		numFollrInt, err := strconv.Atoi(numFollr)
+		// fallback on default value
 		if err != nil {
-			noFollowers = 100
+			numFollrInt = 100
 		}
 
 		userId, err := getUserIDByUsername(profileUserName)
@@ -308,15 +309,16 @@ func apiFllwsHandler(c *gin.Context) {
 
 		// Fetch all followers for the user
 		userIdStr := strconv.FormatInt(userId, 10)
-		followers, err := getFollowers(userIdStr)
+		followers, err := getFollowers(userIdStr, numFollrInt)
 		if err != nil {
 			errorData.status = http.StatusInternalServerError
 			errorData.error_msg = "Failed to fetch followers from DB"
 			c.AbortWithStatusJSON(http.StatusInternalServerError, errorData)
 		}
+		// empty slice for follower usernames
+		followerNames := []string{}
 
-		// Extract follower usernames
-		followerNames := make([]string, len(followers))
+		// Append the usernames to the followerNames slice
 		for _, follower := range followers {
 			followerNames = append(followerNames, follower["username"].(string))
 		}
@@ -330,39 +332,74 @@ func apiFllwsHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, followersResponse)
 
 	} else if c.Request.Method == http.MethodPost {
+		// POST request
 		var requestBody struct {
 			Follow   string `json:"follow"`
 			Unfollow string `json:"unfollow"`
 		}
 
+		// Bind JSON data to requestBody
 		if err := c.BindJSON(&requestBody); err != nil {
 			errorData.status = http.StatusBadRequest
 			errorData.error_msg = "Failed to parse JSON"
 			c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
+			return
 		}
+
+		profileUserName := c.Param("username")
+
+		// Convert profileUserName to userID
+		userId, err := getUserIDByUsername(profileUserName)
+		if err != nil || userId == -1 {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+		userIdStr := strconv.FormatInt(userId, 10)
 
 		if requestBody.Follow != "" {
 			// Follow logic
-			profileUserName := c.Param("username")
+			// Convert requestBody.Follow to profileUserID
+			profileUserID, err := getUserIDByUsername(requestBody.Follow)
+			if err != nil || profileUserID == -1 {
+				c.AbortWithStatus(http.StatusBadRequest)
+				return
+			}
+			profileUserIDStr := strconv.FormatInt(profileUserID, 10)
 
-			// userA follow userB
-			err := followUser(requestBody.Follow, profileUserName)
-			if err != nil {
+			// Follow the user
+			if err := followUser(userIdStr, profileUserIDStr); err != nil {
 				errorData.status = http.StatusInternalServerError
 				errorData.error_msg = "Failed to follow user"
 				c.AbortWithStatusJSON(http.StatusInternalServerError, errorData)
+				return
 			}
+
+			c.Status(http.StatusNoContent)
+			return
 		} else if requestBody.Unfollow != "" {
 			// Unfollow logic
-			profileUserName := c.Param("username")
-			// userA unfollow userB
-			err := unfollowUser(requestBody.Unfollow, profileUserName)
-			if err != nil {
+			// Convert requestBody.Unfollow to profileUserID
+			profileUserID, err := getUserIDByUsername(requestBody.Unfollow)
+			if err != nil || profileUserID == -1 {
+				c.AbortWithStatus(http.StatusBadRequest)
+				return
+			}
+			profileUserIDStr := strconv.FormatInt(profileUserID, 10)
+
+			// Unfollow the user
+			if err := unfollowUser(userIdStr, profileUserIDStr); err != nil {
 				errorData.status = http.StatusInternalServerError
 				errorData.error_msg = "Failed to unfollow user"
 				c.AbortWithStatusJSON(http.StatusInternalServerError, errorData)
+				return
 			}
 
+			c.Status(http.StatusNoContent)
+		} else {
+			errorData.status = http.StatusBadRequest
+			errorData.error_msg = "No 'follow' or 'unfollow' provided in request"
+			c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
+			return
 		}
 	}
 }
