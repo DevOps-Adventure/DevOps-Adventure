@@ -286,7 +286,85 @@ else if POST:
 		return: status code
 */
 func apiFllwsHandler(c *gin.Context) {
-	return
+
+	errorData := ErrorData{
+		status:    0,
+		error_msg: "",
+	}
+
+	if c.Request.Method == http.MethodGet {
+		profileUserName := c.Param("username")
+		noFollowersStr := c.Query("no")
+		noFollowers, err := strconv.Atoi(noFollowersStr)
+		if err != nil {
+			noFollowers = 100
+		}
+
+		userId, err := getUserIDByUsername(profileUserName)
+		if err != nil || userId == -1 {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		// Fetch all followers for the user
+		userIdStr := strconv.FormatInt(userId, 10)
+		followers, err := getFollowers(userIdStr)
+		if err != nil {
+			errorData.status = http.StatusInternalServerError
+			errorData.error_msg = "Failed to fetch followers from DB"
+			c.AbortWithStatusJSON(http.StatusInternalServerError, errorData)
+		}
+
+		// Extract follower usernames
+		followerNames := make([]string, len(followers))
+		for _, follower := range followers {
+			followerNames = append(followerNames, follower["username"].(string))
+		}
+
+		// Prepare response
+		followersResponse := gin.H{
+			"followers": followerNames,
+		}
+
+		// Send JSON response of all followers
+		c.JSON(http.StatusOK, followersResponse)
+
+	} else if c.Request.Method == http.MethodPost {
+		var requestBody struct {
+			Follow   string `json:"follow"`
+			Unfollow string `json:"unfollow"`
+		}
+
+		if err := c.BindJSON(&requestBody); err != nil {
+			errorData.status = http.StatusBadRequest
+			errorData.error_msg = "Failed to parse JSON"
+			c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
+		}
+
+		if requestBody.Follow != "" {
+			// Follow logic
+			profileUserName := c.Param("username")
+
+			// userA follow userB
+			err := followUser(requestBody.Follow, profileUserName)
+			if err != nil {
+				errorData.status = http.StatusInternalServerError
+				errorData.error_msg = "Failed to follow user"
+				c.AbortWithStatusJSON(http.StatusInternalServerError, errorData)
+			}
+		} else if requestBody.Unfollow != "" {
+			// Unfollow logic
+			profileUserName := c.Param("username")
+			// userA unfollow userB
+			err := unfollowUser(requestBody.Unfollow, profileUserName)
+			if err != nil {
+				errorData.status = http.StatusInternalServerError
+				errorData.error_msg = "Failed to unfollow user"
+				c.AbortWithStatusJSON(http.StatusInternalServerError, errorData)
+			}
+
+		}
+	}
 }
 
 // simulator logic is moved here now
