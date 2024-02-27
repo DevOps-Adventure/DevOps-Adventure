@@ -35,7 +35,7 @@ type UserData struct {
 }
 
 type LatestRequest struct {
-	Latest string
+	Latest string `json:"latest"`
 }
 
 type MessageData struct {
@@ -44,12 +44,23 @@ type MessageData struct {
 
 var latestRequest LatestRequest
 
-func updateLatest(request string) {
-	latestRequest.Latest = request
+func updateLatest(c *gin.Context) {
+	parsedCommandID := c.Query("latest")
+	fmt.Println("Latest:")
+	fmt.Println(parsedCommandID)
+	if parsedCommandID != "-1" {
+		c.SetCookie("latestProcessedCommandId", fmt.Sprint(parsedCommandID), 3600, "/", "", false, true)
+	}
 }
 
 func getLatest(c *gin.Context) {
-	c.String(200, "", latestRequest)
+	latestProcessedCommandID, err := c.Cookie("latestProcessedCommandId")
+	if err != nil || latestProcessedCommandID == "" {
+		latestProcessedCommandID = "-1"
+	}
+	fmt.Println("Cookie:")
+	fmt.Println(latestProcessedCommandID)
+	c.JSON(http.StatusOK, gin.H{"latest": latestProcessedCommandID})
 }
 
 /*
@@ -106,8 +117,6 @@ func apiRegisterHandler(c *gin.Context) {
 			c.AbortWithStatusJSON(404, errorData)
 			return
 		}
-
-		updateLatest(fmt.Sprintf("%#v", registerReq))
 
 		// Check for errors
 		if username == "" {
@@ -171,6 +180,7 @@ else if POST:
 
 func apiMsgsHandler(c *gin.Context) {
 	// todo: update this request to be the latest
+	updateLatest(c)
 	// todo: check if this is not from sim response
 	errorData := ErrorData{
 		status:    0,
@@ -190,8 +200,6 @@ func apiMsgsHandler(c *gin.Context) {
 		errorData.error_msg = "Failed to fetch messages from DB"
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
 	}
-
-	// All Messages
 
 	filteredMessages := filterMessages(messages)
 	jsonFilteredMessages, _ := json.Marshal(filteredMessages)
@@ -408,40 +416,3 @@ func apiFllwsHandler(c *gin.Context) {
 		}
 	}
 }
-
-// simulator logic is moved here now
-// mathing the endpoints with the handlers for the simulator
-// func registerSimulatorApi(router *gin.Engine) {
-
-// 	router.GET("/", myTimelineHandler).Use(simulatorApi())
-// 	router.GET("/public", publicTimelineHandler).Use(simulatorApi())
-// 	router.GET("/:username", userTimelineHandler).Use(simulatorApi())
-// 	router.GET("/register", registerHandler).Use(simulatorApi())
-// 	router.GET("/login", loginHandler).Use(simulatorApi())
-// 	router.GET("/logout", logoutHandler).Use(simulatorApi())
-// 	router.GET("/:username/*action", userFollowActionHandler).Use(simulatorApi())
-
-// 	router.POST("/register", registerHandler).Use(simulatorApi())
-// 	router.POST("/login", loginHandler).Use(simulatorApi())
-// 	router.POST("/add_message", addMessageHandler).Use(simulatorApi())
-
-// }
-
-// func simulatorApi() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		if c.GetHeader("simulatorApi") == "true" {
-// 			c.Set("simulator", true)
-// 		} else {
-// 			c.Set("simulator", false)
-// 		}
-// 		c.Next()
-// 	}
-// }
-
-// // use this function to make sure that the request is coming from the simulator
-// func IsSimulatorRequest(c *gin.Context) bool {
-// 	if isSumulator, exists := c.Get("simulator"); exists {
-// 		return isSumulator.(bool)
-// 	}
-// 	return false
-// }
