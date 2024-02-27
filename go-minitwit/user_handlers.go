@@ -222,8 +222,6 @@ func addMessageHandler(c *gin.Context) {
 
 func registerHandler(c *gin.Context) {
 
-	fmt.Println("registerHandler")
-
 	session := sessions.Default(c)
 
 	userID, exists := c.Get("UserID")
