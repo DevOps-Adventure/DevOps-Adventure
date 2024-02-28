@@ -72,6 +72,8 @@ returns: ("", 204) or ({"status": 400, "error_msg": error}, 400)
 */
 func apiRegisterHandler(c *gin.Context) {
 
+	updateLatest(c)
+
 	errorData := ErrorData{
 		status:    0,
 		error_msg: "",
@@ -170,7 +172,7 @@ func apiRegisterHandler(c *gin.Context) {
 /api/msgs?no=<num>
 */
 func apiMsgsHandler(c *gin.Context) {
-	// todo: update this request to be the latest
+
 	updateLatest(c)
 	// todo: check if this is not from sim response
 	errorData := ErrorData{
@@ -202,7 +204,8 @@ func apiMsgsHandler(c *gin.Context) {
 /api/msgs/<username>
 */
 func apiMsgsPerUserHandler(c *gin.Context) {
-	// todo: update this request to be the latest
+
+	updateLatest(c)
 	// todo: check if this is not from sim response
 
 	errorData := ErrorData{
@@ -295,6 +298,8 @@ else if POST:
 /api/fllws/<username>
 */
 func apiFllwsHandler(c *gin.Context) {
+
+	updateLatest(c)
 
 	errorData := ErrorData{
 		status:    0,
