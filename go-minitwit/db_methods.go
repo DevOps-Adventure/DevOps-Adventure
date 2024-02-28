@@ -272,6 +272,7 @@ func followUser(userID string, profileUserID string) error {
 
 // unfollowUser removes a follower from the database
 func unfollowUser(userID string, profileUserID string) error {
+	fmt.Println(userID, profileUserID)
 	query := `delete from follower where who_id=? and whom_id=?`
 	var db, err = connect_db(DATABASE)
 	if err != nil {
