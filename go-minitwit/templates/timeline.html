@@ -35,7 +35,7 @@ content will be inserted */}} {{template "layout.html" .}} {{define "Title"}}
 		<p>
 			<strong><a href="{{.Profile_link}}">{{.Username}}</a></strong>
 			{{.Text}}
-			<small>&mdash;</small>
+			<small>&mdash; {{ .PubDate }}</small>
 		</p>
 	</li>
 	{{else}}
