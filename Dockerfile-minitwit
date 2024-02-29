@@ -15,7 +15,7 @@ COPY go-minitwit/templates /app/templates
 # Build
 RUN go build -o /docker-gs-ping
 
-EXPOSE 8080
+EXPOSE 8081
 
 ENV NAME World
 
