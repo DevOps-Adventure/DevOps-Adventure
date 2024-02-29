@@ -1,0 +1,34 @@
+{{template "layout.html" .}} {{define "title"}}Sign Up{{end}} {{define
+"RegisterBody"}}
+<h2>{{ template "title" . }}</h2>
+{{if .Error}}
+<div class="error"><strong>Error:</strong> {{ .Error }}</div>
+{{end}}
+<form action="/register" method="post">
+	<dl>
+		<dt>Username:</dt>
+		<dd>
+			<input
+				type="text"
+				name="username"
+				size="30"
+				value="{{ .request.form.username }}"
+			/>
+		</dd>
+		<dt>E-Mail:</dt>
+		<dd>
+			<input
+				type="text"
+				name="email"
+				size="30"
+				value="{{ .request.form.email }}"
+			/>
+		</dd>
+		<dt>Password:</dt>
+		<dd><input type="password" name="password" size="30" /></dd>
+		<dt>Password <small>(repeat)</small>:</dt>
+		<dd><input type="password" name="passwordConfirm" size="30" /></dd>
+	</dl>
+	<div class="actions"><input type="submit" value="Sign Up" /></div>
+</form>
+{{end}}
