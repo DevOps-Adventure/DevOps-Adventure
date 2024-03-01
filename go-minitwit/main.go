@@ -29,7 +29,7 @@ type Message struct {
 	MessageID    int
 	AuthorID     int
 	Text         string
-	PubDate      time.Time
+	PubDate      string
 	User         User
 	Email        string
 	Username     string
@@ -145,8 +145,6 @@ func formatMessages(messages []map[string]interface{}) []Message {
 		if userID, ok := m["user_id"].(int64); ok {
 			msg.User.UserID = int(userID)
 		}
-
-		// For strings, direct type assertion is fine
 		if text, ok := m["text"].(string); ok {
 			msg.Text = text
 		}
@@ -156,7 +154,10 @@ func formatMessages(messages []map[string]interface{}) []Message {
 		if email, ok := m["email"].(string); ok {
 			msg.Email = email
 		}
-
+		if pubDate, ok := m["pub_date"].(int64) ; ok {
+			pubDateTime := time.Unix(pubDate,0)
+			msg.PubDate = pubDateTime.Format("02/01/2006 15:04:05") // go time layout format is weird 1,2,3,4,5,6 ¬¬
+		}
 		link := "/" + msg.Username
 		msg.Profile_link = strings.ReplaceAll(link, " ", "%20")
 
