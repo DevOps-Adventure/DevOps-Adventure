@@ -4,7 +4,9 @@ content will be inserted */}} {{template "layout.html" .}} {{define "Title"}}
 "user_timeline"}} {{.ProfileUserName}}'s Timeline {{else}} My Timeline {{end}}
 {{end}} {{define "TimelineBody"}}
 <h2>{{template "Title" .}}</h2>
-{{if .UserID}} {{if eq .Endpoint "user_timeline"}}
+{{if .Error}}
+<div class="error"><strong>Error:</strong> {{ .Error }}</div>
+{{end}} {{if .UserID}} {{if eq .Endpoint "user_timeline"}}
 <div class="followstatus">
 	{{if eq .UserID .ProfileUser}} This is you! {{else if .Followed}} You are
 	currently following this user.
