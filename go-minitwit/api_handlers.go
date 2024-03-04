@@ -35,21 +35,17 @@ type UserData struct {
 }
 
 type LatestRequest struct {
-	Latest string `json:"latest"`
+	Latest int64 `json:"latest"`
 }
 
 type MessageData struct {
 	Content string `json:"content"`
 }
 
-var latestRequest LatestRequest
-
 func updateLatest(c *gin.Context) {
 	parsedCommandID := c.Query("latest")
-	fmt.Println("Latest:")
-	fmt.Println(parsedCommandID)
 	if parsedCommandID != "-1" {
-		c.SetCookie("latestProcessedCommandId", fmt.Sprint(parsedCommandID), 3600, "/", "", false, true)
+		c.SetCookie("latestProcessedCommandId", parsedCommandID, 3600, "/", "", false, true)
 	}
 }
 
@@ -59,9 +55,11 @@ func getLatest(c *gin.Context) {
 	if err != nil || latestProcessedCommandID == "" {
 		latestProcessedCommandID = "-1"
 	}
-	fmt.Println("Cookie:")
-	fmt.Println(latestProcessedCommandID)
-	c.JSON(http.StatusOK, gin.H{"latest": latestProcessedCommandID})
+	latestProcessedCommandIDInt, err := strconv.Atoi(latestProcessedCommandID)
+	if err != nil || latestProcessedCommandID == "" {
+		latestProcessedCommandIDInt = -1
+	}
+	c.JSON(http.StatusOK, gin.H{"latest": latestProcessedCommandIDInt})
 }
 
 /*
