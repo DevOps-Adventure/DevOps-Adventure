@@ -315,7 +315,7 @@ func apiFllwsHandler(c *gin.Context) {
 
 		userId, err := getUserIDByUsername(profileUserName)
 		if err != nil || userId == -1 {
-			c.AbortWithStatus(http.StatusBadRequest)
+			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
 
@@ -354,9 +354,9 @@ func apiFllwsHandler(c *gin.Context) {
 
 		// Bind JSON data to requestBody
 		if err := c.BindJSON(&requestBody); err != nil {
-			errorData.status = http.StatusBadRequest
+			errorData.status = http.StatusNotFound
 			errorData.error_msg = "Failed to parse JSON"
-			c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
+			c.AbortWithStatusJSON(http.StatusNotFound, errorData)
 			return
 		}
 
@@ -365,7 +365,7 @@ func apiFllwsHandler(c *gin.Context) {
 		// Convert profileUserName to userID
 		userId, err := getUserIDByUsername(profileUserName)
 		if err != nil || userId == -1 {
-			c.AbortWithStatus(http.StatusBadRequest)
+			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
 		userIdStr := strconv.FormatInt(userId, 10)
@@ -375,16 +375,16 @@ func apiFllwsHandler(c *gin.Context) {
 			// Convert requestBody.Follow to profileUserID
 			profileUserID, err := getUserIDByUsername(requestBody.Follow)
 			if err != nil || profileUserID == -1 {
-				c.AbortWithStatus(http.StatusBadRequest)
+				c.AbortWithStatus(http.StatusNotFound)
 				return
 			}
 			profileUserIDStr := strconv.FormatInt(profileUserID, 10)
 
 			// Follow the user
 			if err := followUser(userIdStr, profileUserIDStr); err != nil {
-				errorData.status = http.StatusInternalServerError
+				errorData.status = http.StatusNotFound
 				errorData.error_msg = "Failed to follow user"
-				c.AbortWithStatusJSON(http.StatusInternalServerError, errorData)
+				c.AbortWithStatusJSON(http.StatusNotFound, errorData)
 				return
 			}
 
@@ -395,24 +395,24 @@ func apiFllwsHandler(c *gin.Context) {
 			// Convert requestBody.Unfollow to profileUserID
 			profileUserID, err := getUserIDByUsername(requestBody.Unfollow)
 			if err != nil || profileUserID == -1 {
-				c.AbortWithStatus(http.StatusBadRequest)
+				c.AbortWithStatus(http.StatusNotFound)
 				return
 			}
 			profileUserIDStr := strconv.FormatInt(profileUserID, 10)
 
 			// Unfollow the user
 			if err := unfollowUser(userIdStr, profileUserIDStr); err != nil {
-				errorData.status = http.StatusInternalServerError
+				errorData.status = http.StatusNotFound
 				errorData.error_msg = "Failed to unfollow user"
-				c.AbortWithStatusJSON(http.StatusInternalServerError, errorData)
+				c.AbortWithStatusJSON(http.StatusNotFound, errorData)
 				return
 			}
 
 			c.JSON(http.StatusNoContent, "")
 		} else {
-			errorData.status = http.StatusBadRequest
+			errorData.status = http.StatusNotFound
 			errorData.error_msg = "No 'follow' or 'unfollow' provided in request"
-			c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
+			c.AbortWithStatusJSON(http.StatusNotFound, errorData)
 			return
 		}
 	}
