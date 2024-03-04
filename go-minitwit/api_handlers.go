@@ -34,10 +34,6 @@ type UserData struct {
 	Pwd      string
 }
 
-type LatestRequest struct {
-	Latest int64 `json:"latest"`
-}
-
 type MessageData struct {
 	Content string `json:"content"`
 }
@@ -49,8 +45,7 @@ func updateLatest(c *gin.Context) {
 	}
 }
 
-// api/latest
-func getLatest(c *gin.Context) {
+func getLatestHelper(c *gin.Context) int {
 	latestProcessedCommandID, err := c.Cookie("latestProcessedCommandId")
 	if err != nil || latestProcessedCommandID == "" {
 		latestProcessedCommandID = "-1"
@@ -59,7 +54,12 @@ func getLatest(c *gin.Context) {
 	if err != nil || latestProcessedCommandID == "" {
 		latestProcessedCommandIDInt = -1
 	}
-	c.JSON(http.StatusOK, gin.H{"latest": latestProcessedCommandIDInt})
+	return latestProcessedCommandIDInt
+}
+
+// api/latest
+func getLatest(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"latest": getLatestHelper(c)})
 }
 
 /*
@@ -71,6 +71,8 @@ returns: ("", 204) or ({"status": 400, "error_msg": error}, 400)
 func apiRegisterHandler(c *gin.Context) {
 
 	updateLatest(c)
+	latest := getLatestHelper(c)
+	logMessage(fmt.Sprint(latest) + " apiRegisterHandler: registering user.")
 
 	errorData := ErrorData{
 		status:    0,
@@ -172,7 +174,9 @@ func apiRegisterHandler(c *gin.Context) {
 func apiMsgsHandler(c *gin.Context) {
 
 	updateLatest(c)
-	// todo: check if this is not from sim response
+	latest := getLatestHelper(c)
+	logMessage(fmt.Sprint(latest) + " apiMsgsHandler: getting all messages.")
+
 	errorData := ErrorData{
 		status:    0,
 		error_msg: "",
@@ -204,7 +208,8 @@ func apiMsgsHandler(c *gin.Context) {
 func apiMsgsPerUserHandler(c *gin.Context) {
 
 	updateLatest(c)
-	// todo: check if this is not from sim response
+	latest := getLatestHelper(c)
+	logMessage(fmt.Sprint(latest) + " apiMsgsPerUserHandler: getting all messages by user " + c.Param("username") + ".")
 
 	errorData := ErrorData{
 		status:    0,
@@ -298,6 +303,8 @@ else if POST:
 func apiFllwsHandler(c *gin.Context) {
 
 	updateLatest(c)
+	latest := getLatestHelper(c)
+	logMessage(fmt.Sprint(latest) + " apiFllwsHandler: checking follow")
 
 	errorData := ErrorData{
 		status:    0,
