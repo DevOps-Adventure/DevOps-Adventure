@@ -212,12 +212,10 @@ func addMessageHandler(c *gin.Context) {
 			c.Redirect(http.StatusSeeOther, "/")
 			session.AddFlash("Your message was recorded")
 			session.Save()
+			return
 		}
 	}
-	c.HTML(http.StatusOK, "timeline.html", gin.H{
-		"RegisterBody": true,
-		"Error":        errorData,
-	})
+	c.Redirect(http.StatusSeeOther, "/")
 }
 
 func registerHandler(c *gin.Context) {
