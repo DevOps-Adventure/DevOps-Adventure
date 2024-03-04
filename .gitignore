@@ -3,3 +3,4 @@ itu-minitwit/__pycache__/
 .DS_STORE
 .vscode
 go-minitwit/tmp/
+go-minitwit/tmp/minitwit.db
