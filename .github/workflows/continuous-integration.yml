@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  start_server_and_run_tests:
+  start_minitwit_server:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,19 +21,31 @@ jobs:
         with:
           go-version: "1.21"
 
-      - name: change the directory
-        run: cd go-minitwit
+      - name: Install dependencies and start minitwit server
+        run: |
+          cd go-minitwit
+          go mod tidy
+          go run *.go &
+          sleep 10
 
-      - name: install GO dependencies
-        run: go mod tidy
+  test_with_pytest:
+    runs-on: ubuntu-latest
 
-      - name: install Python dependencies #maybe change it in the future to use a requirements file instead
+    needs: start_minitwit_server
+
+    steps:
+      - name: checkout action
+        uses: actions/checkout@v2
+
+      - name: set python env
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.12"
+
+      - name: install python dependencies #maybe change it in the future to use a requirements file instead
         run: |
           pip install pytest
           pip install requests
-
-      - name: start minitwit server
-        run: go run *.go &
 
       - name: run pytest
         run: pytest go-minitwit/tests/
