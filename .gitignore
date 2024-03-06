@@ -5,3 +5,4 @@ itu-minitwit/__pycache__/
 .vscode
 go-minitwit/tmp/
 go-minitwit/tmp/minitwit.db
+go-minitwit/tests/__pycache__/
