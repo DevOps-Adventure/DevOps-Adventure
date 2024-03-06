@@ -41,10 +41,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: install python dependencies #maybe change it in the future to use a requirements file instead
+      - name: install python dependencies
         run: |
-          pip install pytest
-          pip install requests
+          cd go-minitwit/tests/
+          pip install -r requirements_tests.txt
 
       - name: check listening ports
         run: |
@@ -52,4 +52,6 @@ jobs:
           curl http://localhost:8081
 
       - name: run pytest
-        run: pytest go-minitwit/tests/
+        run: |
+          cd go-minitwit/tests/
+          pytest ./

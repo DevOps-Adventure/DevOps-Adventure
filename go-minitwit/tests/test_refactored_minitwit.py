@@ -17,7 +17,7 @@ import sqlite3
 # import data
 # otherwise use the database that you got previously
 BASE_URL = "http://localhost:8081"
-DATABASE = "./tmp/minitwit_empty.db"
+DATABASE = "../tmp/minitwit_empty.db"
 
 print("Running tests...")
 
