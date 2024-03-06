@@ -12,12 +12,16 @@
 import requests
 import pytest
 import sqlite3
+import os
 
 # import schema
 # import data
 # otherwise use the database that you got previously
 BASE_URL = "http://localhost:8081"
-DATABASE = "../tmp/minitwit_empty.db"
+if os.getenv('EXECUTION_ENVIRONMENT') == 'CI':
+    DATABASE = "../tmp/minitwit_empty.db"
+else:
+    DATABASE = "./tmp/minitwit_empty.db"
 
 print("Running tests...")
 
