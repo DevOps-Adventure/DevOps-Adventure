@@ -10,27 +10,74 @@
     :license: BSD, see LICENSE for more details.
 """
 import requests
-
+import pytest
+import sqlite3
 
 # import schema
 # import data
 # otherwise use the database that you got previously
 BASE_URL = "http://localhost:8081"
+DATABASE = "./tmp/minitwit_empty.db"
 
 print("Running tests...")
 
-def register(username, password, passwordConfirm=None, email=None):
+def delete_user(username):
+    # Assuming DATABASE points to your test database
+    conn = sqlite3.connect(DATABASE)
+    cur = conn.cursor()
+    cur.execute("DELETE FROM user WHERE username = ?", (username,))
+    # print results
+    print(f"Deleted {cur.rowcount} user(s) with username {username}")
+    conn.commit()
+    conn.close()
+
+@pytest.fixture(autouse=True)
+def clean_up_user():
+    # Setup code: Delete the test user if exists
+    # This requires implementing a function that deletes a user by username from your database
+    delete_user('user1')
+    delete_user('meh')
+    # No teardown code needed if you're cleaning up before each test
+    yield
+
+@pytest.fixture(scope="session", autouse=True)
+def clean_up_user(request):
+    # Define cleanup function to run after all tests
+    def remove_test_users():
+        delete_user('user1')
+        delete_user('meh')
+        delete_user('foo')
+        delete_user('bar')
+        print("Cleanup: Deleted test users")
+
+    # finalizer to be run after all tests are done
+    request.addfinalizer(remove_test_users)
+
+def register(username, password, passwordConfirm=None, email=None, session=None, follow_redirects=True):
     """Helper function to register a user"""
+    if session is None:
+        # raise ValueError("Session object must be provided")
+        session = requests.Session()
     if passwordConfirm is None:
-        passwordConfirm = password
+        passwordConfirm = password  # Use the same password if passwordConfirm isn't provided
     if email is None:
-        email = username + '@example.com'
-    return requests.post(f'{BASE_URL}/register', data={
-        'username':     username,
-        'password':     password,
-        'passwordConfirm':    passwordConfirm,
-        'email':        email,
-    }, allow_redirects=True)
+        email = f'{username}@example.com'  # Construct a default email if one isn't provided
+    
+    response = session.post(f'{BASE_URL}/register', data={
+        'username': username,
+        'password': password,
+        'passwordConfirm': passwordConfirm,
+        'email': email,
+    }, allow_redirects=follow_redirects)
+    
+    # Check for HTTP errors (4xx, 5xx) after the request is made
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        # Optionally, log the error or handle it based on your test requirements
+        print(f"HTTP Error occurred: {e.response.status_code} - {e.response.reason}")
+    
+    return response
 
 def login(username, password):
     """Helper function to login"""
@@ -62,18 +109,20 @@ def add_message(http_session, text):
 
 def test_register():
     """Make sure registering works"""
-    r = register('user1', 'default')
-    assert 'You were successfully registered and can login now' in r.text
-    r = register('user1', 'default')
-    assert 'The username is already taken' in r.text
-    r = register('', 'default')
-    assert 'You have to enter a username' in r.text
-    r = register('meh', '')
-    assert 'You have to enter a password' in r.text
-    r = register('meh', 'x', 'y')
-    assert 'The two passwords do not match' in r.text
-    r = register('meh', 'foo', email='broken')
-    assert 'You have to enter a valid email address' in r.text
+    with requests.Session() as session:
+        # Assuming delete_user() correctly resets the state before this test
+        r = register('user1', 'default', session=session)
+        assert 'You were successfully registered and can login now' in r.text
+        r = register('user1', 'default')
+        assert 'The username is already taken' in r.text
+        r = register('', 'default')
+        assert 'You have to enter a username' in r.text
+        r = register('meh', '')
+        assert 'You have to enter a password' in r.text
+        r = register('meh', 'x', 'y')
+        assert 'The two passwords do not match' in r.text
+        r = register('meh', 'foo', email='broken')
+        assert 'You have to enter a valid email address' in r.text
 
 def test_login_logout():
     """Make sure logging in and logging out works"""
@@ -134,8 +183,3 @@ def test_timelines():
     r = http_session.get(f'{BASE_URL}/')
     assert 'the message by foo' not in r.text
     assert 'the message by bar' in r.text
-
-test_register()
-test_login_logout()
-test_message_recording()
-test_timelines()

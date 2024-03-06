@@ -169,7 +169,7 @@ func myTimelineHandler(c *gin.Context) {
 		"Followed":     false,
 		"ProfileUser":  userID,
 		"Flashes":      flashMessages,
-		"Error": 		errMsg,
+		"Error":        errMsg,
 	})
 }
 
@@ -275,6 +275,8 @@ func registerHandler(c *gin.Context) {
 			}
 			// Redirect to login page after successful registration
 			session.AddFlash("You were successfully registered and can login now")
+			// print session info
+			fmt.Println("session info:", session, "Logged in")
 			session.Save()
 			c.Redirect(http.StatusSeeOther, "/login")
 			return
