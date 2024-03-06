@@ -1,5 +1,9 @@
 name: minitwit CI
 
+env:
+  # Set EXECUTION_ENVIRONMENT to CI
+  EXECUTION_ENVIRONMENT: CI
+
 on:
   push:
     branches:
