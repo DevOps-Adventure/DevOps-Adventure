@@ -21,7 +21,7 @@ BASE_URL = "http://localhost:8081"
 if os.getenv('EXECUTION_ENVIRONMENT') == 'CI':
     DATABASE = "../tmp/minitwit_empty.db"
 else:
-    DATABASE = "./tmp/minitwit_empty.db"
+    DATABASE = "../tmp/minitwit_empty.db"
 
 print("Running tests...")
 
