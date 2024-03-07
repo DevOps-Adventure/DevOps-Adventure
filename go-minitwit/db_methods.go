@@ -104,7 +104,6 @@ func getPublicMessages(numMsgs int) ([]MessageUser, error) {
 func getUserMessages(pUserId int64, numMsgs int) ([]MessageUser, error) {
 
 	var messages []MessageUser
-	fmt.Println("userid:", pUserId)
 	dbNew.Table("message").
 		Select("message.*, user.*").
 		Joins("JOIN user ON user.user_id = message.author_id").
