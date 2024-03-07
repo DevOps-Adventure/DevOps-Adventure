@@ -267,7 +267,7 @@ func apiMsgsPerUserHandler(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
 		}
 
-		err = addMessage(text, strconv.Itoa(int(authorId)))
+		err = addMessage(text, strconv.FormatInt(authorId, 10))
 		if err != nil {
 			errorData.status = http.StatusInternalServerError
 			errorData.error_msg = "Failed to upload message"
@@ -332,7 +332,7 @@ func apiFllwsHandler(c *gin.Context) {
 
 		// Append the usernames to the followerNames slice
 		for _, follower := range followers {
-			followerNames = append(followerNames, follower["username"].(string))
+			followerNames = append(followerNames, follower.Username)
 		}
 
 		// Prepare response

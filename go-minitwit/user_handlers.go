@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"fmt"
+	"log"
 	"strconv"
 
 	"net/http"
@@ -33,17 +34,15 @@ func userFollowActionHandler(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/public")
 		return
 	}
-	profileUserID := fmt.Sprintf("%v", profileUser[0]["user_id"])
+	profileUserID := fmt.Sprintf("%v", profileUser.UserID)
 
 	action := c.Param("action")
 
 	if action == "/follow" {
-		fmt.Println("following process triggered")
 		followUser(userID, profileUserID)
 		session.AddFlash("You are now following " + profileUserName)
 	}
 	if action == "/unfollow" {
-		fmt.Println("Unfollowing process triggered")
 		unfollowUser(userID, profileUserID)
 		session.AddFlash("You are no longer following " + profileUserName)
 	}
@@ -54,7 +53,7 @@ func userFollowActionHandler(c *gin.Context) {
 func publicTimelineHandler(c *gin.Context) {
 
 	// need to pass a default value to getPublicMessages (GoLang doesn't support default values for arguments)
-	messages, err := getPublicMessages(0)
+	messages, err := getPublicMessages(PERPAGE)
 	if err != nil {
 		return
 	}
@@ -80,13 +79,14 @@ func publicTimelineHandler(c *gin.Context) {
 }
 
 func userTimelineHandler(c *gin.Context) {
+	fmt.Println("userTimelineHandler")
 	session := sessions.Default(c)
 	flashMessages := session.Flashes()
 	session.Save()
 	profileUserName := c.Param("username")
 	profileUser, err := getUserByUsername(profileUserName)
 
-	if profileUser == nil {
+	if profileUser.Username == "" {
 		c.AbortWithStatus(404)
 		return
 	}
@@ -97,18 +97,23 @@ func userTimelineHandler(c *gin.Context) {
 
 	// does the logged in user follow them
 	followed := false
-	pUserId := profileUser[0]["user_id"].(int64)
-	profileName := profileUser[0]["username"]
+	pUserId := int64(profileUser.UserID)
+	profileName := profileUser.Username
 	userID, errID := c.Cookie("UserID")
 	userIDInt64, err := strconv.ParseInt(userID, 10, 64)
 
 	userName, _ := getUserNameByUserID(userID)
 
 	if errID == nil {
-		followed = checkFollowStatus(userIDInt64, pUserId)
+		followed, err = checkFollowStatus(userIDInt64, pUserId)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
 	}
 
-	messages, err := getUserMessages(pUserId, 0)
+	messages, err := getUserMessages(pUserId, PERPAGE)
+	fmt.Println(messages)
 
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -223,7 +228,6 @@ func registerHandler(c *gin.Context) {
 	session := sessions.Default(c)
 
 	userID, exists := c.Get("UserID")
-	fmt.Println("userID:", userID)
 	if exists {
 		fmt.Println("userID:", userID)
 		return
@@ -248,7 +252,6 @@ func registerHandler(c *gin.Context) {
 		passwordConfirm := c.Request.FormValue("passwordConfirm")
 
 		userID, err := getUserIDByUsername(userName)
-		fmt.Println(userID)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
@@ -293,7 +296,6 @@ func loginHandler(c *gin.Context) {
 	flashMessages := session.Flashes()
 	session.Save()
 
-	fmt.Println("loginHandler")
 	userID, _ := c.Cookie("UserID")
 	if userID != "" {
 		session.AddFlash("You were logged in")
@@ -325,9 +327,9 @@ func loginHandler(c *gin.Context) {
 			return
 		}
 
-		if user == nil {
+		if user.Username == "" {
 			errorData = "Invalid username"
-		} else if !checkPasswordHash(password, user[0]["pw_hash"].(string)) {
+		} else if !checkPasswordHash(password, user.PwHash) {
 			errorData = "Invalid password"
 		} else {
 			userID, err := getUserIDByUsername(userName)

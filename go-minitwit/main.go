@@ -2,9 +2,10 @@ package main
 
 import (
 	"crypto/md5"
+	"encoding/hex"
 	"fmt"
+	"reflect"
 
-	"log"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
+	"gorm.io/gorm"
 )
 
 // todo: can we move these as well?
@@ -20,37 +22,22 @@ const (
 	PERPAGE  int    = 30
 )
 
-// todo: can we move these?
-type User struct {
-	UserID int
-}
-
-type Message struct {
-	MessageID    int
-	AuthorID     int
-	Text         string
-	PubDate      string
-	User         User
-	Email        string
-	Username     string
-	Profile_link string
-	Gravatar     string
-}
-
 type FilteredMsg struct {
 	Content string `json:"content"`
 	PubDate int64  `json:"pub_date"`
 	User    string `json:"user"`
 }
 
+var dbNew *gorm.DB
+
 func main() {
 
-	//using db connection (1)
-	db, err := connect_db(DATABASE)
+	// Using db connection (1)
+	var err error
+	dbNew, err = connect_DB(DATABASE)
 	if err != nil {
-		log.Fatal(err)
+		panic("failed to connect to database")
 	}
-	defer db.Close()
 
 	// Create a Gin router and set the parsed templates
 	router := gin.Default()
@@ -116,8 +103,8 @@ func bytesToString(bytes [16]byte) string {
 }
 
 func checkPasswordHash(userEnteredPwd string, dbpwd string) bool {
-	bytes := md5.Sum([]byte(userEnteredPwd))
-	str := bytesToString(bytes)
+	hash := md5.Sum([]byte(userEnteredPwd))
+	str := hex.EncodeToString(hash[:])
 	return str == dbpwd
 }
 
@@ -131,31 +118,38 @@ func gravatarURL(email string, size int) string {
 	return fmt.Sprintf("http://www.gravatar.com/avatar/%x?d=identicon&s=%d", hash, size)
 }
 
-func formatMessages(messages []map[string]interface{}) []Message {
-	var formattedMessages []Message
+func formatMessages(messages []MessageUser) []MessageUI {
+	var formattedMessages []MessageUI
+
+	/*
+		if reflect.TypeOf(m.Text).Kind() == reflect.String {
+			filteredMsg.Content = m.Text
+		}
+	*/
+
 	for _, m := range messages {
-		var msg Message
+		var msg MessageUI
 		// Use type assertion for int64, then convert to int
-		if id, ok := m["message_id"].(int64); ok {
-			msg.MessageID = int(id)
+		if reflect.TypeOf(m.MessageID).Kind() == reflect.Int {
+			msg.MessageID = int(m.MessageID)
 		}
-		if authorID, ok := m["author_id"].(int64); ok {
-			msg.AuthorID = int(authorID)
+		if reflect.TypeOf(m.AuthorID).Kind() == reflect.Int {
+			msg.AuthorID = int(m.AuthorID)
 		}
-		if userID, ok := m["user_id"].(int64); ok {
-			msg.User.UserID = int(userID)
+		if reflect.TypeOf(m.UserID).Kind() == reflect.Int {
+			msg.User.UserID = int(m.UserID)
 		}
-		if text, ok := m["text"].(string); ok {
-			msg.Text = text
+		if reflect.TypeOf(m.Text).Kind() == reflect.String {
+			msg.Text = m.Text
 		}
-		if userName, ok := m["username"].(string); ok {
-			msg.Username = userName
+		if reflect.TypeOf(m.Username).Kind() == reflect.String {
+			msg.Username = m.Username
 		}
-		if email, ok := m["email"].(string); ok {
-			msg.Email = email
+		if reflect.TypeOf(m.Email).Kind() == reflect.String {
+			msg.Email = m.Email
 		}
-		if pubDate, ok := m["pub_date"].(int64) ; ok {
-			pubDateTime := time.Unix(pubDate,0)
+		if reflect.TypeOf(m.PubDate).Kind() == reflect.Int {
+			pubDateTime := time.Unix(int64(m.PubDate), 0)
 			msg.PubDate = pubDateTime.Format("02/01/2006 15:04:05") // go time layout format is weird 1,2,3,4,5,6 ¬¬
 		}
 		link := "/" + msg.Username
@@ -170,23 +164,21 @@ func formatMessages(messages []map[string]interface{}) []Message {
 	return formattedMessages
 }
 
-func filterMessages(messages []map[string]interface{}) []FilteredMsg {
+func filterMessages(messages []MessageUser) []FilteredMsg {
 	var filteredMessages []FilteredMsg
 	for _, m := range messages {
 		var filteredMsg FilteredMsg
 		// content
-		if text, ok := m["text"].(string); ok {
-			filteredMsg.Content = text
+		if reflect.TypeOf(m.Text).Kind() == reflect.String {
+			filteredMsg.Content = m.Text
 		}
 
 		// publication date
-		if pubDate, ok := m["pub_date"].(int64); ok {
-			filteredMsg.PubDate = pubDate
-		}
+		filteredMsg.PubDate = int64(m.PubDate)
 
 		// user
-		if userName, ok := m["username"].(string); ok {
-			filteredMsg.User = userName
+		if reflect.TypeOf(m.Username).Kind() == reflect.String {
+			filteredMsg.User = m.Username
 		}
 
 		filteredMessages = append(filteredMessages, filteredMsg)
