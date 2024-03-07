@@ -25,20 +25,12 @@ jobs:
         with:
           go-version: "1.21"
 
-      - name: check ports before init
-        run: netstat -tuln
-
       - name: Install dependencies and start minitwit server
         run: |
           cd go-minitwit
           go mod tidy
           go run *.go &
           sleep 60
-
-      - name: check listening ports after init
-        run: |
-          netstat -tuln
-          curl http://localhost:8081
 
       - name: set python env
         uses: actions/setup-python@v2
