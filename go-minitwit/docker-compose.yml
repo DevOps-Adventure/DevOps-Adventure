@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   app:
@@ -11,3 +11,5 @@ services:
       - NAME=World
     volumes:
       - ./templates:/app/templates
+    mem_limit: "1g"
+    mem_reservation: "512m"

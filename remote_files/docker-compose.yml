@@ -1,10 +1,9 @@
-version: '3.3'
+version: "3.8"
 
 networks:
   main:
 
 services:
-
   minitwitimage:
     image: ${DOCKER_USERNAME}/minitwitimage
     container_name: minitwit
@@ -13,16 +12,9 @@ services:
     depends_on:
       - itusqlimage
     ports:
-        - '5000:5000'
-    node:
-      deploy:
-        resources:
-          limits:
-            cpus: '0.001'
-            memory: 2000M
-          reservations:
-            cpus: '0.0001'
-            memory: 20M
+      - "5000:5000"
+    mem_limit: "1g"
+    mem_reservation: "512m"
 
   itusqlimage:
     image: ${DOCKER_USERNAME}/mysqlimage
@@ -30,15 +22,8 @@ services:
     networks:
       - main
     ports:
-      - '3306:3306'
+      - "3306:3306"
     environment:
-        - MYSQL_ROOT_PASSWORD=root
-    node:
-      deploy:
-        resources:
-          limits:
-            cpus: '0.001'
-            memory: 500m
-          reservations:
-            cpus: '0.0001'
-            memory: 20M
+      - MYSQL_ROOT_PASSWORD=root
+    mem_limit: "1g"
+    mem_reservation: "512m"
