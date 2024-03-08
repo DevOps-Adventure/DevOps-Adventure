@@ -14,6 +14,15 @@ services:
       - itusqlimage
     ports:
         - '5000:5000'
+    node:
+      deploy:
+        resources:
+          limits:
+            cpus: '0.001'
+            memory: 2000M
+          reservations:
+            cpus: '0.0001'
+            memory: 20M
 
   itusqlimage:
     image: ${DOCKER_USERNAME}/mysqlimage
@@ -24,3 +33,12 @@ services:
       - '3306:3306'
     environment:
         - MYSQL_ROOT_PASSWORD=root
+    node:
+      deploy:
+        resources:
+          limits:
+            cpus: '0.001'
+            memory: 500m
+          reservations:
+            cpus: '0.0001'
+            memory: 20M
