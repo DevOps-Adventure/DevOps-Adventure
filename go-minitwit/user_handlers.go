@@ -137,6 +137,7 @@ func userTimelineHandler(c *gin.Context) {
 
 func myTimelineHandler(c *gin.Context) {
 	userID, err := c.Cookie("UserID")
+	errMsg := c.Query("error")
 
 	if err != nil {
 		c.Redirect(http.StatusFound, "/public")
@@ -173,6 +174,7 @@ func myTimelineHandler(c *gin.Context) {
 		"Followed":     false,
 		"ProfileUser":  userID,
 		"Flashes":      flashMessages,
+		"Error": 		errMsg,
 	})
 }
 
@@ -191,10 +193,7 @@ func addMessageHandler(c *gin.Context) {
 		err := c.Request.ParseForm()
 		if err != nil {
 			errorData = "Failed to parse form data"
-			c.HTML(http.StatusBadRequest, "timeline.html", gin.H{
-				"RegisterBody": true,
-				"Error":        errorData,
-			})
+			c.Redirect(http.StatusBadRequest, "/?error="+errorData)
 			return
 		}
 
@@ -203,14 +202,13 @@ func addMessageHandler(c *gin.Context) {
 
 		if text == "" {
 			errorData = "You have to enter a value"
+			c.Redirect(http.StatusBadRequest, "/?error="+errorData)
+			return
 		} else {
 			err := addMessage(text, userID)
 			if err != nil {
 				errorData = "Failed to register user"
-				c.HTML(http.StatusInternalServerError, "timeline.html", gin.H{
-					"RegisterBody": true,
-					"Error":        errorData,
-				})
+				c.Redirect(http.StatusInternalServerError, "/?error="+errorData)
 				return
 			}
 			// Redirect to login page after successful registration

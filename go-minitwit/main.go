@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"reflect"
-
+	"os"
 	"strings"
 	"time"
 
@@ -18,7 +18,7 @@ import (
 
 // todo: can we move these as well?
 const (
-	DATABASE string = "./tmp/minitwit.db"
+	DATABASE string = "./tmp/minitwit_empty.db"
 	PERPAGE  int    = 30
 )
 
@@ -184,4 +184,25 @@ func filterMessages(messages []MessageUser) []FilteredMsg {
 		filteredMessages = append(filteredMessages, filteredMsg)
 	}
 	return filteredMessages
+}
+
+func logMessage(message string) {
+	// Specify the file path
+	filePath := "./tmp/logging/logger.txt"
+
+	// Open or create the file for writing
+	file, err := os.Create(filePath)
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+
+	data := []byte(message)
+
+	err = os.WriteFile(filePath, data, 0644)
+	if err != nil {
+		fmt.Println("Error writing to file:", err)
+		return
+	}
 }
