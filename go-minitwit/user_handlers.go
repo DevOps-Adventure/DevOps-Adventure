@@ -79,7 +79,6 @@ func publicTimelineHandler(c *gin.Context) {
 }
 
 func userTimelineHandler(c *gin.Context) {
-	fmt.Println("userTimelineHandler")
 	session := sessions.Default(c)
 	flashMessages := session.Flashes()
 	session.Save()
@@ -97,15 +96,14 @@ func userTimelineHandler(c *gin.Context) {
 
 	// does the logged in user follow them
 	followed := false
-	pUserId := int64(profileUser.UserID)
+	pUserId := profileUser.UserID
 	profileName := profileUser.Username
 	userID, errID := c.Cookie("UserID")
-	userIDInt64, err := strconv.ParseInt(userID, 10, 64)
-
+	userIDInt, err := strconv.Atoi(userID)
 	userName, _ := getUserNameByUserID(userID)
 
 	if errID == nil {
-		followed, err = checkFollowStatus(userIDInt64, pUserId)
+		followed, err = checkFollowStatus(userIDInt, pUserId)
 		if err != nil {
 			log.Fatal(err)
 			return
@@ -125,7 +123,7 @@ func userTimelineHandler(c *gin.Context) {
 	c.HTML(http.StatusOK, "timeline.html", gin.H{
 		"TimelineBody":    true,
 		"Endpoint":        "user_timeline",
-		"UserID":          userIDInt64,
+		"UserID":          userIDInt,
 		"UserName":        userName,
 		"Messages":        formattedMessages,
 		"Followed":        followed,
@@ -174,7 +172,7 @@ func myTimelineHandler(c *gin.Context) {
 		"Followed":     false,
 		"ProfileUser":  userID,
 		"Flashes":      flashMessages,
-		"Error": 		errMsg,
+		"Error":        errMsg,
 	})
 }
 
@@ -183,7 +181,8 @@ func addMessageHandler(c *gin.Context) {
 	session := sessions.Default(c)
 
 	userID, err := c.Cookie("UserID")
-	if err != nil {
+	userIDString, errStr := strconv.Atoi(userID)
+	if err != nil || errStr != nil {
 		c.Redirect(http.StatusFound, "/public")
 		return
 	}
@@ -205,7 +204,7 @@ func addMessageHandler(c *gin.Context) {
 			c.Redirect(http.StatusBadRequest, "/?error="+errorData)
 			return
 		} else {
-			err := addMessage(text, userID)
+			err := addMessage(text, userIDString)
 			if err != nil {
 				errorData = "Failed to register user"
 				c.Redirect(http.StatusInternalServerError, "/?error="+errorData)

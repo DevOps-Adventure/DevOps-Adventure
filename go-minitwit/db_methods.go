@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/hex"
-	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -101,7 +100,7 @@ func getPublicMessages(numMsgs int) ([]MessageUser, error) {
 }
 
 // fetches all messages from picked user
-func getUserMessages(pUserId int64, numMsgs int) ([]MessageUser, error) {
+func getUserMessages(pUserId int, numMsgs int) ([]MessageUser, error) {
 
 	var messages []MessageUser
 	dbNew.Table("message").
@@ -121,7 +120,7 @@ func getUserMessages(pUserId int64, numMsgs int) ([]MessageUser, error) {
 }
 
 // check whether the given user is followed by logged in
-func checkFollowStatus(userID int64, pUserID int64) (bool, error) {
+func checkFollowStatus(userID int, pUserID int) (bool, error) {
 
 	if userID == pUserID {
 		return false, nil
@@ -175,14 +174,14 @@ func getMyMessages(userID string) ([]MessageUser, error) {
 }
 
 // fetches a user by their ID
-func getUserIDByUsername(userName string) (int64, error) {
+func getUserIDByUsername(userName string) (int, error) {
 	var user User
 	dbNew.Where("username = ?", userName).First(&user)
 
 	if user.UserID == 0 {
 		return -1, nil
 	} else {
-		return int64(user.UserID), nil
+		return user.UserID, nil
 	}
 }
 
@@ -239,19 +238,13 @@ func registerUser(userName string, email string, password [16]byte) error {
 }
 
 // adds a new message to the database
-func addMessage(text string, author_id string) error {
-
-	authorIDintValue, err := strconv.Atoi(author_id)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return nil
-	}
+func addMessage(text string, author_id int) error {
 
 	currentTime := time.Now().UTC()
 	unixTimestamp := currentTime.Unix()
 
 	newMessage := Message{
-		AuthorID: authorIDintValue,
+		AuthorID: author_id,
 		Text:     text,
 		PubDate:  int(unixTimestamp),
 		Flagged:  0, // Default to false for flagged

@@ -4,8 +4,8 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"reflect"
 	"os"
+	"reflect"
 	"strings"
 	"time"
 
@@ -131,13 +131,13 @@ func formatMessages(messages []MessageUser) []MessageUI {
 		var msg MessageUI
 		// Use type assertion for int64, then convert to int
 		if reflect.TypeOf(m.MessageID).Kind() == reflect.Int {
-			msg.MessageID = int(m.MessageID)
+			msg.MessageID = m.MessageID
 		}
 		if reflect.TypeOf(m.AuthorID).Kind() == reflect.Int {
-			msg.AuthorID = int(m.AuthorID)
+			msg.AuthorID = m.AuthorID
 		}
 		if reflect.TypeOf(m.UserID).Kind() == reflect.Int {
-			msg.User.UserID = int(m.UserID)
+			msg.User.UserID = m.UserID
 		}
 		if reflect.TypeOf(m.Text).Kind() == reflect.String {
 			msg.Text = m.Text
