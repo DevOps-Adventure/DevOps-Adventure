@@ -4,15 +4,12 @@ networks:
   itu-minitwit-network:
     external: false
     name: itu-minitwit-network
- # main:
-
 
 services:
   minitwitimage:
-    image: ${DOCKER_USERNAME}/minitwitimage #this is new image of my docker that I am useing for Prometeus and Grafana
+    image: ${DOCKER_USERNAME}/minitwitimage
     container_name: minitwit
     networks:
-      #- main
       - itu-minitwit-network
     depends_on:
       - itusqlimage
@@ -28,16 +25,14 @@ services:
     container_name: minitwit_mysql
     networks:
       - itu-minitwit-network
-     # - main
     depends_on:
-     # - minitwitserver
       - grafana
       - prometheus
     ports:
       - "3306:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=root
-    mem_limit: "1g"
+    mem_limit: "512m"
     mem_reservation: "512m"
 
   prometheus:
@@ -49,6 +44,8 @@ services:
       - "9090:9090"
     networks:
       - itu-minitwit-network
+    mem_limit: "1g"
+    mem_reservation: "512m"
 
   grafana:
     image: grafana/grafana:10.2.4
@@ -56,4 +53,5 @@ services:
       - "3000:3000"
     networks:
       - itu-minitwit-network
-
+    mem_limit: "1g"
+    mem_reservation: "512m"
