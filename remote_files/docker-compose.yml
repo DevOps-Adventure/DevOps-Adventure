@@ -9,7 +9,7 @@ networks:
 
 services:
   minitwitimage:
-    image: ${DOCKER_USERNAME}/minitwitimage #this is new local image of my docker that I am useing for Prometeus and Grafana
+    image: ${DOCKER_USERNAME}/minitwitimage #this is new image of my docker that I am useing for Prometeus and Grafana
     container_name: minitwit
     networks:
       #- main
