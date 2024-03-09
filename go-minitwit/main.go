@@ -231,8 +231,9 @@ func formatMessages(messages []MessageUser) []MessageUI {
 			msg.Email = m.Email
 		}
 		if reflect.TypeOf(m.PubDate).Kind() == reflect.Int {
-			pubDateTime := time.Unix(int64(m.PubDate), 0)
-			msg.PubDate = pubDateTime.Format("02/01/2006 15:04:05") // go time layout format is weird 1,2,3,4,5,6 ¬¬
+			// pubDateTime := time.Unix(int64(m.PubDate), 0)
+			// msg.PubDate = pubDateTime.Format("02/01/2006 15:04:05") // go time layout format is weird 1,2,3,4,5,6 ¬¬
+			msg.PubDate = m.PubDate
 		}
 		link := "/" + msg.Username
 		msg.Profile_link = strings.ReplaceAll(link, " ", "%20")
