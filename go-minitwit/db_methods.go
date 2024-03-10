@@ -274,6 +274,13 @@ func followUser(userID string, profileUserID string) error {
 		return errx
 	}
 
+	// following relationship already exists
+	var count int64
+	dbNew.Model(&Follower{}).Where("who_id = ? AND whom_id = ?", userIDInt, profileUserIDInt).Count(&count)
+	if count > 0 {
+		return nil
+	}
+
 	newFollower := Follower{
 		WhoID:  userIDInt,
 		WhomID: profileUserIDInt,
