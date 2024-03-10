@@ -3,7 +3,6 @@ import json
 import base64
 import sqlite3
 import requests
-import pytest
 from pathlib import Path
 from contextlib import closing
 
@@ -24,42 +23,15 @@ HEADERS = {'Connection': 'close',
            'Content-Type': 'application/json',
            f'Authorization': f'Basic {ENCODED_CREDENTIALS}'}
 
-
-
-def init_db():
-    """Creates the database tables."""
-    with closing(sqlite3.connect(DATABASE)) as db:
-        with open(PATH_SCHEMA) as fp:
-            db.cursor().executescript(fp.read())
-        db.commit()
-
-# Empty the database and initialize the schema again
-Path(DATABASE).unlink()
-init_db()
-
-def delete_user(username):
-    # Assuming DATABASE points to your test database
+def clean_database():
     conn = sqlite3.connect(DATABASE)
     cur = conn.cursor()
-    cur.execute("DELETE FROM user WHERE username = ?", (username,))
-    # print results
-    print(f"Deleted {cur.rowcount} user(s) with username {username}")
+    cur.execute("DELETE FROM user")
+    cur.execute("DELETE FROM message")
+    cur.execute("DELETE FROM follower")
     conn.commit()
     conn.close()
-
-
-@pytest.fixture(scope="session", autouse=True)
-def clean_up_user(request):
-    # Define cleanup function to run after all tests
-    def remove_test_users():
-        delete_user('a')
-        delete_user('b')
-        delete_user('c')
-        print("Cleanup: Deleted test users")
-
-    # finalizer to be run after all tests are done
-    request.addfinalizer(remove_test_users)
-
+    
 def create_new_session():
     session = requests.Session()
     session.headers.update({
@@ -69,6 +41,54 @@ def create_new_session():
     })
     return session
 
+def test_register():
+    #clean the DB in the first test case
+    clean_database()
+    session = create_new_session()
+    username = 'a'
+    email = 'a@a.a'
+    pwd = 'a'
+    data = {'username': username, 'email': email, 'pwd': pwd}
+    params = {'latest': 1}
+    response = session.post(f'{BASE_URL}/register',
+                             data=json.dumps(data), params=params)
+    assert response.ok
+    # TODO: add another assertion that it is really there
+
+    # verify that latest was updated
+    response = session.get(f'{BASE_URL}/latest')
+    assert response.json()['latest'] == 1
+    
+def test_register_b():
+    session =  create_new_session()
+    username = 'b'
+    email = 'b@b.b'
+    pwd = 'b'
+    data = {'username': username, 'email': email, 'pwd': pwd}
+    params = {'latest': 5}
+    response = session.post(f'{BASE_URL}/register', data=json.dumps(data),
+                            params=params)
+    assert response.ok
+    # TODO: add another assertion that it is really there
+
+    # verify that latest was updated
+    response = session.get(f'{BASE_URL}/latest')
+    assert response.json()['latest'] == 5
+
+def test_register_c():
+    session = create_new_session()
+    username = 'c'
+    email = 'c@c.c'
+    pwd = 'c'
+    data = {'username': username, 'email': email, 'pwd': pwd}
+    params = {'latest': 6}
+    response = session.post(f'{BASE_URL}/register', data=json.dumps(data),
+                             params=params)
+    assert response.ok
+
+    # verify that latest was updated
+    response = session.get(f'{BASE_URL}/latest')
+    assert response.json()['latest'] == 6
 
 def test_latest():
     session = create_new_session()
@@ -85,24 +105,6 @@ def test_latest():
     response = session.get(url)
     assert response.ok
     assert response.json()['latest'] == 1337
-
-
-def test_register():
-    session = create_new_session()
-    username = 'a'
-    email = 'a@a.a'
-    pwd = 'a'
-    data = {'username': username, 'email': email, 'pwd': pwd}
-    params = {'latest': 1}
-    response = session.post(f'{BASE_URL}/register',
-                             data=json.dumps(data), params=params)
-    assert response.ok
-    # TODO: add another assertion that it is really there
-
-    # verify that latest was updated
-    response = session.get(f'{BASE_URL}/latest')
-    assert response.json()['latest'] == 1
-
 
 def test_create_msg():
     session = create_new_session()
@@ -158,40 +160,6 @@ def test_get_latest_msgs():
     response = session.get(f'{BASE_URL}/latest')
     assert response.json()['latest'] == 4
 
-
-def test_register_b():
-    session =  create_new_session()
-    username = 'b'
-    email = 'b@b.b'
-    pwd = 'b'
-    data = {'username': username, 'email': email, 'pwd': pwd}
-    params = {'latest': 5}
-    response = session.post(f'{BASE_URL}/register', data=json.dumps(data),
-                            params=params)
-    assert response.ok
-    # TODO: add another assertion that it is really there
-
-    # verify that latest was updated
-    response = session.get(f'{BASE_URL}/latest')
-    assert response.json()['latest'] == 5
-
-
-def test_register_c():
-    session = create_new_session()
-    username = 'c'
-    email = 'c@c.c'
-    pwd = 'c'
-    data = {'username': username, 'email': email, 'pwd': pwd}
-    params = {'latest': 6}
-    response = session.post(f'{BASE_URL}/register', data=json.dumps(data),
-                             params=params)
-    assert response.ok
-
-    # verify that latest was updated
-    response = session.get(f'{BASE_URL}/latest')
-    assert response.json()['latest'] == 6
-
-
 def test_follow_user():
     session = create_new_session()
     username = 'a'
@@ -242,3 +210,16 @@ def test_a_unfollows_b():
     # verify that latest was updated
     response = session.get(f'{BASE_URL}/latest')
     assert response.json()['latest'] == 11
+    
+def test_cleaning_the_db():
+    session = create_new_session()
+    username = 'a'
+    query = {'no': 20, 'latest': 3}
+    url = f'{BASE_URL}/msgs/{username}'
+    response = session.get(url, params=query)
+    assert response.status_code == 200
+    
+    clean_database()
+    
+    response = session.get(url, params=query)
+    assert response.status_code == 400
