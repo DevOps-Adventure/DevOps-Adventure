@@ -15,6 +15,7 @@ if os.getenv('EXECUTION_ENVIRONMENT') == 'CI':
 else:
     PATH_SCHEMA = "./schema.sql"
     DATABASE = "./tmp/minitwit_empty.db"
+
 USERNAME = 'simulator'
 PWD = 'super_safe!'
 CREDENTIALS = ':'.join([USERNAME, PWD]).encode('ascii')

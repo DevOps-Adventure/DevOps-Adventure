@@ -14,10 +14,12 @@ import pytest
 import sqlite3
 import os
 
+
 # import schema
 # import data
 # otherwise use the database that you got previously
 BASE_URL = "http://localhost:8081"
+
 if os.getenv('EXECUTION_ENVIRONMENT') == 'CI':
     DATABASE = "../tmp/minitwit_empty.db"
 else:
@@ -187,3 +189,8 @@ def test_timelines():
     r = http_session.get(f'{BASE_URL}/')
     assert 'the message by foo' not in r.text
     assert 'the message by bar' in r.text
+
+# test_register()
+# test_login_logout()
+# test_message_recording()
+# test_timelines()

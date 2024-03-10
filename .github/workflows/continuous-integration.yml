@@ -47,7 +47,11 @@ jobs:
           netstat -tuln
           curl http://localhost:8081
 
-      - name: run pytest
+      - name: run refactored tests
         run: |
           cd go-minitwit/tests/
-          pytest ./
+          pytest ./test_refactored_minitwit.py
+      - name: run api tests
+        run: |
+          cd go-minitwit/tests/
+          pytest ./test_minitwit_sim_api.py

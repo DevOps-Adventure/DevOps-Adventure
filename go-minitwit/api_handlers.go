@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -38,28 +39,51 @@ type MessageData struct {
 	Content string `json:"content"`
 }
 
+const filePath = "./latest_processed_sim_action_id.txt"
+
 func updateLatest(c *gin.Context) {
 	parsedCommandID := c.Query("latest")
-	if parsedCommandID != "-1" {
-		c.SetCookie("latestProcessedCommandId", parsedCommandID, 3600, "/", "", false, true)
+	commandID, err := strconv.Atoi(parsedCommandID)
+
+	if err != nil || parsedCommandID == "" {
+		// Handle the case where the parameter is not present or cannot be converted to an integer
+		commandID = -1
+	}
+	if commandID != -1 {
+		err := os.WriteFile(filePath, []byte(strconv.Itoa(commandID)), 0644)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update latest value"})
+			return
+		}
 	}
 }
 
-func getLatestHelper(c *gin.Context) int {
-	latestProcessedCommandID, err := c.Cookie("latestProcessedCommandId")
-	if err != nil || latestProcessedCommandID == "" {
-		latestProcessedCommandID = "-1"
-	}
-	latestProcessedCommandIDInt, err := strconv.Atoi(latestProcessedCommandID)
-	if err != nil || latestProcessedCommandID == "" {
-		latestProcessedCommandIDInt = -1
-	}
-	return latestProcessedCommandIDInt
-}
-
-// api/latest
 func getLatest(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"latest": getLatestHelper(c)})
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read latest value"})
+		return
+	}
+
+	latestProcessedCommandID, err := strconv.Atoi(string(content))
+	if err != nil {
+		latestProcessedCommandID = -1
+	}
+
+	c.JSON(http.StatusOK, gin.H{"latest": latestProcessedCommandID})
+}
+
+func getLatestHelper() int {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return -2
+	}
+
+	latestProcessedCommandID, err := strconv.Atoi(string(content))
+	if err != nil {
+		latestProcessedCommandID = -1
+	}
+	return latestProcessedCommandID
 }
 
 /*
@@ -71,7 +95,7 @@ returns: ("", 204) or ({"status": 400, "error_msg": error}, 400)
 func apiRegisterHandler(c *gin.Context) {
 
 	updateLatest(c)
-	latest := getLatestHelper(c)
+	latest := getLatestHelper()
 	logMessage(fmt.Sprint(latest) + " apiRegisterHandler: registering user.")
 
 	errorData := ErrorData{
@@ -174,7 +198,7 @@ func apiRegisterHandler(c *gin.Context) {
 func apiMsgsHandler(c *gin.Context) {
 
 	updateLatest(c)
-	latest := getLatestHelper(c)
+	latest := getLatestHelper()
 	logMessage(fmt.Sprint(latest) + " apiMsgsHandler: getting all messages.")
 
 	errorData := ErrorData{
@@ -208,7 +232,7 @@ func apiMsgsHandler(c *gin.Context) {
 func apiMsgsPerUserHandler(c *gin.Context) {
 
 	updateLatest(c)
-	latest := getLatestHelper(c)
+	latest := getLatestHelper()
 	logMessage(fmt.Sprint(latest) + " apiMsgsPerUserHandler: getting all messages by user " + c.Param("username") + ".")
 
 	errorData := ErrorData{
@@ -272,7 +296,7 @@ func apiMsgsPerUserHandler(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
 		}
 
-		err = addMessage(text, strconv.Itoa(int(authorId)))
+		err = addMessage(text, authorId)
 		if err != nil {
 			errorData.status = http.StatusInternalServerError
 			errorData.error_msg = "Failed to upload message"
@@ -303,7 +327,7 @@ else if POST:
 func apiFllwsHandler(c *gin.Context) {
 
 	updateLatest(c)
-	latest := getLatestHelper(c)
+	latest := getLatestHelper()
 	logMessage(fmt.Sprint(latest) + " apiFllwsHandler: checking follow")
 
 	errorData := ErrorData{
@@ -327,8 +351,8 @@ func apiFllwsHandler(c *gin.Context) {
 		}
 
 		// Fetch all followers for the user
-		userIdStr := strconv.FormatInt(userId, 10)
-		followers, err := getFollowing(userIdStr, numFollrInt)
+		userIdStr := strconv.Itoa(userId)
+		followers, err := getFollowers(userIdStr, numFollrInt)
 		if err != nil {
 			errorData.status = http.StatusInternalServerError
 			errorData.error_msg = "Failed to fetch followers from DB"
@@ -339,7 +363,7 @@ func apiFllwsHandler(c *gin.Context) {
 
 		// Append the usernames to the followerNames slice
 		for _, follower := range followers {
-			followerNames = append(followerNames, follower["username"].(string))
+			followerNames = append(followerNames, follower.Username)
 		}
 
 		// Prepare response
@@ -375,7 +399,7 @@ func apiFllwsHandler(c *gin.Context) {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
-		userIdStr := strconv.FormatInt(userId, 10)
+		userIdStr := strconv.Itoa(userId)
 
 		if requestBody.Follow != "" {
 			// Follow logic
@@ -385,7 +409,7 @@ func apiFllwsHandler(c *gin.Context) {
 				c.AbortWithStatus(http.StatusNotFound)
 				return
 			}
-			profileUserIDStr := strconv.FormatInt(profileUserID, 10)
+			profileUserIDStr := strconv.Itoa(profileUserID)
 
 			// Follow the user
 			if err := followUser(userIdStr, profileUserIDStr); err != nil {
@@ -405,7 +429,7 @@ func apiFllwsHandler(c *gin.Context) {
 				c.AbortWithStatus(http.StatusNotFound)
 				return
 			}
-			profileUserIDStr := strconv.FormatInt(profileUserID, 10)
+			profileUserIDStr := strconv.Itoa(profileUserID)
 
 			// Unfollow the user
 			if err := unfollowUser(userIdStr, profileUserIDStr); err != nil {
