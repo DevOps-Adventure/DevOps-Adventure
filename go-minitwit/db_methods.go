@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3" // Import the SQLite3 driver
 )
@@ -16,10 +17,56 @@ import (
 
 // connect_db creates and returns a new database connection
 func connect_db(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", dsn)
+	// db, err := sql.Open("sqlite3", dsn)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// return db, nil
+
+	cfg := mysql.Config{
+		User:   os.Getenv("DBUSER"),
+		Passwd: os.Getenv("DBPASS"),
+		Net:    "tcp",
+		Addr:   "db-mysql-fra1-34588-do-user-15917069-0.c.db.ondigitalocean.com:25060",
+		DBName: "devopsadventure",
+	}
+
+	// Get a database handle.
+	db, err := sql.Open("mysql", cfg.FormatDSN())
 	if err != nil {
 		return nil, err
 	}
+
+	pingErr := db.Ping()
+	if pingErr != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+// connects to digital ocean db and returns a new database connection
+// Capture connection properties.
+func connect_do_db() (*sql.DB, error) {
+	cfg := mysql.Config{
+		User:   os.Getenv("DBUSER"),
+		Passwd: os.Getenv("DBPASS"),
+		Net:    "tcp",
+		Addr:   "db-mysql-fra1-34588-do-user-15917069-0.c.db.ondigitalocean.com:25060",
+		DBName: "defaultdb",
+	}
+
+	// Get a database handle.
+	db, err := sql.Open("mysql", cfg.FormatDSN())
+	if err != nil {
+		return nil, err
+	}
+
+	pingErr := db.Ping()
+	if pingErr != nil {
+		return nil, err
+	}
+
 	return db, nil
 }
 
@@ -204,7 +251,7 @@ func getUserNameByUserID(userID string) (string, error) {
 	if profile_user == nil {
 		return "", err
 	}
-	return profile_user[0]["username"].(string), err
+	return string(profile_user[0]["username"].([]uint8)), err
 }
 
 func getUserByUsername(userName string) ([]map[string]interface{}, error) {
@@ -236,14 +283,16 @@ func registerUser(userName string, email string, password [16]byte) error {
 		return err
 	}
 	args := []interface{}{userName, email, pq.Array(password)}
-	messages, err := query_db(db, query, args, false)
-	fmt.Println("this is the messages", messages)
+	_, err = query_db(db, query, args, false)
+	if err != nil {
+		fmt.Println(err)
+	}
 	return err
 }
 
 // adds a new message to the database
 func addMessage(text string, author_id string) error {
-	query := `insert into message (author_id, text, pub_date, flagged) values (?, ?, ?, 0)`
+	query := `insert into message (author_id, text, pub_date, flagged) values (?, ?, ?, ?)`
 	var db, err = connect_db(DATABASE)
 	if err != nil {
 		fmt.Println("error in addMessage query")
@@ -253,7 +302,10 @@ func addMessage(text string, author_id string) error {
 	unixTimestamp := currentTime.Unix()
 
 	args := []interface{}{author_id, text, unixTimestamp, 0}
-	query_db(db, query, args, false)
+	_, err = query_db(db, query, args, false)
+	if err != nil {
+		fmt.Println(err)
+	}
 	return err
 }
 
@@ -265,8 +317,10 @@ func followUser(userID string, profileUserID string) error {
 		return err
 	}
 	args := []interface{}{userID, profileUserID}
-	messages, err := query_db(db, query, args, false)
-	fmt.Println(messages)
+	_, err = query_db(db, query, args, false)
+	if err != nil {
+		fmt.Println(err)
+	}
 	return err
 }
 
@@ -279,8 +333,10 @@ func unfollowUser(userID string, profileUserID string) error {
 		return err
 	}
 	args := []interface{}{userID, profileUserID}
-	messages, err := query_db(db, query, args, false)
-	fmt.Println(messages)
+	_, err = query_db(db, query, args, false)
+	if err != nil {
+		fmt.Println(err)
+	}
 	return err
 }
 
@@ -297,6 +353,9 @@ func getFollowers(userID string, limit int) ([]map[string]interface{}, error) {
 	}
 	args := []interface{}{userID, limit}
 	followers, err := query_db(db, query, args, false)
+	if err != nil {
+		fmt.Println(err)
+	}
 	return followers, err
 }
 

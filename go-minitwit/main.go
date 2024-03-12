@@ -137,28 +137,18 @@ func formatMessages(messages []map[string]interface{}) []Message {
 	for _, m := range messages {
 		var msg Message
 		// Use type assertion for int64, then convert to int
-		if id, ok := m["message_id"].(int64); ok {
-			msg.MessageID = int(id)
-		}
-		if authorID, ok := m["author_id"].(int64); ok {
-			msg.AuthorID = int(authorID)
-		}
-		if userID, ok := m["user_id"].(int64); ok {
-			msg.User.UserID = int(userID)
-		}
-		if text, ok := m["text"].(string); ok {
-			msg.Text = text
-		}
-		if userName, ok := m["username"].(string); ok {
-			msg.Username = userName
-		}
-		if email, ok := m["email"].(string); ok {
-			msg.Email = email
-		}
+		msg.MessageID = int(m["message_id"].(int64))
+		msg.AuthorID = int(m["author_id"].(int64))
+		msg.User.UserID = int(m["user_id"].(int64))
+		msg.Text = string(m["text"].([]uint8))
+		msg.Username = string(m["username"].([]uint8))
+		msg.Email = string(m["email"].([]uint8))
+
 		if pubDate, ok := m["pub_date"].(int64); ok {
 			pubDateTime := time.Unix(pubDate, 0)
 			msg.PubDate = pubDateTime.Format("02/01/2006 15:04:05") // go time layout format is weird 1,2,3,4,5,6 ¬¬
 		}
+
 		link := "/" + msg.Username
 		msg.Profile_link = strings.ReplaceAll(link, " ", "%20")
 
@@ -174,23 +164,19 @@ func formatMessages(messages []map[string]interface{}) []Message {
 func filterMessages(messages []map[string]interface{}) []FilteredMsg {
 	var filteredMessages []FilteredMsg
 	for _, m := range messages {
-		var filteredMsg FilteredMsg
+		var msg FilteredMsg
 		// content
-		if text, ok := m["text"].(string); ok {
-			filteredMsg.Content = text
-		}
+		msg.Content = string(m["text"].([]uint8))
 
 		// publication date
 		if pubDate, ok := m["pub_date"].(int64); ok {
-			filteredMsg.PubDate = pubDate
+			msg.PubDate = pubDate
 		}
 
 		// user
-		if userName, ok := m["username"].(string); ok {
-			filteredMsg.User = userName
-		}
+		msg.User = string(m["username"].([]uint8))
 
-		filteredMessages = append(filteredMessages, filteredMsg)
+		filteredMessages = append(filteredMessages, msg)
 	}
 	return filteredMessages
 }

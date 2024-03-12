@@ -98,7 +98,7 @@ func userTimelineHandler(c *gin.Context) {
 	// does the logged in user follow them
 	followed := false
 	pUserId := profileUser[0]["user_id"].(int64)
-	profileName := profileUser[0]["username"]
+	profileName := string(profileUser[0]["username"].([]uint8))
 	userID, errID := c.Cookie("UserID")
 	userIDInt64, err := strconv.ParseInt(userID, 10, 64)
 
@@ -158,6 +158,7 @@ func myTimelineHandler(c *gin.Context) {
 	}
 
 	formattedMessages := formatMessages(messages)
+	fmt.Println(formattedMessages)
 
 	// For template rendering with Gin
 	c.HTML(http.StatusOK, "timeline.html", gin.H{
@@ -169,7 +170,7 @@ func myTimelineHandler(c *gin.Context) {
 		"Followed":     false,
 		"ProfileUser":  userID,
 		"Flashes":      flashMessages,
-		"Error": 		errMsg,
+		"Error":        errMsg,
 	})
 }
 
@@ -202,11 +203,11 @@ func addMessageHandler(c *gin.Context) {
 		} else {
 			err := addMessage(text, userID)
 			if err != nil {
-				errorData = "Failed to register user"
+				errorData = "Failed to add message"
 				c.Redirect(http.StatusInternalServerError, "/?error="+errorData)
 				return
 			}
-			// Redirect to login page after successful registration
+
 			c.Redirect(http.StatusSeeOther, "/")
 			session.AddFlash("Your message was recorded")
 			session.Save()
@@ -325,7 +326,7 @@ func loginHandler(c *gin.Context) {
 
 		if user == nil {
 			errorData = "Invalid username"
-		} else if !checkPasswordHash(password, user[0]["pw_hash"].(string)) {
+		} else if !checkPasswordHash(password, string(user[0]["pw_hash"].([]uint8))) {
 			errorData = "Invalid password"
 		} else {
 			userID, err := getUserIDByUsername(userName)

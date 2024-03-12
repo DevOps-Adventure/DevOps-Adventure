@@ -363,15 +363,13 @@ func apiFllwsHandler(c *gin.Context) {
 
 		// Append the usernames to the followerNames slice
 		for _, follower := range followers {
-			followerNames = append(followerNames, follower["username"].(string))
+			followerNames = append(followerNames, string(follower["username"].([]uint8)))
 		}
 
 		// Prepare response
 		followersResponse := gin.H{
 			"followers": followerNames,
 		}
-
-		fmt.Println(followersResponse)
 
 		// Send JSON response of all followers
 		c.JSON(200, followersResponse)
