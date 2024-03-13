@@ -1,4 +1,4 @@
-name: minitwit CI
+name: Continuous Integration Pipeline
 
 env:
   # Set EXECUTION_ENVIRONMENT to CI
@@ -11,6 +11,31 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: "Log level"
+        required: true
+        default: "warning"
+        type: choice
+        options:
+          - info
+          - warning
+          - debug
+      verbosity:
+        description: "Verbosity level"
+        required: true
+        default: "normal"
+        type: choice
+        options:
+          - normal
+          - high
+          - extreme
+          - nuts
+      environment:
+        description: "Environment to run tests against"
+        type: environment
+        required: true
 
 jobs:
   minitwit_server_test:
@@ -47,11 +72,27 @@ jobs:
           netstat -tuln
           curl http://localhost:8081
 
-      - name: run refactored tests
+      - name: run pipeline manual tests
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          cd go-minitwit/tests/
+          pytest_cmd="pytest "
+          if [ "${{ github.event.inputs.logLevel }}" != "warning" ]; then
+            pytest_cmd+="--log-cli-level=${{ github.event.inputs.logLevel }} "
+          fi
+          if [ "${{ github.event.inputs.verbosity }}" == "high" ]; then
+            pytest_cmd+="-v"
+          elif [ "${{ github.event.inputs.verbosity }}" == "extreme" ]; then
+            pytest_cmd+="-vv"
+          elif [ "${{ github.event.inputs.verbosity }}" == "nuts" ]; then
+            pytest_cmd+="-vvv"
+          fi
+          $pytest_cmd ./test_refactored_minitwit.py
+          $pytest_cmd ./test_minitwit_sim_api.py
+
+      - name: run pipeline standard tests
+        if: github.event_name != 'workflow_dispatch'
         run: |
           cd go-minitwit/tests/
           pytest ./test_refactored_minitwit.py
-      - name: run api tests
-        run: |
-          cd go-minitwit/tests/
           pytest ./test_minitwit_sim_api.py
