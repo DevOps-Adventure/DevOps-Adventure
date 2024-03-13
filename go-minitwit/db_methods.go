@@ -274,6 +274,13 @@ func followUser(userID string, profileUserID string) error {
 		return errx
 	}
 
+	// following relationship already exists
+	var count int64
+	dbNew.Model(&Follower{}).Where("who_id = ? AND whom_id = ?", userIDInt, profileUserIDInt).Count(&count)
+	if count > 0 {
+		return nil
+	}
+
 	newFollower := Follower{
 		WhoID:  userIDInt,
 		WhomID: profileUserIDInt,
@@ -328,30 +335,24 @@ func getFollowers(userID string, limit int) ([]User, error) {
 		log.Fatal(dbNew.Error)
 		return users, dbNew.Error
 	}
+	return users, nil
+}
+
+// getFollowing fetches up to `limit` users that the user identified by userID is following
+func getFollowing(userID string, limit int) ([]User, error) {
+	var users []User
+
+	dbNew.
+		Select("user.*").
+		Joins("INNER JOIN follower ON user.user_id = follower.whom_id").
+		Where("follower.who_id = ?", userID).
+		Limit(limit).
+		Find(&users)
+
+	if dbNew.Error != nil {
+		log.Fatal(dbNew.Error)
+		return users, dbNew.Error
+	}
 
 	return users, nil
-
 }
-
-/*
-// userExists checks if a user with the given username already exists in the database.
-func userExists(username string) (bool, error) {
-	query := "SELECT COUNT(*) FROM user WHERE username = ?"
-	db, err := connect_db(DATABASE)
-	if err != nil {
-		return false, err
-	}
-	defer db.Close()
-
-	var count int
-	err = db.QueryRow(query, username).Scan(&count)
-	if err != nil {
-		return false, err
-	}
-
-	// 	// If count is greater than 0, the user exists
-	// 	return count > 0, nil
-	// }
-	return true, nil
-}
-*/

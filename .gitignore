@@ -1,7 +1,10 @@
 itu-minitwit/venv/
+go-minitwit/venv/
 itu-minitwit/__pycache__/
 .DS_STORE
 .vscode
 go-minitwit/tmp/
 go-minitwit/tmp/minitwit.db
+go-minitwit/tests/__pycache__/
 .vagrant
+

@@ -277,6 +277,8 @@ func registerHandler(c *gin.Context) {
 			}
 			// Redirect to login page after successful registration
 			session.AddFlash("You were successfully registered and can login now")
+			// print session info
+			fmt.Println("session info:", session, "Logged in")
 			session.Save()
 			c.Redirect(http.StatusSeeOther, "/login")
 			return

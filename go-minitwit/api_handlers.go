@@ -352,7 +352,7 @@ func apiFllwsHandler(c *gin.Context) {
 
 		// Fetch all followers for the user
 		userIdStr := strconv.Itoa(userId)
-		followers, err := getFollowers(userIdStr, numFollrInt)
+		followers, err := getFollowing(userIdStr, numFollrInt)
 		if err != nil {
 			errorData.status = http.StatusInternalServerError
 			errorData.error_msg = "Failed to fetch followers from DB"
@@ -368,7 +368,7 @@ func apiFllwsHandler(c *gin.Context) {
 
 		// Prepare response
 		followersResponse := gin.H{
-			"followers": followerNames,
+			"follows": followerNames,
 		}
 
 		fmt.Println(followersResponse)

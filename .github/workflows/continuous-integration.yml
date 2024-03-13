@@ -1,0 +1,57 @@
+name: minitwit CI
+
+env:
+  # Set EXECUTION_ENVIRONMENT to CI
+  EXECUTION_ENVIRONMENT: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  minitwit_server_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout action
+        uses: actions/checkout@v2
+
+      - name: set go env
+        uses: actions/setup-go@v2
+        with:
+          go-version: "1.21"
+
+      - name: Install dependencies and start minitwit server
+        run: |
+          cd go-minitwit
+          go mod tidy
+          go run *.go &
+          sleep 60
+
+      - name: set python env
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.12"
+
+      - name: install python dependencies
+        run: |
+          cd go-minitwit/tests/
+          pip install -r requirements_tests.txt
+
+      - name: check listening ports
+        run: |
+          netstat -tuln
+          curl http://localhost:8081
+
+      - name: run refactored tests
+        run: |
+          cd go-minitwit/tests/
+          pytest ./test_refactored_minitwit.py
+      - name: run api tests
+        run: |
+          cd go-minitwit/tests/
+          pytest ./test_minitwit_sim_api.py
