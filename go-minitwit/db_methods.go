@@ -47,7 +47,7 @@ type MessageUI struct {
 	MessageID    int
 	AuthorID     int
 	Text         string
-	PubDate      string
+	PubDate      int
 	Flagged      bool
 	User         User
 	Email        string

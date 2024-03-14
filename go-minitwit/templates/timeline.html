@@ -37,7 +37,9 @@ content will be inserted */}} {{template "layout.html" .}} {{define "Title"}}
 		<p>
 			<strong><a href="{{.Profile_link}}">{{.Username}}</a></strong>
 			{{.Text}}
-			<small>&mdash; {{ .PubDate }}</small>
+			<small
+				>&mdash; <span class="pub-date" data-pub-date="{{.PubDate}}"></span
+			></small>
 		</p>
 	</li>
 	{{else}}
@@ -45,3 +47,16 @@ content will be inserted */}} {{template "layout.html" .}} {{define "Title"}}
 	{{end}}
 </ul>
 {{end}}
+<script>
+	// WARNING: do not use drugs (javascript) only when it is needed
+	// script to display the message date based on the browser timezone
+	function convertUTCtoLocal(utcTimestamp) {
+		var date = new Date(utcTimestamp * 1000);
+		return date.toLocaleString("en-GB");
+	}
+
+	document.querySelectorAll(".pub-date").forEach(function (element) {
+		var utcTimestamp = parseInt(element.getAttribute("data-pub-date"));
+		element.textContent = convertUTCtoLocal(utcTimestamp);
+	});
+</script>
