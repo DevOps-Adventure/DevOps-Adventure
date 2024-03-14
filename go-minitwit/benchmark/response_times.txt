@@ -1,0 +1,7 @@
+Average response time for /api/register: 18.664011ms
+Average response time for /api/msgs/testTime: 19.5063ms
+Average response time for /api/fllws/testTime: 16.334421ms
+Average response time for /api/fllws/testTime2: 2.183658ms
+Average response time for /api/msgs/testTime1: 2.892966ms
+Average response time for /api/msgs: 6.461803ms
+Average response time for /api/latest: 2.288305ms
