@@ -200,13 +200,14 @@ func addMessageHandler(c *gin.Context) {
 		text := c.Request.FormValue("text")
 
 		if text == "" {
-			errorData = "You have to enter a value"
-			c.Redirect(http.StatusBadRequest, "/?error="+errorData)
+			c.Redirect(http.StatusSeeOther, "/")
+			session.AddFlash("You have to enter a value")
+			session.Save()
 			return
 		} else {
 			err := addMessage(text, userIDString)
 			if err != nil {
-				errorData = "Failed to register user"
+				errorData = "Failed to add message"
 				c.Redirect(http.StatusInternalServerError, "/?error="+errorData)
 				return
 			}
