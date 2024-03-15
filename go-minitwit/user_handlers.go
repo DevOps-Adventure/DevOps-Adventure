@@ -99,11 +99,7 @@ func userTimelineHandler(c *gin.Context) {
 	pUserId := profileUser.UserID
 	profileName := profileUser.Username
 	userID, errID := c.Cookie("UserID")
-	userIDInt, err := strconv.Atoi(userID)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
+	userIDInt, _ := strconv.Atoi(userID)
 	userName, _ := getUserNameByUserID(userID)
 
 	if errID == nil {
