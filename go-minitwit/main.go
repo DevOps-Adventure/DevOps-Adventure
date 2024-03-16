@@ -10,7 +10,7 @@ import (
 
 // todo: can we move these as well?
 const (
-	DATABASE string = "./tmp/minitwit_empty.db"
+	DATABASE string = "doadmin:AVNS_foIDc4hiL7qHD1Rn4fs@tcp(db-mysql-fra1-34588-do-user-15917069-0.c.db.ondigitalocean.com:25060)/defaultdb"
 	PERPAGE  int    = 30
 )
 

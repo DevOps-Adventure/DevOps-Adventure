@@ -6,9 +6,11 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3" // Import the SQLite3 driver
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/mysql"
+
+	//"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
+	//"gorm.io/gorm/schema"
 )
 
 /*
@@ -65,7 +67,8 @@ type Follower struct {
 */
 
 func connect_DB(dsn string) (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}})
+	//db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}})
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect to database")
 	}
