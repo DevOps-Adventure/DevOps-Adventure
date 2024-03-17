@@ -296,7 +296,7 @@ func apiMsgsPerUserHandler(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
 		}
 
-		err = addMessage(text, strconv.Itoa(int(authorId)))
+		err = addMessage(text, authorId)
 		if err != nil {
 			errorData.status = http.StatusInternalServerError
 			errorData.error_msg = "Failed to upload message"
@@ -351,8 +351,8 @@ func apiFllwsHandler(c *gin.Context) {
 		}
 
 		// Fetch all followers for the user
-		userIdStr := strconv.FormatInt(userId, 10)
-		followers, err := getFollowers(userIdStr, numFollrInt)
+		userIdStr := strconv.Itoa(userId)
+		followers, err := getFollowing(userIdStr, numFollrInt)
 		if err != nil {
 			errorData.status = http.StatusInternalServerError
 			errorData.error_msg = "Failed to fetch followers from DB"
@@ -363,12 +363,12 @@ func apiFllwsHandler(c *gin.Context) {
 
 		// Append the usernames to the followerNames slice
 		for _, follower := range followers {
-			followerNames = append(followerNames, string(follower["username"].([]uint8)))
+			followerNames = append(followerNames, string(follower.Username))
 		}
 
 		// Prepare response
 		followersResponse := gin.H{
-			"followers": followerNames,
+			"follows": followerNames,
 		}
 
 		// Send JSON response of all followers
@@ -397,7 +397,7 @@ func apiFllwsHandler(c *gin.Context) {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
-		userIdStr := strconv.FormatInt(userId, 10)
+		userIdStr := strconv.Itoa(userId)
 
 		if requestBody.Follow != "" {
 			// Follow logic
@@ -407,7 +407,7 @@ func apiFllwsHandler(c *gin.Context) {
 				c.AbortWithStatus(http.StatusNotFound)
 				return
 			}
-			profileUserIDStr := strconv.FormatInt(profileUserID, 10)
+			profileUserIDStr := strconv.Itoa(profileUserID)
 
 			// Follow the user
 			if err := followUser(userIdStr, profileUserIDStr); err != nil {
@@ -427,7 +427,7 @@ func apiFllwsHandler(c *gin.Context) {
 				c.AbortWithStatus(http.StatusNotFound)
 				return
 			}
-			profileUserIDStr := strconv.FormatInt(profileUserID, 10)
+			profileUserIDStr := strconv.Itoa(profileUserID)
 
 			// Unfollow the user
 			if err := unfollowUser(userIdStr, profileUserIDStr); err != nil {
