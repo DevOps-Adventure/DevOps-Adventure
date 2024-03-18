@@ -29,7 +29,7 @@ func main() {
 
 	// Using db connection (1)
 	var err error
-	_, err = connect_prod_DB()
+	dbNew, err = connect_prod_DB()
 	if err != nil {
 		panic("failed to connect to database")
 	}
