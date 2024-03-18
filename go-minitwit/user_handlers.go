@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"fmt"
+	"log"
 	"strconv"
 
 	"net/http"
@@ -104,7 +105,7 @@ func userTimelineHandler(c *gin.Context) {
 	if errID == nil {
 		followed, err = checkFollowStatus(userIDInt, pUserId)
 		if err != nil {
-			logMessage(err.Error())
+			log.Fatal(err)
 			return
 		}
 	}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/hex"
+	"log"
 	"strconv"
 	"time"
 
@@ -94,7 +95,7 @@ func getPublicMessages(numMsgs int) ([]MessageUser, error) {
 		Find(&messages)
 
 	if dbNew.Error != nil {
-		logMessage(dbNew.Error.Error())
+		log.Fatal(dbNew.Error)
 		return nil, dbNew.Error
 	}
 
@@ -114,7 +115,7 @@ func getUserMessages(pUserId int, numMsgs int) ([]MessageUser, error) {
 		Find(&messages)
 
 	if dbNew.Error != nil {
-		logMessage(dbNew.Error.Error())
+		log.Fatal(dbNew.Error)
 		return nil, dbNew.Error
 	}
 
@@ -132,7 +133,7 @@ func checkFollowStatus(userID int, pUserID int) (bool, error) {
 	dbNew.Where("who_id = ? AND whom_id = ?", userID, pUserID).First(&follower)
 
 	if dbNew.Error != nil {
-		logMessage(dbNew.Error.Error())
+		log.Fatal(dbNew.Error)
 		return false, dbNew.Error
 	}
 
@@ -155,7 +156,7 @@ func getMyMessages(userID string) ([]MessageUser, error) {
 
 	// Find the IDs from the subquery
 	if err := subQuery.Find(&followerIDs).Error; err != nil {
-		logMessage(err.Error())
+		log.Fatal(err)
 		return nil, err
 	}
 
@@ -168,7 +169,7 @@ func getMyMessages(userID string) ([]MessageUser, error) {
 		Find(&messages)
 
 	if dbNew.Error != nil {
-		logMessage(dbNew.Error.Error())
+		log.Fatal(dbNew.Error)
 		return nil, dbNew.Error
 	}
 
@@ -193,7 +194,7 @@ func getUserNameByUserID(userID string) (string, error) {
 	dbNew.First(&user, userID)
 
 	if dbNew.Error != nil {
-		logMessage(dbNew.Error.Error())
+		log.Fatal(dbNew.Error)
 		return "", dbNew.Error
 	}
 
@@ -205,7 +206,7 @@ func getUserByUsername(userName string) (User, error) {
 	dbNew.Where("username = ?", userName).First(&user)
 
 	if dbNew.Error != nil {
-		logMessage(dbNew.Error.Error())
+		log.Fatal(dbNew.Error)
 		return user, dbNew.Error
 	}
 
@@ -231,7 +232,7 @@ func registerUser(userName string, email string, password [16]byte) error {
 	dbNew.Create(&newUser)
 
 	if dbNew.Error != nil {
-		logMessage(dbNew.Error.Error())
+		log.Fatal(dbNew.Error)
 		return dbNew.Error
 	}
 
@@ -255,7 +256,7 @@ func addMessage(text string, author_id int) error {
 	dbNew.Create(&newMessage)
 
 	if dbNew.Error != nil {
-		logMessage(dbNew.Error.Error())
+		log.Fatal(dbNew.Error)
 		return dbNew.Error
 	}
 
@@ -269,10 +270,10 @@ func followUser(userID string, profileUserID string) error {
 	profileUserIDInt, errx := strconv.Atoi(profileUserID)
 
 	if errz != nil {
-		logMessage(errz.Error())
+		log.Fatal(errz)
 		return errz
 	} else if errx != nil {
-		logMessage(errx.Error())
+		log.Fatal(errx)
 		return errx
 	}
 
@@ -291,7 +292,7 @@ func followUser(userID string, profileUserID string) error {
 	dbNew.Create(&newFollower)
 
 	if dbNew.Error != nil {
-		logMessage(dbNew.Error.Error())
+		log.Fatal(dbNew.Error)
 		return dbNew.Error
 	}
 
@@ -304,17 +305,17 @@ func unfollowUser(userID string, profileUserID string) error {
 	profileUserIDInt, errx := strconv.Atoi(profileUserID)
 
 	if errz != nil {
-		logMessage(errz.Error())
+		log.Fatal(errz)
 		return errz
 	} else if errx != nil {
-		logMessage(errx.Error())
+		log.Fatal(errx)
 		return errx
 	}
 
 	dbNew.Where("who_id = ? AND whom_id = ?", userIDInt, profileUserIDInt).Delete(&Follower{})
 
 	if dbNew.Error != nil {
-		logMessage(dbNew.Error.Error())
+		log.Fatal(dbNew.Error)
 		return dbNew.Error
 	}
 
@@ -323,6 +324,7 @@ func unfollowUser(userID string, profileUserID string) error {
 
 // getFollowers fetches up to `limit` followers for the user identified by userID
 func getFollowers(userID string, limit int) ([]User, error) {
+
 	var users []User
 
 	dbNew.
@@ -333,7 +335,7 @@ func getFollowers(userID string, limit int) ([]User, error) {
 		Find(&users)
 
 	if dbNew.Error != nil {
-		logMessage(dbNew.Error.Error())
+		log.Fatal(dbNew.Error)
 		return users, dbNew.Error
 	}
 	return users, nil
@@ -351,7 +353,7 @@ func getFollowing(userID string, limit int) ([]User, error) {
 		Find(&users)
 
 	if dbNew.Error != nil {
-		logMessage(dbNew.Error.Error())
+		log.Fatal(dbNew.Error)
 		return users, dbNew.Error
 	}
 
