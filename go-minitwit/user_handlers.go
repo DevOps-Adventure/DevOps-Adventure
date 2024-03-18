@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"fmt"
+	"log"
 	"strconv"
 
 	"net/http"
@@ -104,7 +105,7 @@ func userTimelineHandler(c *gin.Context) {
 	if errID == nil {
 		followed, err = checkFollowStatus(userIDInt, pUserId)
 		if err != nil {
-			logMessage(err.Error())
+			log.Fatal(err)
 			return
 		}
 	}
@@ -199,14 +200,13 @@ func addMessageHandler(c *gin.Context) {
 		text := c.Request.FormValue("text")
 
 		if text == "" {
-			c.Redirect(http.StatusSeeOther, "/")
-			session.AddFlash("You have to enter a value")
-			session.Save()
+			errorData = "You have to enter a value"
+			c.Redirect(http.StatusBadRequest, "/?error="+errorData)
 			return
 		} else {
 			err := addMessage(text, userIDString)
 			if err != nil {
-				errorData = "Failed to add message"
+				errorData = "Failed to register user"
 				c.Redirect(http.StatusInternalServerError, "/?error="+errorData)
 				return
 			}
