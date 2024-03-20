@@ -8,6 +8,8 @@ networks:
 services:
   minitwitimage:
     image: ${DOCKER_USERNAME}/minitwitimage
+    #image: local/minitwitimage
+
     container_name: minitwit
     networks:
       - itu-minitwit-network
@@ -22,6 +24,8 @@ services:
 
   itusqlimage:
     image: ${DOCKER_USERNAME}/mysqlimage
+    #image: local/mysqlimage
+
     container_name: minitwit_mysql
     networks:
       - itu-minitwit-network
@@ -48,10 +52,20 @@ services:
     mem_reservation: "512m"
 
   grafana:
-    image: grafana/grafana:10.2.4
-    ports:
+    image: grafana/grafana:10.2.4 
+    ports:                        
       - "3000:3000"
-    networks:
+    networks:                     
       - itu-minitwit-network
     mem_limit: "1g"
     mem_reservation: "512m"
+
+  node_exporter:
+    image: prom/node-exporter      
+    container_name: node_exporter
+    ports:
+      - "9100:9100"
+    networks:
+      - itu-minitwit-network
+
+
