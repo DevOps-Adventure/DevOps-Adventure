@@ -16,6 +16,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Set up Git identity
+        run: |
+          git config user.email "eduardostrindade@gmail.com"
+          git config user.name "dudustri"
+
       - name: Create and push new tag based on the last one
         id: tag_release
         run: |
