@@ -26,15 +26,18 @@ jobs:
         run: |
           tag_number=$(git describe --tags $(git rev-list --tags --max-count=1) | grep -o '[0-9]\+' | awk '{print $1+1}' | head -n1)
           tag_name="week${tag_number}"
+          echo "$tag_number"
+          echo "$tag_name"
           git tag -a $tag_name -m "DevOps - week ${tag_number} release"
-          git push origin $tag_n
+          git push origin $tag_name
 
       - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
         run: |
-          gh release create "$(git describe --tags $(git rev-list --tags --max-count=1))" \
-              --repo="$GITHUB_REPOSITORY" \
-              --title="v.$(git describe --tags $(git rev-list --tags --max-count=1) | grep -o '[0-9]\+' | awk '{print $1+1}').0 \
-              --generate-notes
+          week_number=$(git describe --tags $(git rev-list --tags --max-count=1) | grep -o '[0-9]\+' | awk '{print $1+1}' | head -n1)
+          current_tag=$(git describe --tags $(git rev-list --tags --max-count=1))
+          echo "$week_number"
+          echo "$current_tag"
+          gh release create "${current_tag}" --repo="$GITHUB_REPOSITORY" --title="v.$(week_number).0" --generate-notes
