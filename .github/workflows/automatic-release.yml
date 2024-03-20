@@ -24,7 +24,7 @@ jobs:
       - name: Create and push new tag based on the last one
         id: tag_release
         run: |
-          tag_number=$(git describe --tags $(git rev-list --tags --max-count=1) | grep -o '[0-9]\+' | awk '{print $1+1}' | head -n1)
+          tag_number=$(git describe --tags origin $(git rev-list --tags --max-count=3) | grep -o '[0-9]\+' | awk '{print $1+1}' | head -n1)
           tag_name="week${tag_number}"
           echo "$tag_number"
           echo "$tag_name"
@@ -36,7 +36,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
         run: |
-          week_number=$(git describe --tags $(git rev-list --tags --max-count=1) | grep -o '[0-9]\+' | awk '{print $1+1}' | head -n1)
+          week_number=$(git describe --tags origin $(git rev-list --tags --max-count=3) | grep -o '[0-9]\+' | head -n1)
           current_tag=$(git describe --tags $(git rev-list --tags --max-count=1))
           echo "$week_number"
           echo "$current_tag"
