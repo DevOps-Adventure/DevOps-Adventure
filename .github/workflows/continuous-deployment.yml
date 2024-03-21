@@ -1,5 +1,5 @@
 ---
-name: Continuous Deployment Pipeline
+name: Continuous Deployment Pipeline2
 
 on:
   push:
