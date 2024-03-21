@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/md5"
 	"fmt"
-	"log"
 	"strconv"
 
 	"net/http"
@@ -97,19 +96,15 @@ func userTimelineHandler(c *gin.Context) {
 	// does the logged in user follow them
 	followed := false
 	pUserId := profileUser.UserID
-	profileName := string(profileUser.Username)
+	profileName := profileUser.Username
 	userID, errID := c.Cookie("UserID")
-	userIDInt, err := strconv.Atoi(userID)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
+	userIDInt, _ := strconv.Atoi(userID)
 	userName, _ := getUserNameByUserID(userID)
 
 	if errID == nil {
 		followed, err = checkFollowStatus(userIDInt, pUserId)
 		if err != nil {
-			log.Fatal(err)
+			logMessage(err.Error())
 			return
 		}
 	}
@@ -205,8 +200,9 @@ func addMessageHandler(c *gin.Context) {
 		text := c.Request.FormValue("text")
 
 		if text == "" {
-			errorData = "You have to enter a value"
-			c.Redirect(http.StatusBadRequest, "/?error="+errorData)
+			c.Redirect(http.StatusSeeOther, "/")
+			session.AddFlash("You have to enter a value")
+			session.Save()
 			return
 		} else {
 			err := addMessage(text, userIDString)
@@ -333,7 +329,7 @@ func loginHandler(c *gin.Context) {
 
 		if user.Username == "" {
 			errorData = "Invalid username"
-		} else if !checkPasswordHash(password, string(user.PwHash)) {
+		} else if !checkPasswordHash(password, user.PwHash) {
 			errorData = "Invalid password"
 		} else {
 			userID, err := getUserIDByUsername(userName)

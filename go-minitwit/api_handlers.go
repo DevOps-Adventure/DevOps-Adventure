@@ -41,6 +41,16 @@ type MessageData struct {
 
 const filePath = "./latest_processed_sim_action_id.txt"
 
+func not_req_from_simulator(c *gin.Context) (statusCode int, errStr string) {
+	auth := c.Request.Header.Get("Authorization")
+	if auth != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh" {
+		statusCode = 403
+		errStr = "You are not authorized to use this resource!"
+		return statusCode, errStr
+	}
+	return
+}
+
 func updateLatest(c *gin.Context) {
 	parsedCommandID := c.Query("latest")
 	commandID, err := strconv.Atoi(parsedCommandID)
@@ -206,6 +216,14 @@ func apiMsgsHandler(c *gin.Context) {
 		error_msg: "",
 	}
 
+	not_req_from_sim_statusCode, not_req_from_sim_errStr := not_req_from_simulator(c)
+	if not_req_from_sim_statusCode == 403 && not_req_from_sim_errStr != "" {
+		errorData.status = http.StatusForbidden
+		errorData.error_msg = not_req_from_sim_errStr
+		c.AbortWithStatusJSON(http.StatusForbidden, errorData.error_msg)
+		return
+	}
+
 	numMsgs := c.Request.Header.Get("no")
 	numMsgsInt, err := strconv.Atoi(numMsgs)
 	// fallback on default value
@@ -238,6 +256,14 @@ func apiMsgsPerUserHandler(c *gin.Context) {
 	errorData := ErrorData{
 		status:    0,
 		error_msg: "",
+	}
+
+	not_req_from_sim_statusCode, not_req_from_sim_errStr := not_req_from_simulator(c)
+	if not_req_from_sim_statusCode == 403 && not_req_from_sim_errStr != "" {
+		errorData.status = http.StatusForbidden
+		errorData.error_msg = not_req_from_sim_errStr
+		c.AbortWithStatusJSON(http.StatusForbidden, errorData.error_msg)
+		return
 	}
 
 	profileUserName := c.Param("username")
@@ -333,6 +359,14 @@ func apiFllwsHandler(c *gin.Context) {
 	errorData := ErrorData{
 		status:    0,
 		error_msg: "",
+	}
+
+	not_req_from_sim_statusCode, not_req_from_sim_errStr := not_req_from_simulator(c)
+	if not_req_from_sim_statusCode == 403 && not_req_from_sim_errStr != "" {
+		errorData.status = http.StatusForbidden
+		errorData.error_msg = not_req_from_sim_errStr
+		c.AbortWithStatusJSON(http.StatusForbidden, errorData.error_msg)
+		return
 	}
 
 	if c.Request.Method == http.MethodGet {

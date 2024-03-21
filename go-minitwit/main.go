@@ -1,12 +1,9 @@
 package main
 
 import (
-	"log"
-
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
 )
@@ -34,13 +31,11 @@ func main() {
 		panic("failed to connect to database")
 	}
 
-	err = godotenv.Load("../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %s", err)
-	}
-
 	// Create a Gin router and set the parsed templates
 	router := gin.Default()
+	router.Use(AfterRequest()) // This is the middleware that will be called after each request for Prometheus
+	router.Use(beforeRequestHandler)
+
 	router.Use(AfterRequest()) // This is the middleware that will be called after each request for Prometheus
 	router.Use(beforeRequestHandler)
 

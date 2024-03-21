@@ -5,14 +5,15 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
-	"time"
 )
 
 // Helper functions
+
 func checkPasswordHash(userEnteredPwd string, dbpwd string) bool {
-	bytes := md5.Sum([]byte(userEnteredPwd))
-	str := hex.EncodeToString(bytes[:])
+	hash := md5.Sum([]byte(userEnteredPwd))
+	str := hex.EncodeToString(hash[:])
 	return str == dbpwd
 }
 
@@ -26,22 +27,33 @@ func gravatarURL(email string, size int) string {
 	return fmt.Sprintf("http://www.gravatar.com/avatar/%x?d=identicon&s=%d", hash, size)
 }
 
-// package messages to be displayed on the UI
 func formatMessages(messages []MessageUser) []MessageUI {
 	var formattedMessages []MessageUI
+
 	for _, m := range messages {
 		var msg MessageUI
-
-		msg.MessageID = int(m.MessageID)
-		msg.AuthorID = int(m.AuthorID)
-		msg.User.UserID = int(m.UserID)
-		msg.Text = string(m.Text)
-		msg.Username = string(m.Username)
-		msg.Email = string(m.Email)
-
-		pubDateTime := time.Unix(int64(m.PubDate), 0)
-		msg.PubDate = pubDateTime.Format("02/01/2006 15:04:05")
-
+		// Use type assertion for int64, then convert to int
+		if reflect.TypeOf(m.MessageID).Kind() == reflect.Int {
+			msg.MessageID = m.MessageID
+		}
+		if reflect.TypeOf(m.AuthorID).Kind() == reflect.Int {
+			msg.AuthorID = m.AuthorID
+		}
+		if reflect.TypeOf(m.UserID).Kind() == reflect.Int {
+			msg.User.UserID = m.UserID
+		}
+		if reflect.TypeOf(m.Text).Kind() == reflect.String {
+			msg.Text = m.Text
+		}
+		if reflect.TypeOf(m.Username).Kind() == reflect.String {
+			msg.Username = m.Username
+		}
+		if reflect.TypeOf(m.Email).Kind() == reflect.String {
+			msg.Email = m.Email
+		}
+		if reflect.TypeOf(m.PubDate).Kind() == reflect.Int {
+			msg.PubDate = m.PubDate
+		}
 		link := "/" + msg.Username
 		msg.Profile_link = strings.ReplaceAll(link, " ", "%20")
 
@@ -54,21 +66,24 @@ func formatMessages(messages []MessageUser) []MessageUI {
 	return formattedMessages
 }
 
-// package messages to be sent back to the API
 func filterMessages(messages []MessageUser) []FilteredMsg {
 	var filteredMessages []FilteredMsg
 	for _, m := range messages {
-		var msg FilteredMsg
+		var filteredMsg FilteredMsg
 		// content
-		msg.Content = string(m.Text)
+		if reflect.TypeOf(m.Text).Kind() == reflect.String {
+			filteredMsg.Content = m.Text
+		}
 
 		// publication date
-		msg.PubDate = int64(m.PubDate)
+		filteredMsg.PubDate = int64(m.PubDate)
 
 		// user
-		msg.User = string(m.Username)
+		if reflect.TypeOf(m.Username).Kind() == reflect.String {
+			filteredMsg.User = m.Username
+		}
 
-		filteredMessages = append(filteredMessages, msg)
+		filteredMessages = append(filteredMessages, filteredMsg)
 	}
 	return filteredMessages
 }
@@ -78,16 +93,16 @@ func logMessage(message string) {
 	filePath := "./tmp/logging/logger.txt"
 
 	// Open or create the file for writing
-	file, err := os.Create(filePath)
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		fmt.Println("Error creating file:", err)
 		return
 	}
 	defer file.Close()
 
-	data := []byte(message)
+	data := []byte(message + "\n")
 
-	err = os.WriteFile(filePath, data, 0644)
+	_, err = file.Write(data)
 	if err != nil {
 		fmt.Println("Error writing to file:", err)
 		return
