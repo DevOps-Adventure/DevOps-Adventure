@@ -93,16 +93,16 @@ func logMessage(message string) {
 	filePath := "./tmp/logging/logger.txt"
 
 	// Open or create the file for writing
-	file, err := os.Create(filePath)
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		fmt.Println("Error creating file:", err)
 		return
 	}
 	defer file.Close()
 
-	data := []byte(message)
+	data := []byte(message + "\n")
 
-	err = os.WriteFile(filePath, data, 0644)
+	_, err = file.Write(data)
 	if err != nil {
 		fmt.Println("Error writing to file:", err)
 		return
