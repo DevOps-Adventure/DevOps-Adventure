@@ -39,7 +39,7 @@ jobs:
           tag: ${{ github.ref_name }}
         run: |
           week_number=$(git tag -l | grep -o '[0-9]\+' | head -n1)
-          current_tag=$(git tag -l | tail -n1)
+          current_tag=$(git tag -l | head -n1)
           echo "$week_number"
           echo "$current_tag"
           gh release create "${current_tag}" --repo="$GITHUB_REPOSITORY" --title="v${week_number}.0" --generate-notes
