@@ -7,36 +7,19 @@ networks:
 
 services:
   minitwitimage:
-    image: ${DOCKER_USERNAME}/minitwitimage
-    #image: local/minitwitimage
+    #image: ${DOCKER_USERNAME}/minitwitimage
+    image: local/minitwitimage
 
     container_name: minitwit
     networks:
       - itu-minitwit-network
+      #- itusqlimage
     depends_on:
-      - itusqlimage
       - grafana
       - prometheus
     ports:
       - "8081:8081"
     mem_limit: "1g"
-    mem_reservation: "512m"
-
-  itusqlimage:
-    image: ${DOCKER_USERNAME}/mysqlimage
-    #image: local/mysqlimage
-
-    container_name: minitwit_mysql
-    networks:
-      - itu-minitwit-network
-    depends_on:
-      - grafana
-      - prometheus
-    ports:
-      - "3306:3306"
-    environment:
-      - MYSQL_ROOT_PASSWORD=root
-    mem_limit: "512m"
     mem_reservation: "512m"
 
   prometheus:
@@ -59,6 +42,8 @@ services:
       - itu-minitwit-network
     mem_limit: "1g"
     mem_reservation: "512m"
+    volumes:
+      - grafana_data:/var/lib/grafana #to no get erased
 
   node_exporter:
     image: prom/node-exporter      
@@ -67,5 +52,8 @@ services:
       - "9100:9100"
     networks:
       - itu-minitwit-network
+
+volumes:
+  grafana_data:
 
 
