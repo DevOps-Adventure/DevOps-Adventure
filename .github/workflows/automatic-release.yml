@@ -26,11 +26,11 @@ jobs:
       - name: Create and push new tag based on the last one
         id: tag_release
         run: |
-          tag_number=$(git tag -l | tac | grep -o '[0-9]\+' | awk '{print $1+1}' | head -n1)
-          tag_name="Week${tag_number}"
+          tag_number=$(git tag --sort=-creatordate | grep -o '[0-9]\+' | awk '{print $1+1}' | head -n1)
+          tag_name="Release${tag_number}"
           echo "$tag_number"
           echo "$tag_name"
-          git tag -a $tag_name -m "DevOps - week ${tag_number} release"
+          git tag -a $tag_name -m "DevOps - ${tag_number} release"
           git push origin $tag_name
 
       - name: Create release
@@ -38,8 +38,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
         run: |
-          week_number=$(git tag -l | tac | grep -o '[0-9]\+' | head -n1)
-          current_tag=$(git tag -l | tac | head -n1)
-          echo "$week_number"
+          release_number=$(git tag --sort=-creatordate | grep -o '[0-9]\+' | head -n1)
+          current_tag=$(git tag --sort=-creatordate | head -n1)
+          echo "$release_number"
           echo "$current_tag"
-          gh release create "${current_tag}" --repo="$GITHUB_REPOSITORY" --title="v${week_number}.0" --generate-notes
+          gh release create "${current_tag}" --repo="$GITHUB_REPOSITORY" --title="v${release_number}.0" --generate-notes
