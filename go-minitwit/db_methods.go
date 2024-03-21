@@ -64,6 +64,19 @@ type Follower struct {
 	WhomID int
 }
 
+// declare table names so that GORM doesn't fall on default values
+func (User) TableName() string {
+	return "user"
+}
+
+func (Message) TableName() string {
+	return "message"
+}
+
+func (Follower) TableName() string {
+	return "follower"
+}
+
 /*
 	CONNECT, INIT AND QUERY DB
 */
@@ -80,14 +93,14 @@ func connect_dev_DB(dsn string) (*gorm.DB, error) {
 }
 
 func connect_prod_DB() (*gorm.DB, error) {
-	fmt.Println(os.Getenv("DBUSER"))
 	dsn := os.Getenv("DBUSER") + ":" + os.Getenv("DBPASS") + "@tcp(db-mysql-fra1-34588-do-user-15917069-0.c.db.ondigitalocean.com:25060)/devopsadventure"
-	fmt.Println(dsn)
+
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		fmt.Println("gorm Db connection ", err)
 		return nil, err
 	}
+
 	return db, nil
 }
 
@@ -232,7 +245,6 @@ func getUserByUsername(userName string) (User, error) {
 
 // registers a new user
 func registerUser(userName string, email string, password [16]byte) error {
-
 	pwHashString := hex.EncodeToString(password[:])
 
 	newUser := User{
@@ -241,7 +253,8 @@ func registerUser(userName string, email string, password [16]byte) error {
 		PwHash:   pwHashString,
 	}
 
-	dbNew.Create(&newUser)
+	dbNew.Table("user").
+		Create(&newUser)
 
 	if dbNew.Error != nil {
 		log.Fatal(dbNew.Error)
@@ -249,7 +262,6 @@ func registerUser(userName string, email string, password [16]byte) error {
 	}
 
 	return nil
-
 }
 
 // adds a new message to the database
@@ -265,7 +277,8 @@ func addMessage(text string, author_id int) error {
 		Flagged:  0, // Default to false for flagged
 	}
 
-	dbNew.Create(&newMessage)
+	dbNew.Table("message").
+		Create(&newMessage)
 
 	if dbNew.Error != nil {
 		log.Fatal(dbNew.Error)
@@ -291,7 +304,10 @@ func followUser(userID string, profileUserID string) error {
 
 	// following relationship already exists
 	var count int64
-	dbNew.Model(&Follower{}).Where("who_id = ? AND whom_id = ?", userIDInt, profileUserIDInt).Count(&count)
+	dbNew.Table("follower").
+		Model(&Follower{}).
+		Where("who_id = ? AND whom_id = ?", userIDInt, profileUserIDInt).
+		Count(&count)
 	if count > 0 {
 		return nil
 	}
@@ -301,7 +317,8 @@ func followUser(userID string, profileUserID string) error {
 		WhomID: profileUserIDInt,
 	}
 
-	dbNew.Create(&newFollower)
+	dbNew.Table("follower").
+		Create(&newFollower)
 
 	if dbNew.Error != nil {
 		log.Fatal(dbNew.Error)

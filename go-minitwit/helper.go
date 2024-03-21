@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"strings"
@@ -9,25 +10,9 @@ import (
 )
 
 // Helper functions
-// todo: move these to a "helperLibrary"
-func bytesToString(bytes [16]byte) string {
-	var strBuilder strings.Builder
-
-	strBuilder.WriteString("{")
-	for i, b := range bytes {
-		if i > 0 {
-			strBuilder.WriteString(",")
-		}
-		strBuilder.WriteString(fmt.Sprintf("%d", b))
-	}
-	strBuilder.WriteString("}")
-
-	return strBuilder.String()
-}
-
 func checkPasswordHash(userEnteredPwd string, dbpwd string) bool {
 	bytes := md5.Sum([]byte(userEnteredPwd))
-	str := bytesToString(bytes)
+	str := hex.EncodeToString(bytes[:])
 	return str == dbpwd
 }
 
