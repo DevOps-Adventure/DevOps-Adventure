@@ -1,7 +1,6 @@
 ---
-# name: Continuous Deployment Pipeline2
+name: Continuous Deployment Pipeline
 
-name: testteset
 on:
   push:
     # Run workflow every time something is pushed to the main branch
