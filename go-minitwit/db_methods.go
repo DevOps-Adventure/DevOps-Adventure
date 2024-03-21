@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"time"
@@ -120,7 +119,7 @@ func getPublicMessages(numMsgs int) ([]MessageUser, error) {
 		Find(&messages)
 
 	if dbNew.Error != nil {
-		log.Fatal(dbNew.Error)
+		logMessage(dbNew.Error.Error())
 		return nil, dbNew.Error
 	}
 

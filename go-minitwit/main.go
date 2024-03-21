@@ -36,9 +36,6 @@ func main() {
 	router.Use(AfterRequest()) // This is the middleware that will be called after each request for Prometheus
 	router.Use(beforeRequestHandler)
 
-	router.Use(AfterRequest()) // This is the middleware that will be called after each request for Prometheus
-	router.Use(beforeRequestHandler)
-
 	router.LoadHTMLGlob("./templates/*.html")
 
 	// sessions, for cookies
@@ -75,10 +72,9 @@ func main() {
 	// some helper method to "cache" what was the latest simulator action
 	router.GET("/api/latest", getLatest)
 
-	//registerung prometeus
+	// registering prometeus
 	router.GET("/metrics", prometheusHandler())
 
 	// Start the server
 	router.Run(":8081")
-
 }
