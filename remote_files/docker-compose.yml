@@ -11,6 +11,8 @@ services:
     image: local/minitwitimage
 
     container_name: minitwit
+    env_file:
+      - .env
     networks:
       - itu-minitwit-network
       #- itusqlimage
@@ -55,5 +57,3 @@ services:
 
 volumes:
   grafana_data:
-
-
