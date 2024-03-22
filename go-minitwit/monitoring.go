@@ -91,7 +91,7 @@ func AfterRequest() gin.HandlerFunc {
 
 }
 
-func UserSignupMonitoringMiddleware() gin.HandlerFunc {
+func UserSignupMonitoring() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 
@@ -101,3 +101,5 @@ func UserSignupMonitoringMiddleware() gin.HandlerFunc {
 		}
 	}
 }
+
+////

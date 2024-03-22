@@ -35,6 +35,7 @@ func main() {
 	router := gin.Default()
 	router.Use(AfterRequest()) // This is the middleware that will be called after each request for Prometheus
 	router.Use(beforeRequestHandler)
+	router.Use(UserSignupMonitoring()) // This is the middleware that will be called after each request for Prometheus
 
 	router.LoadHTMLGlob("./templates/*.html")
 
@@ -79,3 +80,5 @@ func main() {
 	router.Run(":8081")
 
 }
+
+//
