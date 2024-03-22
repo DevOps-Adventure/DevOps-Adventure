@@ -26,8 +26,12 @@ var (
 		Name: "minitwit_request_duration_milliseconds",
 		Help: "Request duration distribution.",
 	})
-)
 
+	newSignupsCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "minitwit_new_signups_total",
+		Help: "Total number of new user signups.",
+	})
+)
 
 // defining registation of Prometeus
 func prometheusHandler() gin.HandlerFunc {
@@ -84,4 +88,18 @@ func AfterRequest() gin.HandlerFunc {
 			}
 		}()
 	}
+
 }
+
+func UserSignupMonitoring() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+
+		// Check if the registration was successful
+		if success, exists := c.Get("registrationSuccess"); exists && success.(bool) {
+			newSignupsCounter.Inc()
+		}
+	}
+}
+
+////
