@@ -45,7 +45,7 @@ jobs:
       - name: Deploy to server
         # Configure the ~./bash_profile and deploy.sh file on the Vagrantfile
         run: |
-          scp -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no docker-compose.yml deploy.sh prometheus.yaml $SSH_USER@$SSH_HOST:/minitwit/
+          scp -r -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no remote_files/* $SSH_USER@$SSH_HOST:/minitwit/
           ssh -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST '/minitwit/deploy.sh $DBUSER $DBPASS'
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
