@@ -86,7 +86,7 @@ jobs:
         run: >
           ssh $SSH_USER@$SSH_HOST
           -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no
-          '/minitwit/deploy.sh ${{ secretss.DBUSER }} ${{ secretss.DBPASS }}'
+          '/minitwit/deploy.sh ${{ secrets.DBUSER }} ${{ secrets.DBPASS }}'
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
