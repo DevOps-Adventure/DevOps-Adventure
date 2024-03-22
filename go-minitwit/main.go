@@ -1,9 +1,12 @@
 package main
 
 import (
+	"os"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
 )
@@ -26,9 +29,20 @@ func main() {
 
 	// Using db connection (1)
 	var err error
-	dbNew, err = connect_DB(DATABASE)
-	if err != nil {
-		panic("failed to connect to database")
+	godotenv.Load()
+	env := os.Getenv("EXECUTION_ENVIRONMENT")
+
+	if env == "LOCAL" || env == "CI" {
+		dbNew, err = connect_dev_DB("./tmp/minitwit_empty.db")
+		if err != nil {
+			panic("failed to connect to database")
+		}
+
+	} else {
+		dbNew, err = connect_prod_DB()
+		if err != nil {
+			panic("failed to connect to database")
+		}
 	}
 
 	// Create a Gin router and set the parsed templates
@@ -73,12 +87,9 @@ func main() {
 	// some helper method to "cache" what was the latest simulator action
 	router.GET("/api/latest", getLatest)
 
-	//registerung prometeus
+	// registering prometeus
 	router.GET("/metrics", prometheusHandler())
 
 	// Start the server
 	router.Run(":8081")
-
 }
-
-//

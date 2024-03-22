@@ -160,6 +160,7 @@ func myTimelineHandler(c *gin.Context) {
 	}
 
 	formattedMessages := formatMessages(messages)
+	fmt.Println(formattedMessages)
 
 	// For template rendering with Gin
 	c.HTML(http.StatusOK, "timeline.html", gin.H{
@@ -210,7 +211,7 @@ func addMessageHandler(c *gin.Context) {
 				c.Redirect(http.StatusInternalServerError, "/?error="+errorData)
 				return
 			}
-			// Redirect to login page after successful registration
+
 			c.Redirect(http.StatusSeeOther, "/")
 			session.AddFlash("Your message was recorded")
 			session.Save()

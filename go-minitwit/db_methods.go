@@ -2,10 +2,13 @@ package main
 
 import (
 	"encoding/hex"
+	"fmt"
+	"os"
 	"strconv"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3" // Import the SQLite3 driver
+	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
@@ -64,10 +67,26 @@ type Follower struct {
 	CONNECT, INIT AND QUERY DB
 */
 
-func connect_DB(dsn string) (*gorm.DB, error) {
+func connect_dev_DB(dsn string) (*gorm.DB, error) {
+	fmt.Println("dev db")
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}})
 	if err != nil {
 		panic("failed to connect to database")
+	}
+
+	db.AutoMigrate(&User{}, &Message{}, &Follower{})
+
+	return db, nil
+}
+
+func connect_prod_DB() (*gorm.DB, error) {
+	fmt.Println("prod db")
+	dsn := os.Getenv("DBUSER") + ":" + os.Getenv("DBPASS") + "@tcp(db-mysql-fra1-34588-do-user-15917069-0.c.db.ondigitalocean.com:25060)/devopsadventure"
+
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}})
+	if err != nil {
+		fmt.Println("gorm Db connection ", err)
+		return nil, err
 	}
 
 	db.AutoMigrate(&User{}, &Message{}, &Follower{})

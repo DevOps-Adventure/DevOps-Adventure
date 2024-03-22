@@ -26,9 +26,9 @@ HEADERS = {'Connection': 'close',
 def clean_database():
     conn = sqlite3.connect(DATABASE)
     cur = conn.cursor()
-    cur.execute("DELETE FROM user")
-    cur.execute("DELETE FROM message")
-    cur.execute("DELETE FROM follower")
+    cur.execute("DELETE FROM user;")
+    cur.execute("DELETE FROM message;")
+    cur.execute("DELETE FROM follower;")
     conn.commit()
     conn.close()
     
@@ -45,7 +45,7 @@ def test_register():
     #clean the DB in the first test case
     clean_database()
     session = create_new_session()
-    username = 'a'
+    username = 'aa'
     email = 'a@a.a'
     pwd = 'a'
     data = {'username': username, 'email': email, 'pwd': pwd}
@@ -61,7 +61,7 @@ def test_register():
     
 def test_register_b():
     session =  create_new_session()
-    username = 'b'
+    username = 'bb'
     email = 'b@b.b'
     pwd = 'b'
     data = {'username': username, 'email': email, 'pwd': pwd}
@@ -77,7 +77,7 @@ def test_register_b():
 
 def test_register_c():
     session = create_new_session()
-    username = 'c'
+    username = 'cc'
     email = 'c@c.c'
     pwd = 'c'
     data = {'username': username, 'email': email, 'pwd': pwd}
@@ -108,7 +108,7 @@ def test_latest():
 
 def test_create_msg():
     session = create_new_session()
-    username = 'a'
+    username = 'aa'
     data = {'content': 'Blub!'}
     url = f'{BASE_URL}/msgs/{username}'
     params = {'latest': 2}
@@ -123,7 +123,7 @@ def test_create_msg():
 
 def test_get_latest_user_msgs():
     session = create_new_session()
-    username = 'a'
+    username = 'aa'
     query = {'no': 20, 'latest': 3}
     url = f'{BASE_URL}/msgs/{username}'
     response = session.get(url, params=query)
@@ -143,7 +143,7 @@ def test_get_latest_user_msgs():
 
 def test_get_latest_msgs():
     session =  create_new_session()
-    username = 'a'
+    username = 'aa'
     query = {'no': 20, 'latest': 4}
     url = f'{BASE_URL}/msgs'
     response = session.get(url, params=query)
@@ -162,15 +162,15 @@ def test_get_latest_msgs():
 
 def test_follow_user():
     session = create_new_session()
-    username = 'a'
+    username = 'aa'
     url = f'{BASE_URL}/fllws/{username}'
-    data = {'follow': 'b'}
+    data = {'follow': 'bb'}
     params = {'latest': 7}
     response = session.post(url, data=json.dumps(data),
                             params=params)
     assert response.ok
 
-    data = {'follow': 'c'}
+    data = {'follow': 'cc'}
     params = {'latest': 8}
     response = session.post(url, data=json.dumps(data),
                             params=params)
@@ -181,8 +181,8 @@ def test_follow_user():
     assert response.ok
 
     json_data = response.json()
-    assert "b" in json_data["follows"]
-    assert "c" in json_data["follows"]
+    assert "bb" in json_data["follows"]
+    assert "cc" in json_data["follows"]
 
     # verify that latest was updated
     response = session.get(f'{BASE_URL}/latest')
@@ -191,11 +191,11 @@ def test_follow_user():
 
 def test_a_unfollows_b():
     session = create_new_session()
-    username = 'a'
+    username = 'aa'
     url = f'{BASE_URL}/fllws/{username}'
 
     #  first send unfollow command
-    data = {'unfollow': 'b'}
+    data = {'unfollow': 'bb'}
     params = {'latest': 10}
     response = session.post(url, data=json.dumps(data),
                             params=params)
@@ -205,7 +205,7 @@ def test_a_unfollows_b():
     query = {'no': 20, 'latest': 11}
     response = session.get(url, params=query)
     assert response.ok
-    assert 'b' not in response.json()['follows']
+    assert 'bb' not in response.json()['follows']
 
     # verify that latest was updated
     response = session.get(f'{BASE_URL}/latest')
@@ -213,7 +213,7 @@ def test_a_unfollows_b():
     
 def test_cleaning_the_db():
     session = create_new_session()
-    username = 'a'
+    username = 'aa'
     query = {'no': 20, 'latest': 3}
     url = f'{BASE_URL}/msgs/{username}'
     response = session.get(url, params=query)
