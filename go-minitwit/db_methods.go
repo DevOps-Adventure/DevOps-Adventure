@@ -63,19 +63,6 @@ type Follower struct {
 	WhomID int
 }
 
-// declare table names so that GORM doesn't fall on default values
-func (User) TableName() string {
-	return "user"
-}
-
-func (Message) TableName() string {
-	return "message"
-}
-
-func (Follower) TableName() string {
-	return "follower"
-}
-
 /*
 	CONNECT, INIT AND QUERY DB
 */
@@ -94,11 +81,13 @@ func connect_dev_DB(dsn string) (*gorm.DB, error) {
 func connect_prod_DB() (*gorm.DB, error) {
 	dsn := os.Getenv("DBUSER") + ":" + os.Getenv("DBPASS") + "@tcp(db-mysql-fra1-34588-do-user-15917069-0.c.db.ondigitalocean.com:25060)/devopsadventure"
 
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}})
 	if err != nil {
 		fmt.Println("gorm Db connection ", err)
 		return nil, err
 	}
+
+	db.AutoMigrate(&User{}, &Message{}, &Follower{})
 
 	return db, nil
 }
