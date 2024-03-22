@@ -33,7 +33,7 @@ func main() {
 	env := os.Getenv("EXECUTION_ENVIRONMENT")
 
 	if env == "LOCAL" || env == "CI" {
-		dbNew, err = connect_dev_DB("/tmp/minitwit_empty.db")
+		dbNew, err = connect_dev_DB("./tmp/minitwit_empty.db")
 		if err != nil {
 			panic("failed to connect to database")
 		}
