@@ -7,9 +7,7 @@ networks:
 
 services:
   minitwitimage:
-    #image: ${DOCKER_USERNAME}/minitwitimage
-    image: local/minitwitimage
-
+    image: ${DOCKER_USERNAME}/minitwitimage
     container_name: minitwit
     env_file:
       - .env
@@ -37,10 +35,10 @@ services:
     mem_reservation: "512m"
 
   grafana:
-    image: grafana/grafana:10.2.4 
-    ports:                        
+    image: grafana/grafana:10.2.4
+    ports:
       - "3000:3000"
-    networks:                     
+    networks:
       - itu-minitwit-network
     mem_limit: "1g"
     mem_reservation: "512m"
@@ -48,7 +46,7 @@ services:
       - grafana_data:/var/lib/grafana #to no get erased
 
   node_exporter:
-    image: prom/node-exporter      
+    image: prom/node-exporter
     container_name: node-exporter
     ports:
       - "9100:9100"
