@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
@@ -63,6 +65,11 @@ func publicTimelineHandler(c *gin.Context) {
 		"Endpoint":     "public_timeline",
 		"Messages":     formattedMessages,
 	}
+
+	// Log an example message with fields.
+	logger.WithFields(logrus.Fields{
+		"action": "public timeline",
+	}).Info("User in public timeline. Test log")
 
 	userID, errID := c.Cookie("UserID")
 	if errID == nil {
