@@ -3,14 +3,12 @@ package main
 import (
 	"os"
 
-	logrusfluent "github.com/evalphobia/logrus_fluent"
-	"github.com/sirupsen/logrus"
-
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -27,34 +25,9 @@ type FilteredMsg struct {
 }
 
 var dbNew *gorm.DB
-var logger *logrus.Logger
-
-func setupLogger() {
-	logger = logrus.New()
-
-	// Configure the Fluentd hook.
-	hook, err := logrusfluent.NewWithConfig(logrusfluent.Config{
-		Port: 24224,
-		Host: "fluentd",
-	})
-	if err != nil {
-		logger.Fatalf("Failed to create Fluentd hook: %v", err)
-	}
-
-	logger.SetLevel(logrus.DebugLevel)
-	logger.AddHook(hook)
-
-	hook.SetTag("minitwit.tag")
-	hook.SetMessageField("message")
-}
 
 func main() {
 	setupLogger()
-
-	// Log an example message with fields.
-	logger.WithFields(logrus.Fields{
-		"action": "start running application",
-	}).Info("User action logged")
 
 	// Using db connection (1)
 	var err error
@@ -64,6 +37,14 @@ func main() {
 	if env == "LOCAL" || env == "CI" {
 		dbNew, err = connect_dev_DB("./tmp/minitwit_empty.db")
 		if err != nil {
+			// Log the failure to connect to the database with the error message.
+			logger.WithFields(logrus.Fields{
+				"environment": env,
+				"action":      "connect to database",
+				"status":      "failed",
+				"error":       err.Error(),
+				"database":    "minitwit_empty.db",
+			}).Error("Failed to connect to the development database.")
 			panic("failed to connect to database")
 		}
 

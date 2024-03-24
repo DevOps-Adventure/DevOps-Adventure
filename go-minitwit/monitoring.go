@@ -5,11 +5,13 @@ import (
 	"log"
 	"time"
 
+	logrusfluent "github.com/evalphobia/logrus_fluent"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shirou/gopsutil/cpu"
+	"github.com/sirupsen/logrus"
 )
 
 // defining metrics -counter,cpu,responce time monitoring for Prometeus
@@ -32,6 +34,28 @@ var (
 		Help: "Total number of new user signups.",
 	})
 )
+
+var logger *logrus.Logger
+
+// connect lorus with tcp to fluent
+func setupLogger() {
+	logger = logrus.New()
+
+	// Configure the Fluentd hook.
+	hook, err := logrusfluent.NewWithConfig(logrusfluent.Config{
+		Port: 24224,
+		Host: "fluentd",
+	})
+	if err != nil {
+		logger.Fatalf("Failed to create Fluentd hook: %v", err)
+	}
+
+	logger.SetLevel(logrus.DebugLevel)
+	logger.AddHook(hook)
+
+	hook.SetTag("minitwit.tag")
+	hook.SetMessageField("message")
+}
 
 // defining registation of Prometeus
 func prometheusHandler() gin.HandlerFunc {
