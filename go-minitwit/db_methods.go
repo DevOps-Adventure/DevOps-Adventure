@@ -74,7 +74,7 @@ func connect_dev_DB(dsn string) (*gorm.DB, error) {
 		panic("failed to connect to database")
 	}
 
-	db.AutoMigrate(&User{}, &Message{}, &Follower{})
+	_ = db.AutoMigrate(&User{}, &Message{}, &Follower{})
 
 	return db, nil
 }
@@ -91,7 +91,7 @@ func connect_prod_DB() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	db.AutoMigrate(&User{}, &Message{}, &Follower{})
+	_ = db.AutoMigrate(&User{}, &Message{}, &Follower{})
 
 	return db, nil
 }
@@ -339,6 +339,7 @@ func unfollowUser(userID string, profileUserID string) error {
 	return nil
 }
 
+/*
 // getFollowers fetches up to `limit` followers for the user identified by userID
 func getFollowers(userID string, limit int) ([]User, error) {
 	var users []User
@@ -356,7 +357,7 @@ func getFollowers(userID string, limit int) ([]User, error) {
 	}
 	return users, nil
 }
-
+*/
 // getFollowing fetches up to `limit` users that the user identified by userID is following
 func getFollowing(userID string, limit int) ([]User, error) {
 	var users []User
