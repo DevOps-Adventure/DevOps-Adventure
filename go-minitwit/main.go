@@ -29,7 +29,10 @@ func main() {
 
 	// Using db connection (1)
 	var err error
-	godotenv.Load()
+	err = godotenv.Load()
+	if err != nil {
+		panic("failed to load env variables")
+	}
 	env := os.Getenv("EXECUTION_ENVIRONMENT")
 
 	if env == "LOCAL" || env == "CI" {
@@ -91,5 +94,8 @@ func main() {
 	router.GET("/metrics", prometheusHandler())
 
 	// Start the server
-	router.Run(":8081")
+	err = router.Run(":8081")
+	if err != nil {
+		panic("failed to run router at port 8081")
+	}
 }

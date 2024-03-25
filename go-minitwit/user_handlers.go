@@ -15,13 +15,18 @@ import (
 
 // Handlers
 func userFollowActionHandler(c *gin.Context) {
-
+	var err error
 	session := sessions.Default(c)
 
-	userID, errID := c.Cookie("UserID")
-	if errID != nil {
+	userID, err := c.Cookie("UserID")
+	if err != nil {
 		session.AddFlash("You need to login before continuing to follow or unfollow.")
-		session.Save()
+
+		err = session.Save()
+		if err != nil {
+			panic("failed to save session in userFollowActionHandler")
+		}
+
 		c.Redirect(http.StatusFound, "/login")
 		return
 
@@ -38,14 +43,23 @@ func userFollowActionHandler(c *gin.Context) {
 	action := c.Param("action")
 
 	if action == "/follow" {
-		followUser(userID, profileUserID)
+		err = followUser(userID, profileUserID)
+		if err != nil {
+			panic("failed to followUser")
+		}
 		session.AddFlash("You are now following " + profileUserName)
 	}
 	if action == "/unfollow" {
-		unfollowUser(userID, profileUserID)
+		err = unfollowUser(userID, profileUserID)
+		if err != nil {
+			panic("failed to unfollowUser")
+		}
 		session.AddFlash("You are no longer following " + profileUserName)
 	}
-	session.Save()
+	err = session.Save()
+	if err != nil {
+		panic("failed to save session in userFollowActionHandler")
+	}
 	c.Redirect(http.StatusFound, "/"+profileUserName)
 }
 
@@ -78,9 +92,13 @@ func publicTimelineHandler(c *gin.Context) {
 }
 
 func userTimelineHandler(c *gin.Context) {
+	var err error
 	session := sessions.Default(c)
 	flashMessages := session.Flashes()
-	session.Save()
+	err = session.Save()
+	if err != nil {
+		panic("failed to save session in userTimelineHandler")
+	}
 	profileUserName := c.Param("username")
 	profileUser, err := getUserByUsername(profileUserName)
 
@@ -89,6 +107,7 @@ func userTimelineHandler(c *gin.Context) {
 		return
 	}
 	if err != nil {
+		//nolint:all
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
@@ -113,6 +132,7 @@ func userTimelineHandler(c *gin.Context) {
 	fmt.Println(messages)
 
 	if err != nil {
+		//nolint:all
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
@@ -133,6 +153,7 @@ func userTimelineHandler(c *gin.Context) {
 }
 
 func myTimelineHandler(c *gin.Context) {
+	var err error
 	userID, err := c.Cookie("UserID")
 	errMsg := c.Query("error")
 
@@ -144,17 +165,22 @@ func myTimelineHandler(c *gin.Context) {
 	userName, err := getUserNameByUserID(userID)
 
 	if err != nil {
+		//nolint:all
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	session := sessions.Default(c)
 	flashMessages := session.Flashes()
-	session.Save() // Clear flashes after retrieving
+	err = session.Save() // Clear flashes after retrieving
+	if err != nil {
+		panic("failed to save session in myTimelineHandler")
+	}
 
 	messages, err := getMyMessages(userID)
 
 	if err != nil {
+		//nolint:all
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
@@ -177,6 +203,7 @@ func myTimelineHandler(c *gin.Context) {
 }
 
 func addMessageHandler(c *gin.Context) {
+	var err error
 
 	session := sessions.Default(c)
 
@@ -202,7 +229,10 @@ func addMessageHandler(c *gin.Context) {
 		if text == "" {
 			c.Redirect(http.StatusSeeOther, "/")
 			session.AddFlash("You have to enter a value")
-			session.Save()
+			err = session.Save()
+			if err != nil {
+				panic("failed to save session in addMessageHandler")
+			}
 			return
 		} else {
 			err := addMessage(text, userIDString)
@@ -214,7 +244,10 @@ func addMessageHandler(c *gin.Context) {
 
 			c.Redirect(http.StatusSeeOther, "/")
 			session.AddFlash("Your message was recorded")
-			session.Save()
+			err = session.Save()
+			if err != nil {
+				panic("failed to save session in addMessageHandler")
+			}
 			return
 		}
 	}
@@ -251,6 +284,7 @@ func registerHandler(c *gin.Context) {
 
 		userID, err := getUserIDByUsername(userName)
 		if err != nil {
+			//nolint:all
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
@@ -280,7 +314,10 @@ func registerHandler(c *gin.Context) {
 			session.AddFlash("You were successfully registered and can login now")
 			// print session info
 			fmt.Println("session info:", session, "Logged in")
-			session.Save()
+			err = session.Save()
+			if err != nil {
+				panic("failed to save session in registerHandler")
+			}
 			c.Redirect(http.StatusSeeOther, "/login")
 			return
 		}
@@ -292,14 +329,21 @@ func registerHandler(c *gin.Context) {
 }
 
 func loginHandler(c *gin.Context) {
+	var err error
 	session := sessions.Default(c)
 	flashMessages := session.Flashes()
-	session.Save()
+	err = session.Save()
+	if err != nil {
+		panic("failed to save session in loginHandler")
+	}
 
 	userID, _ := c.Cookie("UserID")
 	if userID != "" {
 		session.AddFlash("You were logged in")
-		session.Save()
+		err = session.Save()
+		if err != nil {
+			panic("failed to save session in loginHandler")
+		}
 		c.Redirect(http.StatusFound, "/")
 		return
 	}
@@ -323,6 +367,7 @@ func loginHandler(c *gin.Context) {
 
 		user, err := getUserByUsername(userName)
 		if err != nil {
+			//nolint:all
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
@@ -334,12 +379,16 @@ func loginHandler(c *gin.Context) {
 		} else {
 			userID, err := getUserIDByUsername(userName)
 			if err != nil {
+				//nolint:all
 				c.AbortWithError(http.StatusInternalServerError, err)
 				return
 			}
 			c.SetCookie("UserID", fmt.Sprint(userID), 3600, "/", "", false, true)
 			session.AddFlash("You were logged in")
-			session.Save()
+			err = session.Save()
+			if err != nil {
+				panic("failed to save session in loginHandler")
+			}
 			c.Redirect(http.StatusFound, "/")
 			return
 		}
@@ -354,9 +403,13 @@ func loginHandler(c *gin.Context) {
 }
 
 func logoutHandler(c *gin.Context) {
+	var err error
 	session := sessions.Default(c)
 	session.AddFlash("You were logged out")
-	session.Save()
+	err = session.Save()
+	if err != nil {
+		panic("failed to save session in logoutHandler")
+	}
 	// Invalidate the cookie by setting its max age to -1
 	// will delete the cookie <- nice stuff
 	c.SetCookie("UserID", "", -1, "/", "", false, true)

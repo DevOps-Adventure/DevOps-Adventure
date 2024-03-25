@@ -273,6 +273,7 @@ func apiMsgsPerUserHandler(c *gin.Context) {
 		return
 	}
 	if err != nil {
+		//nolint:all
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
