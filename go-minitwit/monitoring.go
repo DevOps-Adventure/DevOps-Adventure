@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"log"
+	"os"
 	"time"
 
 	logrusfluent "github.com/evalphobia/logrus_fluent"
@@ -41,20 +42,25 @@ var logger *logrus.Logger
 func setupLogger() {
 	logger = logrus.New()
 
-	// Configure the Fluentd hook.
-	hook, err := logrusfluent.NewWithConfig(logrusfluent.Config{
-		Port: 24224,
-		Host: "fluentd",
-	})
-	if err != nil {
-		logger.Fatalf("Failed to create Fluentd hook: %v", err)
+	if os.Getenv("EXECUTION_ENVIRONMENT") != "CI" {
+		// Configure the Fluentd hook only if not in CI environment.
+		hook, err := logrusfluent.NewWithConfig(logrusfluent.Config{
+			Port: 24224,
+			Host: "fluentd",
+		})
+		if err != nil {
+			logger.Fatalf("Failed to create Fluentd hook: %v", err)
+		}
+		logger.SetLevel(logrus.DebugLevel)
+		logger.AddHook(hook)
+
+		hook.SetTag("minitwit.tag")
+		hook.SetMessageField("message")
+	} else {
+		// in CI enviroment
+		logger.Out = os.Stdout
 	}
-
 	logger.SetLevel(logrus.DebugLevel)
-	logger.AddHook(hook)
-
-	hook.SetTag("minitwit.tag")
-	hook.SetMessageField("message")
 }
 
 // defining registation of Prometeus
