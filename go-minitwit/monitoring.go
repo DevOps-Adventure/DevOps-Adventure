@@ -34,6 +34,21 @@ var (
 		Name: "minitwit_new_signups_total",
 		Help: "Total number of new user signups.",
 	})
+
+	loginCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "minitwit_login_total",
+		Help: "Total number of user logins.",
+	})
+
+	logoutCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "minitwit_logout_total",
+		Help: "Total number of user logouts.",
+	})
+
+	dbProcessDuration = promauto.NewSummary(prometheus.SummaryOpts{
+		Name: "minitwit_db_process_duration_seconds",
+		Help: "Time spent in database processes.",
+	})
 )
 
 var logger *logrus.Logger
@@ -120,16 +135,3 @@ func AfterRequest() gin.HandlerFunc {
 	}
 
 }
-
-func UserSignupMonitoring() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Next()
-
-		// Check if the registration was successful
-		if success, exists := c.Get("registrationSuccess"); exists && success.(bool) {
-			newSignupsCounter.Inc()
-		}
-	}
-}
-
-////
