@@ -8,7 +8,6 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3" // Import the SQLite3 driver
-	"github.com/prometheus/client_golang/prometheus"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -266,11 +265,11 @@ func registerUser(userName string, email string, password [16]byte) error {
 // adds a new message to the database
 func addMessage(text string, author_id int) error {
 
-	//monitoring Prometheus
-	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		dbProcessDuration.Observe(v)
-	}))
-	defer timer.ObserveDuration()
+	// //monitoring Prometheus
+	// timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+	// 	dbProcessDuration.Observe(v)
+	// }))
+	// defer timer.ObserveDuration()
 
 	currentTime := time.Now().UTC()
 	unixTimestamp := currentTime.Unix()
