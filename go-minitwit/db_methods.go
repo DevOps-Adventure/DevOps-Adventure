@@ -8,6 +8,7 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3" // Import the SQLite3 driver
+	"github.com/prometheus/client_golang/prometheus"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -102,6 +103,13 @@ func connect_prod_DB() (*gorm.DB, error) {
 
 // fetches all public messages for display.
 func getPublicMessages(numMsgs int) ([]MessageUser, error) {
+
+	//adding timer for Prometheus monitoring
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		dbProcessDuration.Observe(v)
+	}))
+	defer timer.ObserveDuration() // This will record the time after completing the operation
+
 	var messages []MessageUser
 	dbNew.Table("message").
 		Select("message.*, user.*").
@@ -122,6 +130,12 @@ func getPublicMessages(numMsgs int) ([]MessageUser, error) {
 // fetches all messages from picked user
 func getUserMessages(pUserId int, numMsgs int) ([]MessageUser, error) {
 
+	//Prometheus monitoring
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		dbProcessDuration.Observe(v)
+	}))
+	defer timer.ObserveDuration()
+
 	var messages []MessageUser
 	dbNew.Table("message").
 		Select("message.*, user.*").
@@ -141,6 +155,12 @@ func getUserMessages(pUserId int, numMsgs int) ([]MessageUser, error) {
 
 // check whether the given user is followed by logged in
 func checkFollowStatus(userID int, pUserID int) (bool, error) {
+
+	//Prometheus monitoring
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		dbProcessDuration.Observe(v)
+	}))
+	defer timer.ObserveDuration()
 
 	if userID == pUserID {
 		return false, nil
@@ -163,6 +183,12 @@ func checkFollowStatus(userID int, pUserID int) (bool, error) {
 
 // fetches all messages for the current logged in user for 'My Timeline'
 func getMyMessages(userID string) ([]MessageUser, error) {
+	//Prometheus monitoring
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		dbProcessDuration.Observe(v)
+	}))
+	defer timer.ObserveDuration()
+
 	var messages []MessageUser
 
 	subQuery := dbNew.Table("follower").
@@ -195,6 +221,12 @@ func getMyMessages(userID string) ([]MessageUser, error) {
 
 // fetches a user by their ID
 func getUserIDByUsername(userName string) (int, error) {
+	//Prometheus monitoring
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		dbProcessDuration.Observe(v)
+	}))
+	defer timer.ObserveDuration()
+
 	var user User
 	dbNew.Where("username = ?", userName).First(&user)
 
@@ -207,6 +239,12 @@ func getUserIDByUsername(userName string) (int, error) {
 
 // fetches a username by their ID
 func getUserNameByUserID(userID string) (string, error) {
+	//monitoring Prometheus
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		dbProcessDuration.Observe(v)
+	}))
+	defer timer.ObserveDuration()
+
 	var user User
 	dbNew.First(&user, userID)
 
@@ -219,6 +257,11 @@ func getUserNameByUserID(userID string) (string, error) {
 }
 
 func getUserByUsername(userName string) (User, error) {
+	//monitoring Prometheus
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		dbProcessDuration.Observe(v)
+	}))
+	defer timer.ObserveDuration()
 	var user User
 	dbNew.Where("username = ?", userName).First(&user)
 
@@ -237,6 +280,11 @@ func getUserByUsername(userName string) (User, error) {
 
 // registers a new user
 func registerUser(userName string, email string, password [16]byte) error {
+	//monitoring Prometheus
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		dbProcessDuration.Observe(v)
+	}))
+	defer timer.ObserveDuration()
 
 	pwHashString := hex.EncodeToString(password[:])
 
@@ -259,6 +307,12 @@ func registerUser(userName string, email string, password [16]byte) error {
 
 // adds a new message to the database
 func addMessage(text string, author_id int) error {
+
+	//monitoring Prometheus
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		dbProcessDuration.Observe(v)
+	}))
+	defer timer.ObserveDuration()
 
 	currentTime := time.Now().UTC()
 	unixTimestamp := currentTime.Unix()
@@ -283,6 +337,12 @@ func addMessage(text string, author_id int) error {
 
 // followUser adds a new follower to the database
 func followUser(userID string, profileUserID string) error {
+	//monitoring Prometheus
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		dbProcessDuration.Observe(v)
+	}))
+	defer timer.ObserveDuration()
+
 	userIDInt, errz := strconv.Atoi(userID)
 	profileUserIDInt, errx := strconv.Atoi(profileUserID)
 
@@ -318,6 +378,12 @@ func followUser(userID string, profileUserID string) error {
 
 // unfollowUser removes a follower from the database
 func unfollowUser(userID string, profileUserID string) error {
+	//monitoring Prometheus
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		dbProcessDuration.Observe(v)
+	}))
+	defer timer.ObserveDuration()
+
 	userIDInt, errz := strconv.Atoi(userID)
 	profileUserIDInt, errx := strconv.Atoi(profileUserID)
 
@@ -341,6 +407,12 @@ func unfollowUser(userID string, profileUserID string) error {
 
 // getFollowers fetches up to `limit` followers for the user identified by userID
 func getFollowers(userID string, limit int) ([]User, error) {
+	//Prometheus monitoring
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		dbProcessDuration.Observe(v)
+	}))
+	defer timer.ObserveDuration()
+
 	var users []User
 
 	dbNew.
@@ -359,6 +431,12 @@ func getFollowers(userID string, limit int) ([]User, error) {
 
 // getFollowing fetches up to `limit` users that the user identified by userID is following
 func getFollowing(userID string, limit int) ([]User, error) {
+	//Prometheus monitoring
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		dbProcessDuration.Observe(v)
+	}))
+	defer timer.ObserveDuration()
+
 	var users []User
 
 	dbNew.

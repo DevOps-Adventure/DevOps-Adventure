@@ -44,6 +44,11 @@ var (
 		Name: "minitwit_logout_total",
 		Help: "Total number of user logouts.",
 	})
+
+	dbProcessDuration = promauto.NewSummary(prometheus.SummaryOpts{
+		Name: "minitwit_db_process_duration_seconds",
+		Help: "Time spent in database processes.",
+	})
 )
 
 var logger *logrus.Logger
