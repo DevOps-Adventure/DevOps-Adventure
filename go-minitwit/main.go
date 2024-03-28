@@ -37,7 +37,6 @@ func main() {
 	if env == "LOCAL" || env == "CI" {
 		dbNew, err = connect_dev_DB("./tmp/minitwit_empty.db")
 		if err != nil {
-			// Log the failure to connect to the database with the error message.
 			logger.WithFields(logrus.Fields{
 				"environment": env,
 				"action":      "connect to database",
@@ -51,6 +50,13 @@ func main() {
 	} else {
 		dbNew, err = connect_prod_DB()
 		if err != nil {
+			logger.WithFields(logrus.Fields{
+				"environment": env,
+				"action":      "connect to database",
+				"status":      "failed",
+				"error":       err.Error(),
+				"database":    "production",
+			}).Error("Failed to connect to the production database.")
 			panic("failed to connect to database")
 		}
 	}
@@ -102,4 +108,10 @@ func main() {
 
 	// Start the server
 	router.Run(":8081")
+
+	logger.WithFields(logrus.Fields{
+		"action": "start server",
+		"status": "success",
+		"port":   8081,
+	}).Info("Application server minitwit is listening.")
 }
