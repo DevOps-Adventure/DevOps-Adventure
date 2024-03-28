@@ -35,14 +35,9 @@ var (
 		Help: "Total number of new user signups.",
 	})
 
-	loginCounter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "minitwit_login_total",
-		Help: "Total number of user logins.",
-	})
-
-	logoutCounter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "minitwit_logout_total",
-		Help: "Total number of user logouts.",
+	activeUsers = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "active_users",
+		Help: "Current number of active users.",
 	})
 
 	dbProcessDuration = promauto.NewSummary(prometheus.SummaryOpts{
@@ -134,4 +129,13 @@ func AfterRequest() gin.HandlerFunc {
 		}()
 	}
 
+}
+
+// prometeus cannot decrement counter so I am using gause instead
+func userLogIn() {
+	activeUsers.Inc()
+}
+
+func userLogout() {
+	activeUsers.Dec()
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -105,6 +106,9 @@ func main() {
 	// registering prometeus
 	router.GET("/metrics", prometheusHandler())
 
+	//registration of prometheus gauge
+	prometheus.MustRegister(activeUsers)
+
 	// Start the server
 	router.Run(":8081")
 
@@ -113,4 +117,5 @@ func main() {
 		"status": "success",
 		"port":   8081,
 	}).Info("Application server minitwit is listening.")
+
 }
