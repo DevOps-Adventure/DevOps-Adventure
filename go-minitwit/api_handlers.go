@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -116,6 +118,13 @@ func apiRegisterHandler(c *gin.Context) {
 	//Check if user already exists
 	userID, exists := c.Get("UserID")
 	if exists {
+
+		logger.WithFields(logrus.Fields{
+			"source":   "api",
+			"endpoint": "/api/register",
+			"action":   "check_user_exists",
+		}).Warn("Attempt to register an existing user")
+
 		errorData.status = 400
 		errorData.error_msg = "User already exists: " + fmt.Sprintf("%v", userID)
 		c.AbortWithStatusJSON(400, errorData)
@@ -127,6 +136,15 @@ func apiRegisterHandler(c *gin.Context) {
 		var registerReq UserData
 		body, err := io.ReadAll(c.Request.Body)
 		if err != nil {
+
+			logger.WithFields(logrus.Fields{
+				"source":   "api",
+				"endpoint": "/api/register",
+				"action":   "read_request_body",
+				"status":   "error",
+				"error":    err.Error(),
+			}).Error("Error failed to read request body")
+
 			errorData.status = 400
 			errorData.error_msg = "Failed to read JSON"
 			c.AbortWithStatusJSON(400, errorData)
@@ -136,6 +154,15 @@ func apiRegisterHandler(c *gin.Context) {
 		// Parse the request body from JSON
 		// Unmarshal parses the JSON and stores it in a pointer (registerReq)
 		if err := json.Unmarshal(body, &registerReq); err != nil {
+
+			logger.WithFields(logrus.Fields{
+				"source":   "api",
+				"endpoint": "/api/register",
+				"action":   "parse_json",
+				"status":   "error",
+				"error":    err.Error(),
+			}).Error("Failed to parse request JSON")
+
 			errorData.status = 400
 			errorData.error_msg = "Failed to parse JSON"
 			c.AbortWithStatusJSON(400, errorData)
@@ -150,6 +177,15 @@ func apiRegisterHandler(c *gin.Context) {
 		// Get user ID
 		userID, err := getUserIDByUsername(username)
 		if err != nil {
+
+			logger.WithFields(logrus.Fields{
+				"source":   "api",
+				"endpoint": "/api/register",
+				"action":   "get_user_by_id",
+				"status":   "error",
+				"error":    err.Error(),
+			}).Error("Error getting username by id")
+
 			errorData.status = 400
 			errorData.error_msg = "Failed to get userID"
 			c.AbortWithStatusJSON(400, errorData)
@@ -185,6 +221,16 @@ func apiRegisterHandler(c *gin.Context) {
 			hash := md5.Sum([]byte(password))
 			err := registerUser(username, email, hash)
 			if err != nil {
+
+				logger.WithFields(logrus.Fields{
+					"source":   "api",
+					"endpoint": "/api/register",
+					"action":   "registration_attempt",
+					"status":   "failed",
+					"reason":   "error_registering_user",
+					"error":    err.Error(),
+				}).Error("Failed registration attempt due to an error during registration")
+
 				errorData.status = 400
 				errorData.error_msg = "Failed to register user"
 				c.AbortWithStatusJSON(400, errorData.error_msg)
@@ -196,6 +242,14 @@ func apiRegisterHandler(c *gin.Context) {
 			c.AbortWithStatusJSON(400, errorData.error_msg)
 			return
 		} else {
+
+			logger.WithFields(logrus.Fields{
+				"source":   "api",
+				"endpoint": "/api/register",
+				"action":   "registration",
+				"status":   "success",
+			}).Info("User successfully registered")
+
 			c.JSON(204, "")
 		}
 	}
@@ -218,6 +272,14 @@ func apiMsgsHandler(c *gin.Context) {
 
 	not_req_from_sim_statusCode, not_req_from_sim_errStr := not_req_from_simulator(c)
 	if not_req_from_sim_statusCode == 403 && not_req_from_sim_errStr != "" {
+
+		logger.WithFields(logrus.Fields{
+			"source":   "api",
+			"endpoint": "/api/messages",
+			"action":   "access_denied",
+			"reason":   not_req_from_sim_errStr,
+		}).Warn("Request denied: not from simulator")
+
 		errorData.status = http.StatusForbidden
 		errorData.error_msg = not_req_from_sim_errStr
 		c.AbortWithStatusJSON(http.StatusForbidden, errorData.error_msg)
@@ -228,11 +290,30 @@ func apiMsgsHandler(c *gin.Context) {
 	numMsgsInt, err := strconv.Atoi(numMsgs)
 	// fallback on default value
 	if err != nil {
+
+		logger.WithFields(logrus.Fields{
+			"source":   "api",
+			"endpoint": "/api/messages",
+			"action":   "parse_header_fallback",
+			"numMsgs":  numMsgs,
+			"fallback": 100,
+			"error":    err.Error(),
+		}).Info("Falling back to default number of messages due to parsing error")
+
 		numMsgsInt = 100
 	}
 
 	messages, err := getPublicMessages(numMsgsInt)
 	if err != nil {
+
+		logger.WithFields(logrus.Fields{
+			"source":   "api",
+			"endpoint": "/api/messages",
+			"action":   "fetch_messages",
+			"status":   "error",
+			"error":    err.Error(),
+		}).Error("Failed to fetch messages from DB")
+
 		errorData.status = http.StatusBadRequest
 		errorData.error_msg = "Failed to fetch messages from DB"
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
@@ -260,6 +341,14 @@ func apiMsgsPerUserHandler(c *gin.Context) {
 
 	not_req_from_sim_statusCode, not_req_from_sim_errStr := not_req_from_simulator(c)
 	if not_req_from_sim_statusCode == 403 && not_req_from_sim_errStr != "" {
+
+		logger.WithFields(logrus.Fields{
+			"source":   "api",
+			"endpoint": "/api/messages_per_user",
+			"action":   "access_denied",
+			"reason":   not_req_from_sim_errStr,
+		}).Warn("Request denied: not from simulator")
+
 		errorData.status = http.StatusForbidden
 		errorData.error_msg = not_req_from_sim_errStr
 		c.AbortWithStatusJSON(http.StatusForbidden, errorData.error_msg)
@@ -283,14 +372,40 @@ func apiMsgsPerUserHandler(c *gin.Context) {
 		// fallback on default value
 		if err != nil {
 			numMsgsInt = 100
+
+			logger.WithFields(logrus.Fields{
+				"source":   "api",
+				"endpoint": "/api/messages_per_user",
+				"action":   "parse_header_fallback",
+				"fallback": numMsgsInt,
+			}).Info("Fallback to default number of messages due to parsing error")
 		}
 
 		messages, err := getUserMessages(userId, numMsgsInt)
 		if err != nil {
+
+			logger.WithFields(logrus.Fields{
+				"source":   "api",
+				"endpoint": "/api/messages_per_user",
+				"action":   "fetch_messages",
+				"status":   "error",
+				"error":    err.Error(),
+			}).Error("Failed to fetch messages from DB")
+
 			errorData.status = http.StatusBadRequest
 			errorData.error_msg = "Failed to fetch messages from DB"
 			c.AbortWithStatusJSON(http.StatusInternalServerError, errorData)
 		}
+
+		// Log successful retrieval of messages
+		logger.WithFields(logrus.Fields{
+			"source":     "api",
+			"endpoint":   "/api/messages_per_user",
+			"action":     "retrieve_messages",
+			"status":     "success",
+			"numMsgs":    numMsgsInt,
+			"numResults": len(messages),
+		}).Info("Successfully retrieved messages")
 
 		filteredMessages := filterMessages(messages)
 		jsonFilteredMessages, _ := json.Marshal(filteredMessages)
@@ -303,12 +418,30 @@ func apiMsgsPerUserHandler(c *gin.Context) {
 		body, err := io.ReadAll(c.Request.Body)
 
 		if err != nil {
+
+			logger.WithFields(logrus.Fields{
+				"source":   "api",
+				"endpoint": "/api/messages_per_user",
+				"action":   "read_request_body",
+				"status":   "error",
+				"error":    err.Error(),
+			}).Error("Failed to read request body")
+
 			errorData.status = 400
 			errorData.error_msg = "Failed to read JSON"
 			c.AbortWithStatusJSON(http.StatusBadRequest, errorData)
 		}
 
 		if err := json.Unmarshal(body, &messageReq); err != nil {
+
+			logger.WithFields(logrus.Fields{
+				"source":   "api",
+				"endpoint": "/api/messages_per_user",
+				"action":   "parse_json",
+				"status":   "error",
+				"error":    err.Error(),
+			}).Error("Failed to parse JSON body")
+
 			errorData.status = 400
 			errorData.error_msg = "Failed to parse JSON"
 		}
@@ -328,6 +461,13 @@ func apiMsgsPerUserHandler(c *gin.Context) {
 			errorData.error_msg = "Failed to upload message"
 			c.AbortWithStatusJSON(http.StatusInternalServerError, errorData)
 		}
+
+		logger.WithFields(logrus.Fields{
+			"source":   "api",
+			"endpoint": "/api/messages_per_user",
+			"action":   "upload_message",
+			"status":   "success",
+		}).Info("Successfully uploaded message")
 
 		c.String(http.StatusNoContent, "")
 	}
@@ -363,6 +503,14 @@ func apiFllwsHandler(c *gin.Context) {
 
 	not_req_from_sim_statusCode, not_req_from_sim_errStr := not_req_from_simulator(c)
 	if not_req_from_sim_statusCode == 403 && not_req_from_sim_errStr != "" {
+
+		logger.WithFields(logrus.Fields{
+			"source":   "api",
+			"endpoint": "/api/fllw",
+			"action":   "access_denied",
+			"reason":   not_req_from_sim_errStr,
+		}).Warn("Request denied: not from simulator")
+
 		errorData.status = http.StatusForbidden
 		errorData.error_msg = not_req_from_sim_errStr
 		c.AbortWithStatusJSON(http.StatusForbidden, errorData.error_msg)
@@ -375,11 +523,25 @@ func apiFllwsHandler(c *gin.Context) {
 		numFollrInt, err := strconv.Atoi(numFollr)
 		// fallback on default value
 		if err != nil {
+			logger.WithFields(logrus.Fields{
+				"source":   "api",
+				"endpoint": "/api/fllw",
+				"action":   "parse_header_fallback",
+				"fallback": numFollrInt,
+			}).Info("Fallback to default number of followers due to parsing error")
 			numFollrInt = 100
 		}
 
 		userId, err := getUserIDByUsername(profileUserName)
 		if err != nil || userId == -1 {
+
+			logger.WithFields(logrus.Fields{
+				"source":   "api",
+				"endpoint": "/api/fllw",
+				"action":   "get_user_id",
+				"status":   "failed",
+			}).Error("Failed to get user ID for follow/unfollow actions")
+
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
@@ -388,10 +550,29 @@ func apiFllwsHandler(c *gin.Context) {
 		userIdStr := strconv.Itoa(userId)
 		followers, err := getFollowing(userIdStr, numFollrInt)
 		if err != nil {
+
+			logger.WithFields(logrus.Fields{
+				"source":   "api",
+				"endpoint": "/api/fllw",
+				"action":   "fetch_followers",
+				"status":   "error",
+				"error":    err.Error(),
+			}).Error("Failed to fetch followers from DB")
+
 			errorData.status = http.StatusInternalServerError
 			errorData.error_msg = "Failed to fetch followers from DB"
 			c.AbortWithStatusJSON(http.StatusInternalServerError, errorData)
 		}
+
+		// Successfully retrieved followers, log this event
+		logger.WithFields(logrus.Fields{
+			"source":     "api",
+			"endpoint":   "/api/fllw",
+			"action":     "retrieve_followers",
+			"status":     "success",
+			"numResults": len(followers),
+		}).Info("Successfully retrieved followers")
+
 		// empty slice for follower usernames
 		followerNames := []string{}
 
@@ -417,6 +598,15 @@ func apiFllwsHandler(c *gin.Context) {
 
 		// Bind JSON data to requestBody
 		if err := c.BindJSON(&requestBody); err != nil {
+
+			logger.WithFields(logrus.Fields{
+				"source":   "api",
+				"endpoint": "/api/fllw",
+				"action":   "bind_json",
+				"status":   "error",
+				"error":    err.Error(),
+			}).Error("Failed to bind JSON for follow/unfollow action")
+
 			errorData.status = http.StatusNotFound
 			errorData.error_msg = "Failed to parse JSON"
 			c.AbortWithStatusJSON(http.StatusNotFound, errorData)
@@ -438,6 +628,12 @@ func apiFllwsHandler(c *gin.Context) {
 			// Convert requestBody.Follow to profileUserID
 			profileUserID, err := getUserIDByUsername(requestBody.Follow)
 			if err != nil || profileUserID == -1 {
+				logger.WithFields(logrus.Fields{
+					"source":   "api",
+					"endpoint": "/api/fllw",
+					"action":   "get_user_id",
+					"status":   "failed",
+				}).Error("Failed to get user ID for follow/unfollow actions")
 				c.AbortWithStatus(http.StatusNotFound)
 				return
 			}
@@ -445,11 +641,28 @@ func apiFllwsHandler(c *gin.Context) {
 
 			// Follow the user
 			if err := followUser(userIdStr, profileUserIDStr); err != nil {
+
+				logger.WithFields(logrus.Fields{
+					"source":   "api",
+					"endpoint": "/api/fllw",
+					"action":   "follow_user",
+					"status":   "failed",
+				}).Error("Failed to follow user")
+
 				errorData.status = http.StatusNotFound
 				errorData.error_msg = "Failed to follow user"
 				c.AbortWithStatusJSON(http.StatusNotFound, errorData)
 				return
 			}
+
+			logger.WithFields(logrus.Fields{
+				"source":   "api",
+				"endpoint": "/api/fllw",
+				"action":   "follow",
+				"status":   "requested",
+				"follower": profileUserName,
+				"followee": requestBody.Follow,
+			}).Info("Follow request processed")
 
 			c.JSON(http.StatusNoContent, "")
 			return
@@ -465,11 +678,27 @@ func apiFllwsHandler(c *gin.Context) {
 
 			// Unfollow the user
 			if err := unfollowUser(userIdStr, profileUserIDStr); err != nil {
+				logger.WithFields(logrus.Fields{
+					"source":   "api",
+					"endpoint": "/api/fllw",
+					"action":   "unfollow_user",
+					"status":   "failed",
+				}).Error("Failed to unfollow user")
+
 				errorData.status = http.StatusNotFound
 				errorData.error_msg = "Failed to unfollow user"
 				c.AbortWithStatusJSON(http.StatusNotFound, errorData)
 				return
 			}
+
+			logger.WithFields(logrus.Fields{
+				"source":   "api",
+				"endpoint": "/api/fllw",
+				"action":   "unfollow",
+				"status":   "requested",
+				"follower": profileUserName,
+				"followee": requestBody.Unfollow,
+			}).Info("Unfollow request processed")
 
 			c.JSON(http.StatusNoContent, "")
 		} else {

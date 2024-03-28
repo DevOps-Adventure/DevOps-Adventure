@@ -3,13 +3,16 @@ package main
 import (
 	"database/sql"
 	"log"
+	"os"
 	"time"
 
+	logrusfluent "github.com/evalphobia/logrus_fluent"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shirou/gopsutil/cpu"
+	"github.com/sirupsen/logrus"
 )
 
 // defining metrics -counter,cpu,responce time monitoring for Prometeus
@@ -42,6 +45,33 @@ var (
 		Help: "Total number of user logouts.",
 	})
 )
+
+var logger *logrus.Logger
+
+// connect lorus with tcp to fluent
+func setupLogger() {
+	logger = logrus.New()
+
+	if os.Getenv("EXECUTION_ENVIRONMENT") != "CI" {
+		// Configure the Fluentd hook only if not in CI environment.
+		hook, err := logrusfluent.NewWithConfig(logrusfluent.Config{
+			Port: 24224,
+			Host: "fluentd",
+		})
+		if err != nil {
+			logger.Fatalf("Failed to create Fluentd hook: %v", err)
+		}
+		logger.SetLevel(logrus.DebugLevel)
+		logger.AddHook(hook)
+
+		hook.SetTag("minitwit.tag")
+		hook.SetMessageField("message")
+	} else {
+		// in CI enviroment
+		logger.Out = os.Stdout
+	}
+	logger.SetLevel(logrus.DebugLevel)
+}
 
 // defining registation of Prometeus
 func prometheusHandler() gin.HandlerFunc {

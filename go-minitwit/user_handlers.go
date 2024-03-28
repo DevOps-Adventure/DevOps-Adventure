@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
@@ -20,6 +22,13 @@ func userFollowActionHandler(c *gin.Context) {
 
 	userID, errID := c.Cookie("UserID")
 	if errID != nil {
+		logger.WithFields(logrus.Fields{
+			"source":   "user_interface",
+			"endpoint": "following",
+			"action":   "check login",
+			"status":   "not logged in",
+		}).Info("Attempt to follow/unfollow without being logged in")
+
 		session.AddFlash("You need to login before continuing to follow or unfollow.")
 		session.Save()
 		c.Redirect(http.StatusFound, "/login")
@@ -29,6 +38,15 @@ func userFollowActionHandler(c *gin.Context) {
 	profileUserName := c.Param("username")
 	profileUser, err := getUserByUsername(profileUserName)
 	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"source":      "user_interface",
+			"endpoint":    "following",
+			"action":      "retrieve profile user",
+			"status":      "failed",
+			"profileUser": profileUserName,
+			"error":       err.Error(),
+		}).Error("Failed to retrieve user profile")
+
 		fmt.Println("get user failed with:", err)
 		c.Redirect(http.StatusFound, "/public")
 		return
@@ -39,10 +57,26 @@ func userFollowActionHandler(c *gin.Context) {
 
 	if action == "/follow" {
 		followUser(userID, profileUserID)
+
+		logger.WithFields(logrus.Fields{
+			"source":   "user_interface",
+			"endpoint": "following",
+			"action":   "follow",
+			"status":   "success",
+		}).Info("User followed another user")
+
 		session.AddFlash("You are now following " + profileUserName)
 	}
 	if action == "/unfollow" {
 		unfollowUser(userID, profileUserID)
+
+		logger.WithFields(logrus.Fields{
+			"source":   "user_interface",
+			"endpoint": "following",
+			"action":   "unfollow",
+			"status":   "success",
+		}).Info("User unfollowed another user")
+
 		session.AddFlash("You are no longer following " + profileUserName)
 	}
 	session.Save()
@@ -71,8 +105,22 @@ func publicTimelineHandler(c *gin.Context) {
 
 		if errName == nil {
 			context["UserName"] = userName
+
+			logger.WithFields(logrus.Fields{
+				"source":   "user_interface",
+				"endpoint": "public_timeline",
+				"action":   "identify user",
+			}).Info("User identified for public timeline")
 		}
 	}
+
+	logger.WithFields(logrus.Fields{
+		"source":        "user_interface",
+		"endpoint":      "public_timeline",
+		"action":        "render",
+		"messagesCount": len(formattedMessages),
+	}).Info("Rendering public timeline")
+
 	// Render timeline template with the context including link variables
 	c.HTML(http.StatusOK, "timeline.html", context)
 }
@@ -85,10 +133,27 @@ func userTimelineHandler(c *gin.Context) {
 	profileUser, err := getUserByUsername(profileUserName)
 
 	if profileUser.Username == "" {
+
+		logger.WithFields(logrus.Fields{
+			"source":   "user_interface",
+			"endpoint": "user_timeline",
+			"action":   "fetch_user",
+			"status":   "user_not_found",
+		}).Warn("User not found for timeline")
+
 		c.AbortWithStatus(404)
 		return
 	}
 	if err != nil {
+
+		logger.WithFields(logrus.Fields{
+			"source":   "user_interface",
+			"endpoint": "user_timeline",
+			"action":   "fetch_user",
+			"status":   "error",
+			"error":    err.Error(),
+		}).Error("Error fetching user for timeline")
+
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
@@ -104,6 +169,15 @@ func userTimelineHandler(c *gin.Context) {
 	if errID == nil {
 		followed, err = checkFollowStatus(userIDInt, pUserId)
 		if err != nil {
+
+			logger.WithFields(logrus.Fields{
+				"source":   "user_interface",
+				"endpoint": "user_timeline",
+				"action":   "check_follow_status",
+				"status":   "error",
+				"error":    err.Error(),
+			}).Error("Error checking follow status")
+
 			logMessage(err.Error())
 			return
 		}
@@ -113,11 +187,27 @@ func userTimelineHandler(c *gin.Context) {
 	fmt.Println(messages)
 
 	if err != nil {
+
+		logger.WithFields(logrus.Fields{
+			"source":   "user_interface",
+			"endpoint": "user_timeline",
+			"action":   "fetch_user_messages",
+			"status":   "error",
+			"error":    err.Error(),
+		}).Error("Error fetching user messages")
+
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	formattedMessages := formatMessages(messages)
+
+	logger.WithFields(logrus.Fields{
+		"source":         "user_interface",
+		"endpoint":       "user_timeline",
+		"action":         "render_user_timeline",
+		"messages_count": len(formattedMessages),
+	}).Info("Rendering users public timeline")
 
 	c.HTML(http.StatusOK, "timeline.html", gin.H{
 		"TimelineBody":    true,
@@ -137,6 +227,15 @@ func myTimelineHandler(c *gin.Context) {
 	errMsg := c.Query("error")
 
 	if err != nil {
+
+		logger.WithFields(logrus.Fields{
+			"source":   "user_interface",
+			"endpoint": "my_timeline",
+			"action":   "get_cookie",
+			"status":   "error",
+			"error":    err.Error(),
+		}).Error("Error getting user information")
+
 		c.Redirect(http.StatusFound, "/public")
 		return
 	}
@@ -144,6 +243,15 @@ func myTimelineHandler(c *gin.Context) {
 	userName, err := getUserNameByUserID(userID)
 
 	if err != nil {
+
+		logger.WithFields(logrus.Fields{
+			"source":   "user_interface",
+			"endpoint": "my_timeline",
+			"action":   "get_user_name",
+			"status":   "error",
+			"error":    err.Error(),
+		}).Error("Error getting username by id")
+
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
@@ -155,12 +263,28 @@ func myTimelineHandler(c *gin.Context) {
 	messages, err := getMyMessages(userID)
 
 	if err != nil {
+
+		logger.WithFields(logrus.Fields{
+			"source":   "user_interface",
+			"endpoint": "my_timeline",
+			"action":   "get_my_messages",
+			"status":   "error",
+			"error":    err.Error(),
+		}).Error("Error getting users messages")
+
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	formattedMessages := formatMessages(messages)
 	fmt.Println(formattedMessages)
+
+	logger.WithFields(logrus.Fields{
+		"source":         "user_interface",
+		"endpoint":       "my_timeline",
+		"action":         "format_messages",
+		"messages_count": len(formattedMessages),
+	}).Info("Rendering users timeline")
 
 	// For template rendering with Gin
 	c.HTML(http.StatusOK, "timeline.html", gin.H{
@@ -183,6 +307,15 @@ func addMessageHandler(c *gin.Context) {
 	userID, err := c.Cookie("UserID")
 	userIDString, errStr := strconv.Atoi(userID)
 	if err != nil || errStr != nil {
+
+		logger.WithFields(logrus.Fields{
+			"source":   "user_interface",
+			"endpoint": "add_messages",
+			"action":   "get_cookie",
+			"status":   "error",
+			"error":    err.Error(),
+		}).Error("Error getting user information")
+
 		c.Redirect(http.StatusFound, "/public")
 		return
 	}
@@ -191,6 +324,15 @@ func addMessageHandler(c *gin.Context) {
 	if c.Request.Method == http.MethodPost {
 		err := c.Request.ParseForm()
 		if err != nil {
+
+			logger.WithFields(logrus.Fields{
+				"source":   "user_interface",
+				"endpoint": "add_messages",
+				"action":   "parse_from_data",
+				"status":   "error",
+				"error":    err.Error(),
+			}).Error("Error failed to parse form data")
+
 			errorData = "Failed to parse form data"
 			c.Redirect(http.StatusBadRequest, "/?error="+errorData)
 			return
@@ -207,10 +349,26 @@ func addMessageHandler(c *gin.Context) {
 		} else {
 			err := addMessage(text, userIDString)
 			if err != nil {
+
+				logger.WithFields(logrus.Fields{
+					"source":   "user_interface",
+					"endpoint": "add_messages",
+					"action":   "enter_value",
+					"status":   "error",
+					"error":    err.Error(),
+				}).Error("Error failed to add message")
+
 				errorData = "Failed to add message"
 				c.Redirect(http.StatusInternalServerError, "/?error="+errorData)
 				return
 			}
+
+			logger.WithFields(logrus.Fields{
+				"source":   "user_interface",
+				"endpoint": "add_messages",
+				"action":   "enter_value",
+				"status":   "success",
+			}).Info("Rendering users timeline")
 
 			c.Redirect(http.StatusSeeOther, "/")
 			session.AddFlash("Your message was recorded")
@@ -227,6 +385,13 @@ func registerHandler(c *gin.Context) {
 
 	userID, exists := c.Get("UserID")
 	if exists {
+
+		logger.WithFields(logrus.Fields{
+			"source":   "user_interface",
+			"endpoint": "register_user",
+			"action":   "get_user",
+		}).Info("User exists")
+
 		fmt.Println("userID:", userID)
 		return
 	}
@@ -235,6 +400,15 @@ func registerHandler(c *gin.Context) {
 	if c.Request.Method == http.MethodPost {
 		err := c.Request.ParseForm()
 		if err != nil {
+
+			logger.WithFields(logrus.Fields{
+				"source":   "user_interface",
+				"endpoint": "register_user",
+				"action":   "parse_data",
+				"status":   "error",
+				"error":    err.Error(),
+			}).Error("Error failed to parse form data")
+
 			errorData = "Failed to parse form data"
 			c.HTML(http.StatusBadRequest, "register.html", gin.H{
 				"RegisterBody": true,
@@ -251,6 +425,15 @@ func registerHandler(c *gin.Context) {
 
 		userID, err := getUserIDByUsername(userName)
 		if err != nil {
+
+			logger.WithFields(logrus.Fields{
+				"source":   "user_interface",
+				"endpoint": "register_user",
+				"action":   "get_user_by_id",
+				"status":   "error",
+				"error":    err.Error(),
+			}).Error("Error getting username by id")
+
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
@@ -269,6 +452,16 @@ func registerHandler(c *gin.Context) {
 			hash := md5.Sum([]byte(password))
 			err := registerUser(userName, email, hash)
 			if err != nil {
+
+				logger.WithFields(logrus.Fields{
+					"source":   "user_interface",
+					"endpoint": "register_user",
+					"action":   "registration_attempt",
+					"status":   "failed",
+					"reason":   "error_registering_user",
+					"error":    err.Error(),
+				}).Error("Failed registration attempt due to an error during registration")
+
 				errorData = "Failed to register user"
 				c.HTML(http.StatusInternalServerError, "register.html", gin.H{
 					"RegisterBody": true,
@@ -277,6 +470,13 @@ func registerHandler(c *gin.Context) {
 				return
 			}
 			newSignupsCounter.Inc() //adding Prometheus new signups counter
+
+			logger.WithFields(logrus.Fields{
+				"source":   "user_interface",
+				"endpoint": "register_user",
+				"action":   "registration",
+				"status":   "success",
+			}).Info("User successfully registered")
 
 			// Redirect to login page after successful registration
 			session.AddFlash("You were successfully registered and can login now")
@@ -300,6 +500,15 @@ func loginHandler(c *gin.Context) {
 
 	userID, _ := c.Cookie("UserID")
 	if userID != "" {
+
+		logger.WithFields(logrus.Fields{
+			"source":   "user_interface",
+			"endpoint": "login_user",
+			"action":   "login_check",
+			"status":   "already_logged_in",
+			"userID":   userID,
+		}).Info("User already logged in, redirecting")
+
 		session.AddFlash("You were logged in")
 		session.Save()
 		c.Redirect(http.StatusFound, "/")
@@ -312,6 +521,16 @@ func loginHandler(c *gin.Context) {
 
 		err := c.Request.ParseForm()
 		if err != nil {
+
+			logger.WithFields(logrus.Fields{
+				"source":   "user_interface",
+				"endpoint": "login_user",
+				"action":   "login_attempt",
+				"status":   "failed",
+				"reason":   "parse_form_error",
+				"error":    err.Error(),
+			}).Error("Failed to parse login form")
+
 			errorData = "Failed to parse form data"
 			c.HTML(http.StatusBadRequest, "login.html", gin.H{
 				"loginBody": true,
@@ -336,9 +555,27 @@ func loginHandler(c *gin.Context) {
 		} else {
 			userID, err := getUserIDByUsername(userName)
 			if err != nil {
+
+				logger.WithFields(logrus.Fields{
+					"source":   "user_interface",
+					"endpoint": "login_user",
+					"action":   "login_attempt",
+					"status":   "failed",
+					"reason":   "user_id_retrieval_error",
+					"error":    err.Error(),
+				}).Error("Failed to retrieve userID during login")
+
 				c.AbortWithError(http.StatusInternalServerError, err)
 				return
 			}
+
+			logger.WithFields(logrus.Fields{
+				"source":   "user_interface",
+				"endpoint": "login_user",
+				"action":   "login",
+				"status":   "success",
+			}).Info("User successfully logged in")
+
 			c.SetCookie("UserID", fmt.Sprint(userID), 3600, "/", "", false, true)
 			loginCounter.Inc() //adding Prometheus login counter
 			session.AddFlash("You were logged in")
@@ -358,6 +595,14 @@ func loginHandler(c *gin.Context) {
 
 func logoutHandler(c *gin.Context) {
 	session := sessions.Default(c)
+
+	logger.WithFields(logrus.Fields{
+		"source":   "user_interface",
+		"endpoint": "logout_user",
+		"action":   "logout",
+		"status":   "success",
+	}).Info("User successfully logged out")
+
 	session.AddFlash("You were logged out")
 	logoutCounter.Inc() //adding Prometheus logout counter
 	session.Save()
