@@ -276,6 +276,8 @@ func registerHandler(c *gin.Context) {
 				})
 				return
 			}
+			newSignupsCounter.Inc() //adding Prometheus new signups counter
+
 			// Redirect to login page after successful registration
 			session.AddFlash("You were successfully registered and can login now")
 			// print session info
@@ -338,6 +340,7 @@ func loginHandler(c *gin.Context) {
 				return
 			}
 			c.SetCookie("UserID", fmt.Sprint(userID), 3600, "/", "", false, true)
+			loginCounter.Inc() //adding Prometheus login counter
 			session.AddFlash("You were logged in")
 			session.Save()
 			c.Redirect(http.StatusFound, "/")
@@ -356,6 +359,7 @@ func loginHandler(c *gin.Context) {
 func logoutHandler(c *gin.Context) {
 	session := sessions.Default(c)
 	session.AddFlash("You were logged out")
+	logoutCounter.Inc() //adding Prometheus logout counter
 	session.Save()
 	// Invalidate the cookie by setting its max age to -1
 	// will delete the cookie <- nice stuff
