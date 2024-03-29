@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -26,6 +27,7 @@ type FilteredMsg struct {
 var dbNew *gorm.DB
 
 func main() {
+	setupLogger()
 
 	// Using db connection (1)
 	var err error
@@ -38,12 +40,26 @@ func main() {
 	if env == "LOCAL" || env == "CI" {
 		dbNew, err = connect_dev_DB("./tmp/minitwit_empty.db")
 		if err != nil {
+			logger.WithFields(logrus.Fields{
+				"environment": env,
+				"action":      "connect to database",
+				"status":      "failed",
+				"error":       err.Error(),
+				"database":    "minitwit_empty.db",
+			}).Error("Failed to connect to the development database.")
 			panic("failed to connect to database")
 		}
 
 	} else {
 		dbNew, err = connect_prod_DB()
 		if err != nil {
+			logger.WithFields(logrus.Fields{
+				"environment": env,
+				"action":      "connect to database",
+				"status":      "failed",
+				"error":       err.Error(),
+				"database":    "production",
+			}).Error("Failed to connect to the production database.")
 			panic("failed to connect to database")
 		}
 	}
@@ -98,4 +114,10 @@ func main() {
 	if err != nil {
 		panic("failed to run router at port 8081")
 	}
+
+	logger.WithFields(logrus.Fields{
+		"action": "start server",
+		"status": "success",
+		"port":   8081,
+	}).Info("Application server minitwit is listening.")
 }
