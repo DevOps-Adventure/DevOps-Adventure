@@ -11,19 +11,20 @@ permissions:
 
 jobs:
   golangci:
-    steps:
-      name: gofmt code format
-      run: |
-        cd ./go-minitwit
-        go fmt .
       name: lint
       runs-on: ubuntu-latest
       steps:
+        - name: Checkout code
         - uses: actions/checkout@v4
+        - name: Set up Go
         - uses: actions/setup-go@v5
           with:
             go-version: '1.21'
             cache: false
+        - name: Run gofmt
+          run: |
+            cd ./go-minitwit
+            go fmt .
         - name: golangci-lint
           uses: golangci/golangci-lint-action@v4
           with:
