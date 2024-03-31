@@ -44,18 +44,36 @@ func setupLogger() {
 
 	if os.Getenv("EXECUTION_ENVIRONMENT") != "CI" {
 		// Configure the Fluentd hook only if not in CI environment.
-		hook, err := logrusfluent.NewWithConfig(logrusfluent.Config{
+
+		var hook *logrusfluent.FluentHook
+        var err error
+        retriesLimit := 3
+        delayBase := time.Second
+
+		for i := 0; i < retriesLimit; i++ {
+		hook, err = logrusfluent.NewWithConfig(logrusfluent.Config{
 			Port: 24224,
 			Host: "fluentd",
 		})
+            if err != nil {
+                logger.Warnf("Failed to create Fluentd hook (Attempt %d of %d): %v", i+1, retriesLimit, err)
+                time.Sleep(delayBase)
+				// exp backoff
+                delayBase *= 2 
+            } else {
+                break
+            }
+        }
 		if err != nil {
-			logger.Fatalf("Failed to create Fluentd hook: %v", err)
+            logger.Warnf("Unable to establish connection to Fluentd after %d attempts. Log set to os stdout", retriesLimit)
+            hook = nil
+			logger.Out = os.Stdout
+        }
+		if hook != nil {
+			logger.AddHook(hook)
+			hook.SetTag("minitwit.tag")
+			hook.SetMessageField("message")
 		}
-		logger.SetLevel(logrus.DebugLevel)
-		logger.AddHook(hook)
-
-		hook.SetTag("minitwit.tag")
-		hook.SetMessageField("message")
 	} else {
 		// in CI enviroment
 		logger.Out = os.Stdout

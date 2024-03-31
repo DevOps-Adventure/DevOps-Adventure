@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"sync"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -27,8 +28,13 @@ type FilteredMsg struct {
 var dbNew *gorm.DB
 
 func main() {
-	setupLogger()
-
+	var threadGroup sync.WaitGroup
+    threadGroup.Add(1)
+	
+	go func(){
+		defer threadGroup.Done()
+		setupLogger()
+	}()
 	// Using db connection (1)
 	var err error
 	godotenv.Load()
