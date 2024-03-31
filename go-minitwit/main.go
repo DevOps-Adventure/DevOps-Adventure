@@ -112,6 +112,8 @@ func main() {
 	// registering prometeus
 	router.GET("/metrics", prometheusHandler())
 
+	threadGroup.Wait()
+
 	// Start the server
 	router.Run(":8081")
 
