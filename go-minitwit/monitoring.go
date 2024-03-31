@@ -40,12 +40,14 @@ var (
 		Help: "Current number of active users.",
 	})
 
-	dbProcessDuration = promauto.NewSummary(prometheus.SummaryOpts{
-		Name: "minitwit_db_process_duration_seconds",
-		Help: "Time spent in database processes.",
-	})
+	dbProcessDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name: "minitwit_db_process_duration_seconds",
+			Help: "Time spent in database processes, by function.",
+		},
+		[]string{"function"},
+	)
 )
-
 var logger *logrus.Logger
 
 // connect lorus with tcp to fluent
@@ -131,7 +133,7 @@ func AfterRequest() gin.HandlerFunc {
 
 }
 
-// prometeus cannot decrement counter so I am using gause instead
+// prometeus cannot decrement counter so I am using gauge instead
 func userLogIn() {
 	activeUsers.Inc()
 }

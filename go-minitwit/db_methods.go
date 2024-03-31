@@ -69,6 +69,13 @@ type Follower struct {
 */
 
 func connect_dev_DB(dsn string) (*gorm.DB, error) {
+
+	//monitoring for Prometheus
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		dbProcessDuration.WithLabelValues("connectLocalDB").Observe(v)
+	}))
+	defer timer.ObserveDuration()
+
 	fmt.Println("dev db")
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}})
 	if err != nil {
@@ -81,6 +88,13 @@ func connect_dev_DB(dsn string) (*gorm.DB, error) {
 }
 
 func connect_prod_DB() (*gorm.DB, error) {
+
+	//monitoring for Prometheus
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		dbProcessDuration.WithLabelValues("connectProdDB").Observe(v)
+	}))
+	defer timer.ObserveDuration()
+
 	fmt.Println("prod db")
 	dsn := os.Getenv("DBUSER") + ":" + os.Getenv("DBPASS") + "@tcp(db-mysql-fra1-34588-do-user-15917069-0.c.db.ondigitalocean.com:25060)/devopsadventure"
 
@@ -106,7 +120,7 @@ func getPublicMessages(numMsgs int) ([]MessageUser, error) {
 
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		dbProcessDuration.Observe(v)
+		dbProcessDuration.WithLabelValues("getPublicMessages").Observe(v)
 	}))
 	defer timer.ObserveDuration()
 
@@ -132,7 +146,7 @@ func getUserMessages(pUserId int, numMsgs int) ([]MessageUser, error) {
 
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		dbProcessDuration.Observe(v)
+		dbProcessDuration.WithLabelValues("getUserMessages").Observe(v)
 	}))
 	defer timer.ObserveDuration()
 
@@ -158,7 +172,7 @@ func checkFollowStatus(userID int, pUserID int) (bool, error) {
 
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		dbProcessDuration.Observe(v)
+		dbProcessDuration.WithLabelValues("checkFollowStatus").Observe(v)
 	}))
 	defer timer.ObserveDuration()
 
@@ -186,7 +200,7 @@ func getMyMessages(userID string) ([]MessageUser, error) {
 
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		dbProcessDuration.Observe(v)
+		dbProcessDuration.WithLabelValues("getMyMessages").Observe(v)
 	}))
 	defer timer.ObserveDuration()
 
@@ -225,7 +239,7 @@ func getUserIDByUsername(userName string) (int, error) {
 
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		dbProcessDuration.Observe(v)
+		dbProcessDuration.WithLabelValues("getUserIDByUsername").Observe(v)
 	}))
 	defer timer.ObserveDuration()
 
@@ -244,7 +258,7 @@ func getUserNameByUserID(userID string) (string, error) {
 
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		dbProcessDuration.Observe(v)
+		dbProcessDuration.WithLabelValues("getUserByUserID").Observe(v)
 	}))
 	defer timer.ObserveDuration()
 
@@ -263,7 +277,7 @@ func getUserByUsername(userName string) (User, error) {
 
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		dbProcessDuration.Observe(v)
+		dbProcessDuration.WithLabelValues("getUserByUsername").Observe(v)
 	}))
 	defer timer.ObserveDuration()
 
@@ -288,7 +302,7 @@ func registerUser(userName string, email string, password [16]byte) error {
 
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		dbProcessDuration.Observe(v)
+		dbProcessDuration.WithLabelValues("registerUser").Observe(v)
 	}))
 	defer timer.ObserveDuration()
 
@@ -316,7 +330,7 @@ func addMessage(text string, author_id int) error {
 
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		dbProcessDuration.Observe(v)
+		dbProcessDuration.WithLabelValues("addMessage").Observe(v)
 	}))
 	defer timer.ObserveDuration()
 
@@ -346,7 +360,7 @@ func followUser(userID string, profileUserID string) error {
 
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		dbProcessDuration.Observe(v)
+		dbProcessDuration.WithLabelValues("followUser").Observe(v)
 	}))
 	defer timer.ObserveDuration()
 
@@ -388,7 +402,7 @@ func unfollowUser(userID string, profileUserID string) error {
 
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		dbProcessDuration.Observe(v)
+		dbProcessDuration.WithLabelValues("unfollowUser").Observe(v)
 	}))
 	defer timer.ObserveDuration()
 
@@ -418,7 +432,7 @@ func getFollowers(userID string, limit int) ([]User, error) {
 
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		dbProcessDuration.Observe(v)
+		dbProcessDuration.WithLabelValues("getFollowers").Observe(v)
 	}))
 	defer timer.ObserveDuration()
 
@@ -443,7 +457,7 @@ func getFollowing(userID string, limit int) ([]User, error) {
 
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		dbProcessDuration.Observe(v)
+		dbProcessDuration.WithLabelValues("getFollowing").Observe(v)
 	}))
 	defer timer.ObserveDuration()
 
