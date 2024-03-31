@@ -141,3 +141,8 @@ func userLogIn() {
 func userLogout() {
 	activeUsers.Dec()
 }
+
+// this registers the dbProcessDuration mwtric with Prometheus registry.
+func init() {
+	prometheus.MustRegister(dbProcessDuration)
+}
