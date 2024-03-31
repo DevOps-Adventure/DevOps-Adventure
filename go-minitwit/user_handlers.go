@@ -577,7 +577,9 @@ func loginHandler(c *gin.Context) {
 			}).Info("User successfully logged in")
 
 			c.SetCookie("UserID", fmt.Sprint(userID), 3600, "/", "", false, true)
-			activeUsers.Inc() //increment counter when login for Prometheus
+
+			userLogIn() //adding Prometheus user login counter
+
 			session.AddFlash("You were logged in")
 			session.Save()
 			c.Redirect(http.StatusFound, "/")
@@ -604,7 +606,9 @@ func logoutHandler(c *gin.Context) {
 	}).Info("User successfully logged out")
 
 	session.AddFlash("You were logged out")
-	activeUsers.Dec() //decrement counter when logoout for Prometeus
+
+	userLogout() //decrement counter when logoout for Prometeus
+
 	session.Save()
 	// Invalidate the cookie by setting its max age to -1
 	// will delete the cookie <- nice stuff
