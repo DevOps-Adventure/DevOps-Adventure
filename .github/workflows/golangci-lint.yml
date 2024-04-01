@@ -25,10 +25,14 @@ jobs:
       - name: Run gofmt
         run: |
           cd ./go-minitwit
-          go fmt .
+          go fmt -w .
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v4
         with:
           version: v1.54
           working-directory: ./go-minitwit
+      - name: shellcheck
+        run: |
+          cd ./remote-files
+          

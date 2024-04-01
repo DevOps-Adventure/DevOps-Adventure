@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/gin-contrib/sessions"
@@ -33,7 +34,7 @@ func main() {
 	var err error
 	godotenv.Load()
 	env := os.Getenv("EXECUTION_ENVIRONMENT")
-
+	fmt.Println(env)
 	if env == "LOCAL" || env == "CI" {
 		dbNew, err = connect_dev_DB("./tmp/minitwit_empty.db")
 		if err != nil {

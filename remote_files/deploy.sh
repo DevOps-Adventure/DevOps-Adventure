@@ -1,6 +1,6 @@
-source ~/.bash_profile
+#!/bin/bash
 
-cd /minitwit
+cd /minitwit || exit
 
 touch .env
 echo "DBUSER=$1">.env #only one '>' = overwrite .env if existing
