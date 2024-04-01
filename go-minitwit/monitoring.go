@@ -42,6 +42,7 @@ var logger *logrus.Logger
 // connect lorus with tcp to fluent
 func setupLogger() {
 	logger = logrus.New()
+
 	err = godotenv.Load()
 	if err != nil {
 		panic("failed to load env variables")

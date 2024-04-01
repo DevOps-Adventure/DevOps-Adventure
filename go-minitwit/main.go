@@ -32,16 +32,14 @@ func main() {
 	setupLogger()
 
 	// Using db connection (1)
-	err = godotenv.Load()
-	if err != nil {
-		panic("failed to load env variables")
-	}
-	ENV = os.Getenv("EXECUTION_ENVIRONMENT")
-	if ENV == "LOCAL" || ENV == "CI" {
+	var err error
+	godotenv.Load()
+	env := os.Getenv("EXECUTION_ENVIRONMENT")
+	if env == "LOCAL" || env == "CI" {
 		dbNew, err = connect_dev_DB("./tmp/minitwit_empty.db")
 		if err != nil {
 			logger.WithFields(logrus.Fields{
-				"environment": ENV,
+				"environment": env,
 				"action":      "connect to database",
 				"status":      "failed",
 				"error":       err.Error(),
@@ -54,7 +52,7 @@ func main() {
 		dbNew, err = connect_prod_DB()
 		if err != nil {
 			logger.WithFields(logrus.Fields{
-				"environment": ENV,
+				"environment": env,
 				"action":      "connect to database",
 				"status":      "failed",
 				"error":       err.Error(),
