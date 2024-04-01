@@ -1,15 +1,22 @@
 version: "3.8"
-
 networks:
   itu-minitwit-network:
     external: false
     name: itu-minitwit-network
-
 services:
   minitwitimage:
     image: ${DOCKER_USERNAME}/minitwitimage
     container_name: minitwit
     command: ["dockerize", "-wait", "tcp://fluentd:24224", "-timeout", "60s", "/docker-gs-ping"]
+    command:
+      [
+        "dockerize",
+        "-wait",
+        "tcp://fluentd:24224",
+        "-timeout",
+        "60s",
+        "/docker-gs-ping"
+      ]
     env_file:
       - .env
     networks:
@@ -26,7 +33,6 @@ services:
       - "8081:8081"
     mem_limit: "1g"
     mem_reservation: "512m"
-
   prometheus:
     image: prom/prometheus
     container_name: prometheus
@@ -38,10 +44,10 @@ services:
       - itu-minitwit-network
     mem_limit: "1g"
     mem_reservation: "512m"
-
   grafana:
     image: grafana/grafana:10.2.4
     ports:
+      - "3001:3000"
       - "3000:3000"
     networks:
       - itu-minitwit-network
@@ -49,7 +55,6 @@ services:
     mem_reservation: "512m"
     volumes:
       - grafana_data:/var/lib/grafana #to no get erased
-
   node_exporter:
     image: prom/node-exporter
     container_name: node-exporter
@@ -57,7 +62,6 @@ services:
       - "9100:9100"
     networks:
       - itu-minitwit-network
-
   fluentd:
     image: fluent/fluentd-kubernetes-daemonset:v1.16.2-debian-elasticsearch7-1.1
     container_name: fluentd
@@ -73,7 +77,6 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy # Make Fluentd depend on Elasticsearch's health check.
-
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.17
     container_name: elasticsearch
@@ -89,11 +92,15 @@ services:
     mem_reservation: "512m"
     healthcheck:
       test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl --silent --fail localhost:9200/_cluster/health || exit 1"
+        ]
       interval: 10s
       retries: 5
       start_period: 30s
       timeout: 10s
-
   kibana:
     image: kibana:7.17.17
     container_name: kibana
@@ -103,13 +110,16 @@ services:
       - elasticsearch # Ensures that Kibana starts after Elasticsearch.
     ports:
       - "5601:5601"  # Exposes Kibana's web interface port.
+      - "5601:5601" # Exposes Kibana's web interface port.
     mem_limit: "1g"
     mem_reservation: "512m"
 
 volumes:
   elasticsearch-data:
    driver: local
+    driver: local
   fluentd-log:
    driver: local
+    driver: local
   grafana_data:
 
