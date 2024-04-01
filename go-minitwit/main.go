@@ -25,23 +25,23 @@ type FilteredMsg struct {
 }
 
 var dbNew *gorm.DB
+var ENV string
+var err error
 
 func main() {
 	setupLogger()
 
 	// Using db connection (1)
-	var err error
 	err = godotenv.Load()
 	if err != nil {
 		panic("failed to load env variables")
 	}
-	env := os.Getenv("EXECUTION_ENVIRONMENT")
-
-	if env == "LOCAL" || env == "CI" {
+	ENV = os.Getenv("EXECUTION_ENVIRONMENT")
+	if ENV == "LOCAL" || ENV == "CI" {
 		dbNew, err = connect_dev_DB("./tmp/minitwit_empty.db")
 		if err != nil {
 			logger.WithFields(logrus.Fields{
-				"environment": env,
+				"environment": ENV,
 				"action":      "connect to database",
 				"status":      "failed",
 				"error":       err.Error(),
@@ -54,7 +54,7 @@ func main() {
 		dbNew, err = connect_prod_DB()
 		if err != nil {
 			logger.WithFields(logrus.Fields{
-				"environment": env,
+				"environment": ENV,
 				"action":      "connect to database",
 				"status":      "failed",
 				"error":       err.Error(),

@@ -8,6 +8,7 @@ import (
 
 	logrusfluent "github.com/evalphobia/logrus_fluent"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -41,8 +42,13 @@ var logger *logrus.Logger
 // connect lorus with tcp to fluent
 func setupLogger() {
 	logger = logrus.New()
+	err = godotenv.Load()
+	if err != nil {
+		panic("failed to load env variables")
+	}
+	ENV = os.Getenv("EXECUTION_ENVIRONMENT")
 
-	if os.Getenv("EXECUTION_ENVIRONMENT") != "CI" {
+	if ENV != "CI" && ENV != "LOCAL" {
 		// Configure the Fluentd hook only if not in CI environment.
 		hook, err := logrusfluent.NewWithConfig(logrusfluent.Config{
 			Port: 24224,
