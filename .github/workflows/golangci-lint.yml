@@ -33,4 +33,5 @@ jobs:
           working-directory: ./go-minitwit
       - name: shellcheck
         run: |
-          cd ./remote-files
+          cd ./remote_files
+          shellcheck deploy.sh
