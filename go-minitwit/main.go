@@ -33,7 +33,10 @@ func main() {
 
 	// Using db connection (1)
 	var err error
-	godotenv.Load()
+	err = godotenv.Load()
+	if err != nil {
+		panic("monitoring: failed to load env variables")
+	}
 	env := os.Getenv("EXECUTION_ENVIRONMENT")
 	if env == "LOCAL" || env == "CI" {
 		dbNew, err = connect_dev_DB("./tmp/minitwit_empty.db")

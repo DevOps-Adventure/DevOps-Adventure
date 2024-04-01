@@ -45,7 +45,7 @@ func setupLogger() {
 
 	err = godotenv.Load()
 	if err != nil {
-		panic("failed to load env variables")
+		panic("monitoring: failed to load env variables")
 	}
 	ENV = os.Getenv("EXECUTION_ENVIRONMENT")
 
