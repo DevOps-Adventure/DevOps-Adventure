@@ -339,6 +339,8 @@ func unfollowUser(userID string, profileUserID string) error {
 	return nil
 }
 
+/*
+//DEPRECATED
 // getFollowers fetches up to `limit` followers for the user identified by userID
 func getFollowers(userID string, limit int) ([]User, error) {
 	var users []User
@@ -356,6 +358,7 @@ func getFollowers(userID string, limit int) ([]User, error) {
 	}
 	return users, nil
 }
+*/
 
 // getFollowing fetches up to `limit` users that the user identified by userID is following
 func getFollowing(userID string, limit int) ([]User, error) {
