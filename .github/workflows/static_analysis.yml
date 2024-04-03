@@ -1,4 +1,4 @@
-name: golangci-lint
+name: static_analysis_tools
 
 on:
   pull_request:
