@@ -35,3 +35,7 @@ jobs:
         run: |
           cd ./remote_files
           shellcheck deploy.sh
+      - name: Hadolint (linter for the dockerfile)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile-minitwit
