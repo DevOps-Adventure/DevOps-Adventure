@@ -85,7 +85,7 @@ def test_register_user_via_gui_and_check_db_entry():
     database yet. After registering a user, it checks that the respective user appears in the database.
     """
     firefox_options = Options()
-    firefox_options.binary_location = r'C:\Program Files\Mozilla Firefox\firefox.exe'
+   # firefox_options.binary_location = r'C:\Program Files\Mozilla Firefox\firefox.exe'
   #  firefox_options.add_argument("--headless") # for visibility?
     # firefox_options = None
     with webdriver.Firefox(service=Service("./geckodriver"), options=firefox_options) as driver:
