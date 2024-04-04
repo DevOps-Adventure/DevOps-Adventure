@@ -1,225 +1,100 @@
-import os
-import json
-import base64
-import sqlite3
-import requests
-from pathlib import Path
-from contextlib import closing
+"""
+To run this test with a visible browser, the following dependencies have to be setup:
+
+  * `pip install selenium`
+  * `pip install pymongo`
+  * `pip install pytest`
+  * `wget https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz`
+  * `tar xzvf geckodriver-v0.32.0-linux64.tar.gz`
+  * After extraction, the downloaded artifact can be removed: `rm geckodriver-v0.32.0-linux64.tar.gz`
+
+The application that it tests is the version of _ITU-MiniTwit_ that you got to know during the exercises on Docker:
+https://github.com/itu-devops/flask-minitwit-mongodb/tree/Containerize (*OBS*: branch Containerize)
+
+```bash
+$ git clone https://github.com/HelgeCPH/flask-minitwit-mongodb.git
+$ cd flask-minitwit-mongodb
+$ git switch Containerize
+```
+
+After editing the `docker-compose.yml` file file where you replace `youruser` with your respective username, the
+application can be started with `docker-compose up`.
+
+Now, the test itself can be executed via: `pytest test_itu_minitwit_ui.py`.
+"""
+
+import pymongo
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.firefox.options import Options
 
 
-BASE_URL = "http://localhost:8081/api"
-if os.getenv('EXECUTION_ENVIRONMENT') == 'CI':
-    DATABASE = "../tmp/minitwit_empty.db"
-    PATH_SCHEMA = "../schema.sql"
-else:
-    PATH_SCHEMA = "./schema.sql"
-    DATABASE = "./tmp/minitwit_empty.db"
-
-USERNAME = 'simulator'
-PWD = 'super_safe!'
-CREDENTIALS = ':'.join([USERNAME, PWD]).encode('ascii')
-ENCODED_CREDENTIALS = base64.b64encode(CREDENTIALS).decode()
-HEADERS = {'Connection': 'close',
-           'Content-Type': 'application/json',
-           f'Authorization': f'Basic {ENCODED_CREDENTIALS}'}
-
-def clean_database():
-    conn = sqlite3.connect(DATABASE)
-    cur = conn.cursor()
-    cur.execute("DELETE FROM user;")
-    cur.execute("DELETE FROM message;")
-    cur.execute("DELETE FROM follower;")
-    conn.commit()
-    conn.close()
-    
-def create_new_session():
-    session = requests.Session()
-    session.headers.update({
-        'Connection': 'close',
-        'Content-Type': 'application/json',
-        'Authorization': f'Basic {ENCODED_CREDENTIALS}'
-    })
-    return session
-
-def test_register():
-    #clean the DB in the first test case
-    clean_database()
-    session = create_new_session()
-    username = 'aa'
-    email = 'a@a.a'
-    pwd = 'a'
-    data = {'username': username, 'email': email, 'pwd': pwd}
-    params = {'latest': 1}
-    response = session.post(f'{BASE_URL}/register',
-                             data=json.dumps(data), params=params)
-    assert response.ok
-    # TODO: add another assertion that it is really there
-
-    # verify that latest was updated
-    response = session.get(f'{BASE_URL}/latest')
-    assert response.json()['latest'] == 1
-    
-def test_register_b():
-    session =  create_new_session()
-    username = 'bb'
-    email = 'b@b.b'
-    pwd = 'b'
-    data = {'username': username, 'email': email, 'pwd': pwd}
-    params = {'latest': 5}
-    response = session.post(f'{BASE_URL}/register', data=json.dumps(data),
-                            params=params)
-    assert response.ok
-    # TODO: add another assertion that it is really there
-
-    # verify that latest was updated
-    response = session.get(f'{BASE_URL}/latest')
-    assert response.json()['latest'] == 5
-
-def test_register_c():
-    session = create_new_session()
-    username = 'cc'
-    email = 'c@c.c'
-    pwd = 'c'
-    data = {'username': username, 'email': email, 'pwd': pwd}
-    params = {'latest': 6}
-    response = session.post(f'{BASE_URL}/register', data=json.dumps(data),
-                             params=params)
-    assert response.ok
-
-    # verify that latest was updated
-    response = session.get(f'{BASE_URL}/latest')
-    assert response.json()['latest'] == 6
-
-def test_latest():
-    session = create_new_session()
-    # post something to update LATEST
-    url = f"{BASE_URL}/register"
-    data = {'username': 'test', 'email': 'test@test', 'pwd': 'foo'}
-    params = {'latest': 1337}
-    response = session.post(url, data=json.dumps(data),
-                             params=params)
-    assert response.ok
-
-    # verify that latest was updated
-    url = f'{BASE_URL}/latest'
-    response = session.get(url)
-    assert response.ok
-    assert response.json()['latest'] == 1337
-
-def test_create_msg():
-    session = create_new_session()
-    username = 'aa'
-    data = {'content': 'Blub!'}
-    url = f'{BASE_URL}/msgs/{username}'
-    params = {'latest': 2}
-    response = session.post(url, data=json.dumps(data),
-                             params=params)
-    assert response.ok
-
-    # verify that latest was updated
-    response = session.get(f'{BASE_URL}/latest')
-    assert response.json()['latest'] == 2
+GUI_URL = "http://localhost:5000/register"
+DB_URL = "mongodb://localhost:27017/test"
 
 
-def test_get_latest_user_msgs():
-    session = create_new_session()
-    username = 'aa'
-    query = {'no': 20, 'latest': 3}
-    url = f'{BASE_URL}/msgs/{username}'
-    response = session.get(url, params=query)
-    assert response.status_code == 200
+def _register_user_via_gui(driver, data):
+    driver.get(GUI_URL)
 
-    got_it_earlier = False
-    for msg in response.json():
-        if msg['content'] == 'Blub!' and msg['user'] == username:
-            got_it_earlier = True
+    wait = WebDriverWait(driver, 5)
+    buttons = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, "actions")))
+    input_fields = driver.find_elements(By.TAG_NAME, "input")
 
-    assert got_it_earlier
+    for idx, str_content in enumerate(data):
+        input_fields[idx].send_keys(str_content)
+    input_fields[4].send_keys(Keys.RETURN)
 
-    # verify that latest was updated
-    response = session.get(f'{BASE_URL}/latest')
-    assert response.json()['latest'] == 3
+    wait = WebDriverWait(driver, 5)
+    flashes = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, "flashes")))
+
+    return flashes
 
 
-def test_get_latest_msgs():
-    session =  create_new_session()
-    username = 'aa'
-    query = {'no': 20, 'latest': 4}
-    url = f'{BASE_URL}/msgs'
-    response = session.get(url, params=query)
-    assert response.status_code == 200
-
-    got_it_earlier = False
-    for msg in response.json():
-        if msg['content'] == 'Blub!' and msg['user'] == username:
-            got_it_earlier = True
-
-    assert got_it_earlier
-
-    # verify that latest was updated
-    response = session.get(f'{BASE_URL}/latest')
-    assert response.json()['latest'] == 4
-
-def test_follow_user():
-    session = create_new_session()
-    username = 'aa'
-    url = f'{BASE_URL}/fllws/{username}'
-    data = {'follow': 'bb'}
-    params = {'latest': 7}
-    response = session.post(url, data=json.dumps(data),
-                            params=params)
-    assert response.ok
-
-    data = {'follow': 'cc'}
-    params = {'latest': 8}
-    response = session.post(url, data=json.dumps(data),
-                            params=params)
-    assert response.ok
-
-    query = {'no': 20, 'latest': 9}
-    response = session.get(url, params=query)
-    assert response.ok
-
-    json_data = response.json()
-    assert "bb" in json_data["follows"]
-    assert "cc" in json_data["follows"]
-
-    # verify that latest was updated
-    response = session.get(f'{BASE_URL}/latest')
-    assert response.json()['latest'] == 9
+def _get_user_by_name(db_client, name):
+    return db_client.test.user.find_one({"username": name})
 
 
-def test_a_unfollows_b():
-    session = create_new_session()
-    username = 'aa'
-    url = f'{BASE_URL}/fllws/{username}'
+def test_register_user_via_gui():
+    """
+    This is a UI test. It only interacts with the UI that is rendered in the browser and checks that visual
+    responses that users observe are displayed.
+    """
+    firefox_options = Options()
+    firefox_options.add_argument("--headless") # for visibility?
+    # firefox_options = None
+    with webdriver.Firefox(service=Service("./geckodriver"), options=firefox_options) as driver:
+        generated_msg = _register_user_via_gui(driver, ["Me", "me@some.where", "secure123", "secure123"])[0].text
+        expected_msg = "You were successfully registered and can login now"
+        assert generated_msg == expected_msg
 
-    #  first send unfollow command
-    data = {'unfollow': 'bb'}
-    params = {'latest': 10}
-    response = session.post(url, data=json.dumps(data),
-                            params=params)
-    assert response.ok
+    # cleanup, make test case idempotent
+    db_client = pymongo.MongoClient(DB_URL, serverSelectionTimeoutMS=5000)
+    db_client.test.user.delete_one({"username": "Me"})
 
-    # then verify that b is no longer in follows list
-    query = {'no': 20, 'latest': 11}
-    response = session.get(url, params=query)
-    assert response.ok
-    assert 'bb' not in response.json()['follows']
 
-    # verify that latest was updated
-    response = session.get(f'{BASE_URL}/latest')
-    assert response.json()['latest'] == 11
-    
-def test_cleaning_the_db():
-    session = create_new_session()
-    username = 'aa'
-    query = {'no': 20, 'latest': 3}
-    url = f'{BASE_URL}/msgs/{username}'
-    response = session.get(url, params=query)
-    assert response.status_code == 200
-    
-    clean_database()
-    
-    response = session.get(url, params=query)
-    assert response.status_code == 400
+def test_register_user_via_gui_and_check_db_entry():
+    """
+    This is an end-to-end test. Before registering a user via the UI, it checks that no such user exists in the
+    database yet. After registering a user, it checks that the respective user appears in the database.
+    """
+    firefox_options = Options()
+    #firefox_options.binary_location = r'C:\Program Files\Mozilla Firefox\firefox.exe'
+    firefox_options.add_argument("--headless") # for visibility?
+    # firefox_options = None
+    with webdriver.Firefox(service=Service("./geckodriver"), options=firefox_options) as driver:
+        db_client = pymongo.MongoClient(DB_URL, serverSelectionTimeoutMS=5000)
+
+        assert _get_user_by_name(db_client, "Me") == None
+
+        generated_msg = _register_user_via_gui(driver, ["Me", "me@some.where", "secure123", "secure123"])[0].text
+        expected_msg = "You were successfully registered and can login now"
+        assert generated_msg == expected_msg
+
+        assert _get_user_by_name(db_client, "Me")["username"] == "Me"
+
+        # cleanup, make test case idempotent
+        db_client.test.user.delete_one({"username": "Me"})
