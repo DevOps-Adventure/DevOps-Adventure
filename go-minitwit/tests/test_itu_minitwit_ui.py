@@ -24,6 +24,8 @@ Now, the test itself can be executed via: `pytest test_itu_minitwit_ui.py`.
 """
 
 import pymongo
+import sqlite3
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -33,8 +35,9 @@ from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
 
 
-GUI_URL = "http://localhost:5000/register"
-DB_URL = "mongodb://localhost:27017/test"
+GUI_URL = "http://localhost:8081/register"
+#DB_URL = "mongodb://localhost:27017/test"
+DB_URL = "../tmp/minitwit_empty.db"
 
 def _register_user_via_gui(driver, data):
     driver.get(GUI_URL)
@@ -54,7 +57,8 @@ def _register_user_via_gui(driver, data):
 
 
 def _get_user_by_name(db_client, name):
-    return db_client.test.user.find_one({"username": name})
+    #return db_client.test.user.find_one({"username": name})
+    return db_client.execute(f"select * from user where username={name}").fetchone()
 
 
 def test_register_user_via_gui():
@@ -63,7 +67,7 @@ def test_register_user_via_gui():
     responses that users observe are displayed.
     """
     firefox_options = Options()
-    firefox_options.add_argument("--headless") # for visibility?
+   # firefox_options.add_argument("--headless") # for visibility?
     # firefox_options = None
     with webdriver.Firefox(service=Service("./geckodriver"), options=firefox_options) as driver:
         generated_msg = _register_user_via_gui(driver, ["Me", "me@some.where", "secure123", "secure123"])[0].text
@@ -71,8 +75,8 @@ def test_register_user_via_gui():
         assert generated_msg == expected_msg
 
     # cleanup, make test case idempotent
-    db_client = pymongo.MongoClient(DB_URL, serverSelectionTimeoutMS=5000)
-    db_client.test.user.delete_one({"username": "Me"})
+    # db_client = pymongo.MongoClient(DB_URL, serverSelectionTimeoutMS=5000)
+    # db_client.test.user.delete_one({"username": "Me"})
 
 
 def test_register_user_via_gui_and_check_db_entry():
@@ -81,19 +85,21 @@ def test_register_user_via_gui_and_check_db_entry():
     database yet. After registering a user, it checks that the respective user appears in the database.
     """
     firefox_options = Options()
-    #firefox_options.binary_location = r'C:\Program Files\Mozilla Firefox\firefox.exe'
-    firefox_options.add_argument("--headless") # for visibility?
+    firefox_options.binary_location = r'C:\Program Files\Mozilla Firefox\firefox.exe'
+  #  firefox_options.add_argument("--headless") # for visibility?
     # firefox_options = None
     with webdriver.Firefox(service=Service("./geckodriver"), options=firefox_options) as driver:
-        db_client = pymongo.MongoClient(DB_URL, serverSelectionTimeoutMS=5000)
+        #db_client = pymongo.MongoClient(DB_URL, serverSelectionTimeoutMS=5000)
+        con = sqlite3.connect(DB_URL)
 
-        assert _get_user_by_name(db_client, "Me") == None
+
+        assert _get_user_by_name(con.cursor(), "Me") == None
 
         generated_msg = _register_user_via_gui(driver, ["Me", "me@some.where", "secure123", "secure123"])[0].text
         expected_msg = "You were successfully registered and can login now"
         assert generated_msg == expected_msg
 
-        assert _get_user_by_name(db_client, "Me")["username"] == "Me"
+        assert _get_user_by_name(con.cursor(), "Me")[0] == "Me"
 
         # cleanup, make test case idempotent
-        db_client.test.user.delete_one({"username": "Me"})
+        #db_client.test.user.delete_one({"username": "Me"})
