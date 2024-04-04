@@ -102,6 +102,8 @@ jobs:
           tar -xvzf geckodriver-v0.32.0-linux64.tar.gz
           sudo mv geckodriver /usr/local/bin/
           rm geckodriver-v0.32.0-linux64.tar.gz
+          export PATH=$PATH:/usr/local/bin/geckodriver
+
 
       - name: run pipeline standard tests
         if: github.event_name != 'workflow_dispatch'

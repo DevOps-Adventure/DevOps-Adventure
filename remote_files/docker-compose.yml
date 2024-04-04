@@ -8,6 +8,7 @@ networks:
 services:
   minitwitimage:
     image: ${DOCKER_USERNAME}/minitwitimage
+    #image: local/minitwitimage
     container_name: minitwit
     command:
       [

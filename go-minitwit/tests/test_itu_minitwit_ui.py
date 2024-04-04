@@ -36,7 +36,6 @@ from selenium.webdriver.firefox.options import Options
 GUI_URL = "http://localhost:5000/register"
 DB_URL = "mongodb://localhost:27017/test"
 
-
 def _register_user_via_gui(driver, data):
     driver.get(GUI_URL)
 
