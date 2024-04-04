@@ -28,17 +28,17 @@ type FilteredMsg struct {
 var dbNew *gorm.DB
 
 func main() {
+	godotenv.Load()
+	env := os.Getenv("EXECUTION_ENVIRONMENT")
 	var threadGroup sync.WaitGroup
-    threadGroup.Add(1)
-	
-	go func(){
+	threadGroup.Add(1)
+
+	go func() {
 		defer threadGroup.Done()
-		setupLogger()
+		setupLogger(env)
 	}()
 	// Using db connection (1)
 	var err error
-	godotenv.Load()
-	env := os.Getenv("EXECUTION_ENVIRONMENT")
 
 	if env == "LOCAL" || env == "CI" {
 		dbNew, err = connect_dev_DB("./tmp/minitwit_empty.db")
