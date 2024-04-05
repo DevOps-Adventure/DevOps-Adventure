@@ -67,7 +67,7 @@ def test_register_user_via_gui():
     responses that users observe are displayed.
     """
     firefox_options = Options()
-   # firefox_options.add_argument("--headless") # for visibility?
+    firefox_options.add_argument("--headless") # for visibility?
     # firefox_options = None
     with webdriver.Firefox(service=Service("./geckodriver"), options=firefox_options) as driver:
         generated_msg = _register_user_via_gui(driver, ["Me", "me@some.where", "secure123", "secure123"])[0].text
@@ -86,7 +86,7 @@ def test_register_user_via_gui_and_check_db_entry():
     """
     firefox_options = Options()
    # firefox_options.binary_location = r'C:\Program Files\Mozilla Firefox\firefox.exe'
-  #  firefox_options.add_argument("--headless") # for visibility?
+    firefox_options.add_argument("--headless") # for visibility?
     # firefox_options = None
     with webdriver.Firefox(service=Service("./geckodriver"), options=firefox_options) as driver:
         #db_client = pymongo.MongoClient(DB_URL, serverSelectionTimeoutMS=5000)
