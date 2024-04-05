@@ -58,7 +58,8 @@ def _register_user_via_gui(driver, data):
 
 def _get_user_by_name(db_client, name):
     #return db_client.test.user.find_one({"username": name})
-    return db_client.execute(f"select * from user where username={name}").fetchone()
+    return db_client.execute(f"SELECT * FROM user WHERE username='{name}'").fetchone()
+
 
 
 def test_register_user_via_gui():
