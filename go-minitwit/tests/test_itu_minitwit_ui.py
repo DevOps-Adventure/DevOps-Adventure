@@ -25,7 +25,7 @@ Now, the test itself can be executed via: `pytest test_itu_minitwit_ui.py`.
 
 import pymongo
 import sqlite3
-
+import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -40,6 +40,7 @@ GUI_URL = "http://localhost:8081/register"
 DB_URL = "../tmp/minitwit_empty.db"
 
 def _register_user_via_gui(driver, data):
+    import time    
     driver.get(GUI_URL)
 
     wait = WebDriverWait(driver, 5)
@@ -49,17 +50,24 @@ def _register_user_via_gui(driver, data):
     for idx, str_content in enumerate(data):
         input_fields[idx].send_keys(str_content)
     input_fields[4].send_keys(Keys.RETURN)
+    wait = WebDriverWait(driver, 5)
+
+    def get_text_from_first_li(driver):
+        try:
+            flashes_ul = driver.find_element(By.CLASS_NAME, "flashes")
+            li_elements = flashes_ul.find_elements(By.TAG_NAME, "li")
+            if li_elements and li_elements[0].text.strip():
+                return li_elements[0].text.strip()
+        except:
+            return None
 
     wait = WebDriverWait(driver, 5)
-    flashes = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, "flashes")))
-
-    return flashes
+    li_text = wait.until(get_text_from_first_li)
+    return li_text
 
 
 def _get_user_by_name(db_client, name):
-    #return db_client.test.user.find_one({"username": name})
-    return db_client.execute(f"SELECT * FROM user WHERE username='{name}'").fetchone()
-
+    return db_client.execute(f"SELECT username FROM user WHERE username='{name}'").fetchone()
 
 
 def test_register_user_via_gui():
@@ -68,17 +76,11 @@ def test_register_user_via_gui():
     responses that users observe are displayed.
     """
     firefox_options = Options()
-    firefox_options.add_argument("--headless") # for visibility?
-    # firefox_options = None
-    with webdriver.Firefox(service=Service("./geckodriver"), options=firefox_options) as driver:
-        generated_msg = _register_user_via_gui(driver, ["Me", "me@some.where", "secure123", "secure123"])[0].text
+    firefox_options.add_argument("--headless") # for visibility
+    with webdriver.Firefox(options=firefox_options) as driver:
+        generated_msg = _register_user_via_gui(driver, ["Me", "me@some.where", "secure123", "secure123"])
         expected_msg = "You were successfully registered and can login now"
         assert generated_msg == expected_msg
-
-    # cleanup, make test case idempotent
-    # db_client = pymongo.MongoClient(DB_URL, serverSelectionTimeoutMS=5000)
-    # db_client.test.user.delete_one({"username": "Me"})
-
 
 def test_register_user_via_gui_and_check_db_entry():
     """
@@ -86,21 +88,23 @@ def test_register_user_via_gui_and_check_db_entry():
     database yet. After registering a user, it checks that the respective user appears in the database.
     """
     firefox_options = Options()
-   # firefox_options.binary_location = r'C:\Program Files\Mozilla Firefox\firefox.exe'
-    firefox_options.add_argument("--headless") # for visibility?
-    # firefox_options = None
-    with webdriver.Firefox(service=Service("./geckodriver"), options=firefox_options) as driver:
-        #db_client = pymongo.MongoClient(DB_URL, serverSelectionTimeoutMS=5000)
+    firefox_options.add_argument("--headless") # for visibility
+    with webdriver.Firefox(options=firefox_options) as driver:
         con = sqlite3.connect(DB_URL)
 
 
         assert _get_user_by_name(con.cursor(), "Me") == None
 
-        generated_msg = _register_user_via_gui(driver, ["Me", "me@some.where", "secure123", "secure123"])[0].text
+        generated_msg = _register_user_via_gui(driver, ["Me", "me@some.where", "secure123", "secure123"])
         expected_msg = "You were successfully registered and can login now"
         assert generated_msg == expected_msg
 
         assert _get_user_by_name(con.cursor(), "Me")[0] == "Me"
 
-        # cleanup, make test case idempotent
-        #db_client.test.user.delete_one({"username": "Me"})
+
+@pytest.fixture(autouse=True)
+def cleanupfix():
+    con = sqlite3.connect(DB_URL)
+    cur = con.cursor()
+    cur.execute(f"DELETE FROM USER")
+    con.commit()
