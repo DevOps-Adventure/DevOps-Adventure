@@ -2,13 +2,13 @@ package main
 
 import (
 	"os"
+	"sync"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -28,12 +28,17 @@ type FilteredMsg struct {
 var dbNew *gorm.DB
 
 func main() {
-	setupLogger()
-
-	// Using db connection (1)
-	var err error
 	godotenv.Load()
 	env := os.Getenv("EXECUTION_ENVIRONMENT")
+	var threadGroup sync.WaitGroup
+	threadGroup.Add(1)
+
+	go func() {
+		defer threadGroup.Done()
+		setupLogger(env)
+	}()
+	// Using db connection (1)
+	var err error
 
 	if env == "LOCAL" || env == "CI" {
 		dbNew, err = connect_dev_DB("./tmp/minitwit_empty.db")
@@ -106,8 +111,7 @@ func main() {
 	// registering prometeus
 	router.GET("/metrics", prometheusHandler())
 
-	//registration of prometheus gauge
-	prometheus.MustRegister(activeUsers)
+	threadGroup.Wait()
 
 	// Start the server
 	router.Run(":8081")

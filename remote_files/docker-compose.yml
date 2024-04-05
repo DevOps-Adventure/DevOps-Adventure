@@ -6,7 +6,7 @@ networks:
     name: itu-minitwit-network
 
 services:
-  minitwitimage:
+  minitwit:
     image: ${DOCKER_USERNAME}/minitwitimage
     #image: local/minitwitimage
     container_name: minitwit
@@ -17,13 +17,13 @@ services:
         "tcp://fluentd:24224",
         "-timeout",
         "60s",
-        "/docker-gs-ping"
+        "/minitwit_service"
       ]
     env_file:
       - .env
+    restart: always
     networks:
       - itu-minitwit-network
-      #- itusqlimage
     depends_on:
       fluentd:
         condition: service_started
@@ -35,7 +35,6 @@ services:
       - "8081:8081"
     mem_limit: "1g"
     mem_reservation: "512m"
-
   prometheus:
     image: prom/prometheus
     container_name: prometheus
@@ -118,12 +117,9 @@ services:
       - "5601:5601" # Exposes Kibana's web interface port.
     mem_limit: "1g"
     mem_reservation: "512m"
-
 volumes:
   elasticsearch-data:
     driver: local
   fluentd-log:
     driver: local
   grafana_data:
-
-

@@ -11,9 +11,9 @@ import (
 )
 
 type Endpoint struct {
-	Method string
-	URL    string
-	Body   interface{}
+	Method      string
+	URL         string
+	Body        interface{}
 	IterateUser bool
 }
 
@@ -42,8 +42,11 @@ func MeasureResponseTime(baseURL string, numRequests int) {
 
 		for i := 0; i < numRequests; i++ {
 			var route string
-			if endpoint.IterateUser {route = endpoint.URL+strconv.Itoa(i)
-			} else { route = endpoint.URL}
+			if endpoint.IterateUser {
+				route = endpoint.URL + strconv.Itoa(i)
+			} else {
+				route = endpoint.URL
+			}
 			if endpoint.Method == "GET" {
 				start = time.Now()
 				_, err := http.Get(baseURL + route)
@@ -63,7 +66,7 @@ func MeasureResponseTime(baseURL string, numRequests int) {
 						continue
 					}
 					start = time.Now()
-					_, err = http.Post(baseURL + route, "application/json", bytes.NewBuffer(jsonBody))
+					_, err = http.Post(baseURL+route, "application/json", bytes.NewBuffer(jsonBody))
 					if err != nil {
 						fmt.Printf("Error occurred while making POST request to %s: %v\n", endpoint.URL, err)
 						continue
@@ -75,7 +78,7 @@ func MeasureResponseTime(baseURL string, numRequests int) {
 						continue
 					}
 					start = time.Now()
-					_, err = http.Post(baseURL + route, "application/json", bytes.NewBuffer(jsonBody))
+					_, err = http.Post(baseURL+route, "application/json", bytes.NewBuffer(jsonBody))
 					if err != nil {
 						fmt.Printf("Error occurred while making POST request to %s: %v\n", endpoint.URL, err)
 						continue
