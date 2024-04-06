@@ -8,6 +8,7 @@ import (
 
 	logrusfluent "github.com/evalphobia/logrus_fluent"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -41,8 +42,9 @@ var logger *logrus.Logger
 // connect lorus with tcp to fluent
 func setupLogger() {
 	logger = logrus.New()
-
-	if os.Getenv("EXECUTION_ENVIRONMENT") != "CI" {
+	godotenv.Load()
+	env := os.Getenv("EXECUTION_ENVIRONMENT")
+	if env != "CI" && env != "LOCAL" {
 		// Configure the Fluentd hook only if not in CI environment.
 		hook, err := logrusfluent.NewWithConfig(logrusfluent.Config{
 			Port: 24224,
@@ -83,6 +85,7 @@ func getCPUPercent() float64 {
 	}
 	return 0
 }
+
 func beforeRequestHandler(c *gin.Context) {
 	// Set CPU usage
 	cpuUsage := getCPUPercent()
@@ -118,7 +121,6 @@ func AfterRequest() gin.HandlerFunc {
 			}
 		}()
 	}
-
 }
 
 func UserSignupMonitoring() gin.HandlerFunc {

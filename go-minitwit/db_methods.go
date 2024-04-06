@@ -121,7 +121,6 @@ func getPublicMessages(numMsgs int) ([]MessageUser, error) {
 
 // fetches all messages from picked user
 func getUserMessages(pUserId int, numMsgs int) ([]MessageUser, error) {
-
 	var messages []MessageUser
 	dbNew.Table("message").
 		Select("message.*, user.*").
@@ -141,7 +140,6 @@ func getUserMessages(pUserId int, numMsgs int) ([]MessageUser, error) {
 
 // check whether the given user is followed by logged in
 func checkFollowStatus(userID int, pUserID int) (bool, error) {
-
 	if userID == pUserID {
 		return false, nil
 	}
@@ -228,7 +226,6 @@ func getUserByUsername(userName string) (User, error) {
 	}
 
 	return user, nil
-
 }
 
 /*
@@ -237,7 +234,6 @@ func getUserByUsername(userName string) (User, error) {
 
 // registers a new user
 func registerUser(userName string, email string, password [16]byte) error {
-
 	pwHashString := hex.EncodeToString(password[:])
 
 	newUser := User{
@@ -254,12 +250,10 @@ func registerUser(userName string, email string, password [16]byte) error {
 	}
 
 	return nil
-
 }
 
 // adds a new message to the database
 func addMessage(text string, author_id int) error {
-
 	currentTime := time.Now().UTC()
 	unixTimestamp := currentTime.Unix()
 
@@ -278,7 +272,6 @@ func addMessage(text string, author_id int) error {
 	}
 
 	return nil
-
 }
 
 // followUser adds a new follower to the database

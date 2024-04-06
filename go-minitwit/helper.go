@@ -93,7 +93,7 @@ func logMessage(message string) {
 	filePath := "./tmp/logging/logger.txt"
 
 	// Open or create the file for writing
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		fmt.Println("Error creating file:", err)
 		return
