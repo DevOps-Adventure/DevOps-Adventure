@@ -47,7 +47,13 @@ lint:
 	@cd $(DIR) && touch .lint.txt
 	@cd $(DIR) && golangci-lint run && echo "success" > .lint.txt || echo "failure" > .lint.txt
 	@cd $(DIR) && gofumpt -l -w . && echo "success" > .lint.txt || echo "failure" > .lint.txt
-	@cd $(DIR) grep "failure" .lint.txt && rm .lint.txt && exit 1 || rm .lint.txt exit 0
+	@cd $(DIR) &&  if grep "failure" .lint.txt; then \
+			rm .lint.txt; \
+			exit 1; \
+	else \
+			rm .lint.txt; \
+			exit 0; \
+	fi
 
 test:
 	@if [ -z "${VIRTUAL_ENV}" ]; then \
