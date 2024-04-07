@@ -1,16 +1,13 @@
-# syntax=docker/dockerfile:1
-
 FROM golang:1.20
 
-# Set destination for COPY
 WORKDIR /app
 
-# Download Go modules
+# Install dependencies
 COPY go-minitwit/go.mod go-minitwit/go.sum ./
 RUN go mod download
 
+# Copy repo
 COPY go-minitwit /app
-COPY go-minitwit/templates /app/templates
 
 # Install dockerize
 ENV DOCKERIZE_VERSION v0.6.1
@@ -19,11 +16,9 @@ RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSI
     && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
 
 # Build
-RUN go build -o /docker-gs-ping
+RUN go build -o /minitwit_service
 
 EXPOSE 8081
 
-ENV NAME World
-
 # Run
-CMD ["/docker-gs-ping"]
+CMD ["/minitwit_server"]

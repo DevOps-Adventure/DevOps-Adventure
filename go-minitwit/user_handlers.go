@@ -469,6 +469,7 @@ func registerHandler(c *gin.Context) {
 				})
 				return
 			}
+			newSignupsCounter.Inc() //adding Prometheus new signups counter
 
 			logger.WithFields(logrus.Fields{
 				"source":   "user_interface",
@@ -576,6 +577,9 @@ func loginHandler(c *gin.Context) {
 			}).Info("User successfully logged in")
 
 			c.SetCookie("UserID", fmt.Sprint(userID), 3600, "/", "", false, true)
+
+			userLogIn() //adding Prometheus user login counter
+
 			session.AddFlash("You were logged in")
 			session.Save()
 			c.Redirect(http.StatusFound, "/")
@@ -602,6 +606,9 @@ func logoutHandler(c *gin.Context) {
 	}).Info("User successfully logged out")
 
 	session.AddFlash("You were logged out")
+
+	userLogout() //decrement counter when logoout for Prometeus
+
 	session.Save()
 	// Invalidate the cookie by setting its max age to -1
 	// will delete the cookie <- nice stuff
