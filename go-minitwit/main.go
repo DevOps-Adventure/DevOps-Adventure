@@ -106,7 +106,7 @@ func main() {
 	router.POST("/api/fllws/:username", apiFllwsHandler)
 
 	// some helper method to "cache" what was the latest simulator action
-	router.GET("/api/latest", getLatest)
+	router.GET("/api/latest", getLatestHandler)
 
 	// registering prometeus
 	router.GET("/metrics", prometheusHandler())

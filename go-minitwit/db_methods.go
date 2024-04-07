@@ -26,6 +26,11 @@ type User struct {
 	PwHash   string
 }
 
+type Latest struct {
+	LatestID int `gorm:"primaryKey"`
+	Value    int
+}
+
 type Message struct {
 	MessageID int `gorm:"primaryKey"`
 	AuthorID  int
@@ -291,6 +296,21 @@ func getUserByUsername(userName string) (User, error) {
 
 	return user, nil
 
+}
+
+func getLatest() (int, error) {
+	var latest Latest
+	dbNew.Where("latest_id = 1").First(&latest)
+	return latest.Value, nil
+}
+
+func updateLatest(commandID int) error {
+	dbNew.Save(&Latest{LatestID: 1, Value: commandID})
+	if dbNew.Error != nil {
+		logMessage(dbNew.Error.Error())
+		return dbNew.Error
+	}
+	return nil
 }
 
 /*
