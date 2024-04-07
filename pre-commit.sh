@@ -1,30 +1,40 @@
 #!/bin/bash
 
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+MAGENTA='\033[1;35m'
+ORANGE='\033[0;33m'
+RESET='\033[0m'
+
 function install {
-    echo "Installing pre-commit script"
+    echo -e "${MAGENTA}Installing pre-commit script ${RESET}"
     
     if [[ -f .git/hooks/pre-commit ]]; then 
-        read -p 'Pre-commit hook already exists. Remove? (Y/N): ' confirm
+        read -p $'\033[0;33m Pre-commit hook already exists. Remove? (Y/N): \033[0m' confirm
         if [[ "$confirm" != "Y" ]]; then
-            echo "Aborting installation." 
+            echo -e "${RED}Aborting installation.${RESET}" 
             exit 1
         else
-            echo "Removing existing pre-commit script"
-            rm .git/hooks/pre-commit || (echo "Failed to remove script"; exit 1) && echo "Removed existing script"
+            echo -e "${MAGENTA}Removing existing pre-commit script${RESET}"
+            rm .git/hooks/pre-commit || (echo -e "${RED}Failed to remove script${RESET}"; exit 1) && echo -e "${GREEN}Existing script removed${RESET}"
         fi
     fi
     
-    echo "Installing pre-commit hook"
+    echo -e "${MAGENTA}Installing pre-commit hook${RESET}"
     ln pre-commit.sh .git/hooks/pre-commit
+    echo -e "${GREEN}Pre-commit ready!${RESET}"
+
 }
 
 function pre-commit {
-    echo "Running pre-commit script"
+    echo -e "${MAGENTA}--------------------~ Running pre-commit script ~--------------------${RESET}"
 
     if [[ -f venv/bin/activate ]]; then
         . venv/bin/activate
     else 
-        echo "Running without a virtual environment" >&2
+        echo -e "${ORANGE}You are trying to run without a virtual environment.${RESET}" >&2
+        echo -e "${RED}Aborting commit procedure!${RESET}" 
+            exit 1
     fi
 
     make lint
@@ -32,18 +42,18 @@ function pre-commit {
     make test
     test_return_code=$?
 
-    echo "---- Pre-commit result:"
-
-    if [ $test_return_code != 0 ]; then
-        echo "Tests failed"
-    else
-        echo "Tests succeeded"
-    fi
+    echo -e "${ORANGE}~> ---- Pre-commit result ---- <~${RESET}"
 
     if [ $lint_return_code != 0 ]; then
-        echo "Linters failed"
+        echo -e "${RED}-> Linters failed     ( ✗ )${RESET}"
     else
-        echo "Linters succeeded"
+        echo -e "${GREEN}-> Linters succeeded! ( ✓ )${RESET}"
+    fi
+
+    if [ $test_return_code != 0 ]; then
+        echo -e "${RED}-> Tests failed       ( ✗ )${RESET}"
+    else
+        echo -e "${GREEN}-> Tests succeeded!   ( ✓ )${RESET}"
     fi
 
     if [ $test_return_code != 0 ] || [ $lint_return_code != 0 ]; then
