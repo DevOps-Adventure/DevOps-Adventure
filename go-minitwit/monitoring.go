@@ -8,7 +8,6 @@ import (
 
 	logrusfluent "github.com/evalphobia/logrus_fluent"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
