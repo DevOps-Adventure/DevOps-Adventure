@@ -148,7 +148,6 @@ func getPublicMessages(numMsgs int) ([]MessageUser, error) {
 
 // fetches all messages from picked user
 func getUserMessages(pUserId int, numMsgs int) ([]MessageUser, error) {
-
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
 		dbProcessDuration.WithLabelValues("getUserMessages").Observe(v)
@@ -174,13 +173,12 @@ func getUserMessages(pUserId int, numMsgs int) ([]MessageUser, error) {
 
 // check whether the given user is followed by logged in
 func checkFollowStatus(userID int, pUserID int) (bool, error) {
-
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
 		dbProcessDuration.WithLabelValues("checkFollowStatus").Observe(v)
 	}))
 	defer timer.ObserveDuration()
-
+  
 	if userID == pUserID {
 		return false, nil
 	}
@@ -295,7 +293,6 @@ func getUserByUsername(userName string) (User, error) {
 	}
 
 	return user, nil
-
 }
 
 func getLatest() (int, error) {
@@ -319,7 +316,6 @@ func updateLatest(commandID int) error {
 
 // registers a new user
 func registerUser(userName string, email string, password [16]byte) error {
-
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
 		dbProcessDuration.WithLabelValues("registerUser").Observe(v)
@@ -342,12 +338,10 @@ func registerUser(userName string, email string, password [16]byte) error {
 	}
 
 	return nil
-
 }
 
 // adds a new message to the database
 func addMessage(text string, author_id int) error {
-
 	//monitoring for Prometheus
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
 		dbProcessDuration.WithLabelValues("addMessage").Observe(v)
@@ -372,7 +366,6 @@ func addMessage(text string, author_id int) error {
 	}
 
 	return nil
-
 }
 
 // followUser adds a new follower to the database
@@ -447,6 +440,8 @@ func unfollowUser(userID string, profileUserID string) error {
 	return nil
 }
 
+/*
+//DEPRECATED
 // getFollowers fetches up to `limit` followers for the user identified by userID
 func getFollowers(userID string, limit int) ([]User, error) {
 
@@ -471,6 +466,7 @@ func getFollowers(userID string, limit int) ([]User, error) {
 	}
 	return users, nil
 }
+*/
 
 // getFollowing fetches up to `limit` users that the user identified by userID is following
 func getFollowing(userID string, limit int) ([]User, error) {

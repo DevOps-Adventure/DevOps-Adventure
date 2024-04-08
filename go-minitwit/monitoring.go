@@ -110,6 +110,7 @@ func getCPUPercent() float64 {
 	}
 	return 0
 }
+
 func beforeRequestHandler(c *gin.Context) {
 	// Set CPU usage
 	cpuUsage := getCPUPercent()
@@ -145,7 +146,6 @@ func AfterRequest() gin.HandlerFunc {
 			}
 		}()
 	}
-
 }
 
 // prometeus cannot decrement counter so I am using gauge instead

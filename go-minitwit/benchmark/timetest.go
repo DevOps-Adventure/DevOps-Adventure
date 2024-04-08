@@ -109,5 +109,5 @@ func main() {
 	}
 	MeasureResponseTime(baseURL, numRequests)
 
-	//TODO: Find a way to clear the db with all the info created!
+	// TODO: Find a way to clear the db with all the info created!
 }

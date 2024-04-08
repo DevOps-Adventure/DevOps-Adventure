@@ -3,9 +3,8 @@ package main
 import (
 	"crypto/md5"
 	"fmt"
-	"strconv"
-
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -17,7 +16,6 @@ import (
 
 // Handlers
 func userFollowActionHandler(c *gin.Context) {
-
 	session := sessions.Default(c)
 
 	userID, errID := c.Cookie("UserID")
@@ -84,7 +82,6 @@ func userFollowActionHandler(c *gin.Context) {
 }
 
 func publicTimelineHandler(c *gin.Context) {
-
 	// need to pass a default value to getPublicMessages (GoLang doesn't support default values for arguments)
 	messages, err := getPublicMessages(PERPAGE)
 	if err != nil {
@@ -241,7 +238,6 @@ func myTimelineHandler(c *gin.Context) {
 	}
 
 	userName, err := getUserNameByUserID(userID)
-
 	if err != nil {
 
 		logger.WithFields(logrus.Fields{
@@ -261,7 +257,6 @@ func myTimelineHandler(c *gin.Context) {
 	session.Save() // Clear flashes after retrieving
 
 	messages, err := getMyMessages(userID)
-
 	if err != nil {
 
 		logger.WithFields(logrus.Fields{
@@ -301,7 +296,6 @@ func myTimelineHandler(c *gin.Context) {
 }
 
 func addMessageHandler(c *gin.Context) {
-
 	session := sessions.Default(c)
 
 	userID, err := c.Cookie("UserID")
@@ -380,7 +374,6 @@ func addMessageHandler(c *gin.Context) {
 }
 
 func registerHandler(c *gin.Context) {
-
 	session := sessions.Default(c)
 
 	userID, exists := c.Get("UserID")

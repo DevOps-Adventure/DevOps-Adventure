@@ -92,7 +92,6 @@ Takes data from the POST and registers a user in the db
 returns: ("", 204) or ({"status": 400, "error_msg": error}, 400)
 */
 func apiRegisterHandler(c *gin.Context) {
-
 	updateLatestHandler(c)
 	latest := getLatestHelper()
 	logMessage(fmt.Sprint(latest) + " apiRegisterHandler: registering user.")
@@ -102,7 +101,7 @@ func apiRegisterHandler(c *gin.Context) {
 		error_msg: "",
 	}
 
-	//Check if user already exists
+	// Check if user already exists
 	userID, exists := c.Get("UserID")
 	if exists {
 
@@ -156,7 +155,7 @@ func apiRegisterHandler(c *gin.Context) {
 			return
 		}
 
-		//Set the user data
+		// Set the user data
 		username := registerReq.Username
 		email := registerReq.Email
 		password := registerReq.Pwd
@@ -247,7 +246,6 @@ func apiRegisterHandler(c *gin.Context) {
 /api/msgs?no=<num>
 */
 func apiMsgsHandler(c *gin.Context) {
-
 	updateLatestHandler(c)
 	latest := getLatestHelper()
 	logMessage(fmt.Sprint(latest) + " apiMsgsHandler: getting all messages.")
@@ -316,7 +314,6 @@ func apiMsgsHandler(c *gin.Context) {
 /api/msgs/<username>
 */
 func apiMsgsPerUserHandler(c *gin.Context) {
-
 	updateLatestHandler(c)
 	latest := getLatestHelper()
 	logMessage(fmt.Sprint(latest) + " apiMsgsPerUserHandler: getting all messages by user " + c.Param("username") + ".")
@@ -403,7 +400,6 @@ func apiMsgsPerUserHandler(c *gin.Context) {
 		// Read the request body
 		var messageReq MessageData
 		body, err := io.ReadAll(c.Request.Body)
-
 		if err != nil {
 
 			logger.WithFields(logrus.Fields{
@@ -478,7 +474,6 @@ else if POST:
 /api/fllws/<username>
 */
 func apiFllwsHandler(c *gin.Context) {
-
 	updateLatestHandler(c)
 	latest := getLatestHelper()
 	logMessage(fmt.Sprint(latest) + " apiFllwsHandler: checking follow")
