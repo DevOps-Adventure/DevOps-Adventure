@@ -15,7 +15,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -41,8 +40,6 @@ type MessageData struct {
 	Content string `json:"content"`
 }
 
-const filePath = "./latest_processed_sim_action_id.txt"
-
 func not_req_from_simulator(c *gin.Context) (statusCode int, errStr string) {
 	auth := c.Request.Header.Get("Authorization")
 	if auth != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh" {
@@ -53,7 +50,7 @@ func not_req_from_simulator(c *gin.Context) (statusCode int, errStr string) {
 	return
 }
 
-func updateLatest(c *gin.Context) {
+func updateLatestHandler(c *gin.Context) {
 	parsedCommandID := c.Query("latest")
 	commandID, err := strconv.Atoi(parsedCommandID)
 
@@ -62,7 +59,7 @@ func updateLatest(c *gin.Context) {
 		commandID = -1
 	}
 	if commandID != -1 {
-		err := os.WriteFile(filePath, []byte(strconv.Itoa(commandID)), 0o644)
+		err := updateLatest(commandID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update latest value"})
 			return
@@ -70,30 +67,20 @@ func updateLatest(c *gin.Context) {
 	}
 }
 
-func getLatest(c *gin.Context) {
-	content, err := os.ReadFile(filePath)
+func getLatestHandler(c *gin.Context) {
+	latestProcessedCommandID, err := getLatest()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read latest value"})
 		return
-	}
-
-	latestProcessedCommandID, err := strconv.Atoi(string(content))
-	if err != nil {
-		latestProcessedCommandID = -1
 	}
 
 	c.JSON(http.StatusOK, gin.H{"latest": latestProcessedCommandID})
 }
 
 func getLatestHelper() int {
-	content, err := os.ReadFile(filePath)
+	latestProcessedCommandID, err := getLatest()
 	if err != nil {
 		return -2
-	}
-
-	latestProcessedCommandID, err := strconv.Atoi(string(content))
-	if err != nil {
-		latestProcessedCommandID = -1
 	}
 	return latestProcessedCommandID
 }
@@ -105,7 +92,7 @@ Takes data from the POST and registers a user in the db
 returns: ("", 204) or ({"status": 400, "error_msg": error}, 400)
 */
 func apiRegisterHandler(c *gin.Context) {
-	updateLatest(c)
+	updateLatestHandler(c)
 	latest := getLatestHelper()
 	logMessage(fmt.Sprint(latest) + " apiRegisterHandler: registering user.")
 
@@ -259,7 +246,7 @@ func apiRegisterHandler(c *gin.Context) {
 /api/msgs?no=<num>
 */
 func apiMsgsHandler(c *gin.Context) {
-	updateLatest(c)
+	updateLatestHandler(c)
 	latest := getLatestHelper()
 	logMessage(fmt.Sprint(latest) + " apiMsgsHandler: getting all messages.")
 
@@ -327,7 +314,7 @@ func apiMsgsHandler(c *gin.Context) {
 /api/msgs/<username>
 */
 func apiMsgsPerUserHandler(c *gin.Context) {
-	updateLatest(c)
+	updateLatestHandler(c)
 	latest := getLatestHelper()
 	logMessage(fmt.Sprint(latest) + " apiMsgsPerUserHandler: getting all messages by user " + c.Param("username") + ".")
 
@@ -487,7 +474,7 @@ else if POST:
 /api/fllws/<username>
 */
 func apiFllwsHandler(c *gin.Context) {
-	updateLatest(c)
+	updateLatestHandler(c)
 	latest := getLatestHelper()
 	logMessage(fmt.Sprint(latest) + " apiFllwsHandler: checking follow")
 

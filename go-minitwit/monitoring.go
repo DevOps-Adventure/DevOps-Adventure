@@ -35,29 +35,55 @@ var (
 		Name: "minitwit_new_signups_total",
 		Help: "Total number of new user signups.",
 	})
-)
 
+	activeUsers = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "active_users",
+		Help: "Current number of active users.",
+	})
+
+	dbProcessDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name: "minitwit_db_process_duration_seconds",
+			Help: "Time spent in database processes, by function.",
+		},
+		[]string{"function"},
+	)
+)
 var logger *logrus.Logger
 
 // connect lorus with tcp to fluent
-func setupLogger() {
+func setupLogger(environment string) {
 	logger = logrus.New()
-	godotenv.Load()
-	env := os.Getenv("EXECUTION_ENVIRONMENT")
-	if env != "CI" && env != "LOCAL" {
-		// Configure the Fluentd hook only if not in CI environment.
-		hook, err := logrusfluent.NewWithConfig(logrusfluent.Config{
-			Port: 24224,
-			Host: "fluentd",
-		})
-		if err != nil {
-			logger.Fatalf("Failed to create Fluentd hook: %v", err)
-		}
-		logger.SetLevel(logrus.DebugLevel)
-		logger.AddHook(hook)
+	if environment != "CI" && environment != "LOCAL" {
+		var hook *logrusfluent.FluentHook
+		var err error
+		retriesLimit := 3
+		delayBase := time.Second
 
-		hook.SetTag("minitwit.tag")
-		hook.SetMessageField("message")
+		for i := 0; i < retriesLimit; i++ {
+			hook, err = logrusfluent.NewWithConfig(logrusfluent.Config{
+				Port: 24224,
+				Host: "fluentd",
+			})
+			if err != nil {
+				logger.Warnf("Failed to create Fluentd hook (Attempt %d of %d): %v", i+1, retriesLimit, err)
+				time.Sleep(delayBase)
+				// exp backoff
+				delayBase *= 2
+			} else {
+				break
+			}
+		}
+		if err != nil {
+			logger.Warnf("Unable to establish connection to Fluentd after %d attempts. Log set to os stdout", retriesLimit)
+			hook = nil
+			logger.Out = os.Stdout
+		}
+		if hook != nil {
+			logger.AddHook(hook)
+			hook.SetTag("minitwit.tag")
+			hook.SetMessageField("message")
+		}
 	} else {
 		// in CI enviroment
 		logger.Out = os.Stdout
@@ -123,15 +149,16 @@ func AfterRequest() gin.HandlerFunc {
 	}
 }
 
-func UserSignupMonitoring() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Next()
-
-		// Check if the registration was successful
-		if success, exists := c.Get("registrationSuccess"); exists && success.(bool) {
-			newSignupsCounter.Inc()
-		}
-	}
+// prometeus cannot decrement counter so I am using gauge instead
+func userLogIn() {
+	activeUsers.Inc()
 }
 
-////
+func userLogout() {
+	activeUsers.Dec()
+}
+
+// this registers the dbProcessDuration mwtric with Prometheus registry.
+func init() {
+	prometheus.MustRegister(dbProcessDuration)
+}

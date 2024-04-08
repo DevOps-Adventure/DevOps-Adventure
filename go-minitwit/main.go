@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -28,13 +29,18 @@ type FilteredMsg struct {
 var dbNew *gorm.DB
 
 func main() {
-	setupLogger()
-
-	// Using db connection (1)
-	var err error
 	godotenv.Load()
 	env := os.Getenv("EXECUTION_ENVIRONMENT")
-	fmt.Println(env)
+	var threadGroup sync.WaitGroup
+	threadGroup.Add(1)
+
+	go func() {
+		defer threadGroup.Done()
+		setupLogger(env)
+	}()
+	// Using db connection (1)
+	var err error
+
 	if env == "LOCAL" || env == "CI" {
 		dbNew, err = connect_dev_DB("./tmp/minitwit_empty.db")
 		if err != nil {
@@ -66,7 +72,6 @@ func main() {
 	router := gin.Default()
 	router.Use(AfterRequest()) // This is the middleware that will be called after each request for Prometheus
 	router.Use(beforeRequestHandler)
-	router.Use(UserSignupMonitoring()) // This is the middleware that will be called after each request for Prometheus
 
 	router.LoadHTMLGlob("./templates/*.html")
 
@@ -102,10 +107,12 @@ func main() {
 	router.POST("/api/fllws/:username", apiFllwsHandler)
 
 	// some helper method to "cache" what was the latest simulator action
-	router.GET("/api/latest", getLatest)
+	router.GET("/api/latest", getLatestHandler)
 
 	// registering prometeus
 	router.GET("/metrics", prometheusHandler())
+
+	threadGroup.Wait()
 
 	// Start the server
 	router.Run(":8081")
@@ -115,4 +122,5 @@ func main() {
 		"status": "success",
 		"port":   8081,
 	}).Info("Application server minitwit is listening.")
+
 }

@@ -6,15 +6,24 @@ networks:
     name: itu-minitwit-network
 
 services:
-  minitwitimage:
+  minitwit:
     image: ${DOCKER_USERNAME}/minitwitimage
+    #image: local/minitwitimage
     container_name: minitwit
-    command: ["dockerize", "-wait", "tcp://fluentd:24224", "-timeout", "60s", "/docker-gs-ping"]
+    command:
+      [
+        "dockerize",
+        "-wait",
+        "tcp://fluentd:24224",
+        "-timeout",
+        "60s",
+        "/minitwit_service"
+      ]
     env_file:
       - .env
+    restart: always
     networks:
       - itu-minitwit-network
-      #- itusqlimage
     depends_on:
       fluentd:
         condition: service_started
@@ -26,7 +35,6 @@ services:
       - "8081:8081"
     mem_limit: "1g"
     mem_reservation: "512m"
-
   prometheus:
     image: prom/prometheus
     container_name: prometheus
@@ -42,7 +50,7 @@ services:
   grafana:
     image: grafana/grafana:10.2.4
     ports:
-      - "3001:3000"
+      - "3000:3000"
     networks:
       - itu-minitwit-network
     mem_limit: "1g"
@@ -88,7 +96,11 @@ services:
     mem_limit: "1g"
     mem_reservation: "512m"
     healthcheck:
-      test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl --silent --fail localhost:9200/_cluster/health || exit 1"
+        ]
       interval: 10s
       retries: 5
       start_period: 30s
@@ -102,14 +114,12 @@ services:
     depends_on:
       - elasticsearch # Ensures that Kibana starts after Elasticsearch.
     ports:
-      - "5601:5601"  # Exposes Kibana's web interface port.
+      - "5601:5601" # Exposes Kibana's web interface port.
     mem_limit: "1g"
     mem_reservation: "512m"
-
 volumes:
   elasticsearch-data:
-   driver: local
+    driver: local
   fluentd-log:
-   driver: local
+    driver: local
   grafana_data:
-
