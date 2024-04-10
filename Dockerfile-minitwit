@@ -22,4 +22,4 @@ RUN go build -o /minitwit_service
 EXPOSE 8081
 
 # Run
-CMD ["/minitwit_server"]
+CMD ["/minitwit_service"]
