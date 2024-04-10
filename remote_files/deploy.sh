@@ -8,5 +8,7 @@ echo "DBPASS=$2">>.env
 
 docker compose -f docker-compose.yml down
 sleep 10s
-docker compose -f docker-compose.yml pull
+echo "pulling minitwit image"
+docker pull mihr/minitwitimage
+echo "starting the docker compose"
 docker compose -f docker-compose.yml up -d --remove-orphans
