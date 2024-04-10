@@ -7,8 +7,7 @@ networks:
 
 services:
   minitwit:
-    image: ${DOCKER_USERNAME}/minitwitimage
-    #image: local/minitwitimage
+    image: mihr/minitwitimage
     container_name: minitwit
     command:
       [
@@ -17,7 +16,7 @@ services:
         "tcp://fluentd:24224",
         "-timeout",
         "60s",
-        "/minitwit_service"
+        "/minitwit_service",
       ]
     env_file:
       - .env
@@ -99,7 +98,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl --silent --fail localhost:9200/_cluster/health || exit 1"
+          "curl --silent --fail localhost:9200/_cluster/health || exit 1",
         ]
       interval: 10s
       retries: 5
