@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
+
 	"os"
 	"strconv"
 	"time"
@@ -87,9 +89,33 @@ func connect_dev_DB(dsn string) (*gorm.DB, error) {
 		panic("failed to connect to database")
 	}
 
+	// Execute schema.sql commands
+	if err := executeSchema(db); err != nil {
+		return nil, fmt.Errorf("failed to execute schema.sql: %w", err)
+	}
 	db.AutoMigrate(&User{}, &Message{}, &Follower{})
 
 	return db, nil
+}
+
+func executeSchema(db *gorm.DB) error {
+	schema, err := os.ReadFile("schema.sql")
+	if err != nil {
+		return fmt.Errorf("failed to read schema.sql: %w", err)
+	}
+
+	// Split the schema.sql file into individual commands
+	commands := strings.Split(string(schema), ";")
+	for _, cmd := range commands {
+		if strings.TrimSpace(cmd) == "" { // to skip empty commands
+			continue
+		}
+		// Execute the schema.sql commands
+		if err := db.Exec(cmd).Error; err != nil {
+			return fmt.Errorf("failed to execute schema.sql: %w", err)
+		}
+	}
+	return nil
 }
 
 func connect_prod_DB() (*gorm.DB, error) {
@@ -178,7 +204,7 @@ func checkFollowStatus(userID int, pUserID int) (bool, error) {
 		dbProcessDuration.WithLabelValues("checkFollowStatus").Observe(v)
 	}))
 	defer timer.ObserveDuration()
-  
+
 	if userID == pUserID {
 		return false, nil
 	}
