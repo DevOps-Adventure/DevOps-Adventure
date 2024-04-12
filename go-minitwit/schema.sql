@@ -6,6 +6,11 @@ create table user (
   pw_hash string not null
 );
 
+CREATE UNIQUE INDEX idx_username ON user(username);
+
+-- CREATE CLUSTERED INDEX <index_name>
+-- ON [schema.]<table_name>(column_name [asc|desc]);
+
 drop table if exists follower;
 create table follower (
   who_id integer,
