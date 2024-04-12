@@ -1,0 +1,226 @@
+name: Continuous Integration and Continuous Deployment Pipeline
+
+env:
+  EXECUTION_ENVIRONMENT: CI
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: "Log level"
+        required: true
+        default: "warning"
+        type: choice
+        options:
+          - info
+          - warning
+          - debug
+      verbosity:
+        description: "Verbosity level"
+        required: true
+        default: "normal"
+        type: choice
+        options:
+          - normal
+          - high
+          - extreme
+          - nuts
+      environment:
+        description: "Environment to run tests against"
+        type: environment
+        required: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout action
+        uses: actions/checkout@v2
+
+      - name: set go env
+        uses: actions/setup-go@v2
+        with:
+          go-version: "1.21"
+
+      - name: Install dependencies and start minitwit server
+        run: |
+          cd go-minitwit
+          go mod tidy
+          go run *.go &
+          sleep 60
+
+      - name: set python env
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.12"
+
+      - name: install python dependencies
+        run: |
+          cd go-minitwit/tests/
+          pip install -r requirements_tests.txt
+
+      - name: check listening ports
+        run: |
+          netstat -tuln
+          curl http://localhost:8081
+
+      - name: run pipeline manual tests
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          cd go-minitwit/tests/
+          pytest_cmd="pytest "
+          if [ "${{ github.event.inputs.logLevel }}" != "warning" ]; then
+            pytest_cmd+="--log-cli-level=${{ github.event.inputs.logLevel }} "
+          fi
+          if [ "${{ github.event.inputs.verbosity }}" == "high" ]; then
+            pytest_cmd+="-v"
+          elif [ "${{ github.event.inputs.verbosity }}" == "extreme" ]; then
+            pytest_cmd+="-vv"
+          elif [ "${{ github.event.inputs.verbosity }}" == "nuts" ]; then
+            pytest_cmd+="-vvv"
+          fi
+          $pytest_cmd ./test_refactored_minitwit.py
+          $pytest_cmd ./test_minitwit_sim_api.py
+
+      #for the UI test, we need firefox and geckodriver
+      - name: Install Firefox
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y firefox
+
+      - name: Install Geckodriver
+        run: |
+          wget https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz
+          tar -xvzf geckodriver-v0.32.0-linux64.tar.gz
+          sudo mv geckodriver go-minitwit/tests/
+          rm geckodriver-v0.32.0-linux64.tar.gz
+
+      - name: run pipeline standard tests
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          cd go-minitwit/tests/
+          pytest ./test_refactored_minitwit.py
+          pytest ./test_minitwit_sim_api.py
+          pytest ./test_itu_minitwit_ui.py
+
+  linters:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+          cache: "false"
+
+      # Install gofumpt
+      - name: Install gofumpt
+        run: go install mvdan.cc/gofumpt@latest
+
+      # Use gofumpt instead of gofmt
+      - name: Run gofumpt
+        run: gofumpt -l -w .
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.54
+          working-directory: ./go-minitwit
+
+      - name: shellcheck
+        run: |
+          cd ./remote_files
+          shellcheck deploy.sh
+
+      - name: Hadolint (linter for the dockerfile)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile-minitwit
+
+  deployment:
+    needs: [tests, linters]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build and push minitwitimage
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile-minitwit
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/minitwitimage:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/minitwitimage:webbuildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/minitwitimage:webbuildcache,mode=max
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/do_ssh_key
+          chmod 600 ~/.ssh/do_ssh_key
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+
+      - name: Deploy to server
+        # Configure the ~./bash_profile and deploy.sh file on the Vagrantfile
+        run: |
+          echo ${{ secrets.DBUSER }}
+          scp -r -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no remote_files/* $SSH_USER@$SSH_HOST:/minitwit/
+          ssh -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST '/minitwit/deploy.sh ${{ secrets.DBUSER }} ${{ secrets.DBPASS }}'
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+
+  release:
+    needs: [deployment]
+    name: Release new version
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Git identity
+        run: |
+          git config user.email "eduardostrindade@gmail.com"
+          git config user.name "dudustri"
+
+      - name: Create and push new tag based on the last one
+        id: tag_release
+        run: |
+          tag_number=$(git tag --sort=-creatordate | grep -o '[0-9]\+' | awk '{print $1+1}' | head -n1)
+          tag_name="Release${tag_number}"
+          echo "$tag_number"
+          echo "$tag_name"
+          git tag -a $tag_name -m "DevOps - ${tag_number} release"
+          git push origin $tag_name
+
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+        run: |
+          release_number=$(git tag --sort=-creatordate | grep -o '[0-9]\+' | head -n1)
+          current_tag=$(git tag --sort=-creatordate | head -n1)
+          echo "$release_number"
+          echo "$current_tag"
+          gh release create "${current_tag}" --repo="$GITHUB_REPOSITORY" --title="v${release_number}.0" --generate-notes
