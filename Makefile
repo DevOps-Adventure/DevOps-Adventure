@@ -45,8 +45,10 @@ format:
 lint:
 	@echo "$(CYAN)Running CLI linters$(RESET)"
 	@cd $(DIR) && touch .lint.txt
-	@cd $(DIR) && golangci-lint run && echo "success" > .lint.txt || echo "failure" > .lint.txt
-	@cd $(DIR) && gofumpt -l -w . && echo "success" > .lint.txt || echo "failure" > .lint.txt
+	@cd $(DIR) &&golangci-lint run && echo "success" > .lint.txt || echo "failure" > .lint.txt
+	@cd $(DIR) && gofumpt -l -w . && echo "success" > .lint.txt || echo "failure" > .lint.txt 
+	@cd remote_files && shellcheck deploy.sh  && echo "success" > ../$(DIR)/lint.txt || echo "failure" > ../$(DIR)/lint.txt
+	@shellcheck pre-commit.sh  && echo "success" > $(DIR)/lint.txt || echo "failure" > $(DIR)/lint.txt
 	@cd $(DIR) &&  if grep "failure" .lint.txt; then \
 			rm .lint.txt; \
 			exit 1; \
