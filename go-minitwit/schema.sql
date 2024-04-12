@@ -33,3 +33,6 @@ create table message (
 CREATE INDEX idx_author_id ON message(author_id);
 
 CREATE INDEX idx_pub_date ON message(pub_date);
+
+
+--
