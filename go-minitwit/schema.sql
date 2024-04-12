@@ -6,16 +6,13 @@ create table user (
   pw_hash string not null
 );
 
-CREATE UNIQUE INDEX idx_username ON user(username);
-
--- CREATE CLUSTERED INDEX <index_name>
--- ON [schema.]<table_name>(column_name [asc|desc]);
-
 drop table if exists follower;
 create table follower (
   who_id integer,
   whom_id integer
 );
+
+
 
 drop table if exists message;
 create table message (
@@ -25,3 +22,15 @@ create table message (
   pub_date integer,
   flagged integer
 );
+
+
+CREATE INDEX idx_username ON user(username);
+CREATE INDEX idx_author_id ON message(author_id);
+CREATE INDEX idx_pub_date ON message(pub_date);
+CREATE INDEX idx_email ON user(email);
+
+
+
+
+
+
