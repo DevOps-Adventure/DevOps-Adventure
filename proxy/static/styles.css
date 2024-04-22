@@ -1,0 +1,42 @@
+@import url("https://fonts.googleapis.com/css2?family=Jersey+10&display=swap");
+
+body {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100vh;
+	margin: 0;
+	background-color: #242124;
+}
+
+.container {
+	text-align: center;
+	position: relative; /* Establish positioning context for absolute positioning */
+}
+
+.rounded-image {
+	border-radius: 20px;
+	overflow: hidden;
+	position: relative; /* Ensure child elements position themselves relative to this container */
+}
+
+.text-left,
+.text-right {
+	font-family: "Jersey 10";
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	display: flex;
+	align-items: center;
+	color: white;
+	font-size: 56px;
+	padding: 10px;
+}
+
+.text-left {
+	left: 0;
+}
+
+.text-right {
+	right: 0;
+}

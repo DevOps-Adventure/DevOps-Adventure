@@ -148,7 +148,7 @@ jobs:
       - name: Hadolint (linter for the dockerfile)
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: Dockerfile-minitwit
+          dockerfile: dockerfile.minitwit
 
   deployment:
     needs: [tests, linters]
@@ -170,11 +170,13 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile-minitwit
+          file: ./dockerfile.minitwit
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/minitwitimage:latest
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/minitwitimage:webbuildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/minitwitimage:webbuildcache,mode=max
+
+        # TODO: Add build and push of the proxy image !!!
 
       - name: Configure SSH
         run: |
