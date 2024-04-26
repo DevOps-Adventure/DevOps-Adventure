@@ -22,7 +22,7 @@ body {
 
 .text-left,
 .text-right {
-	font-family: "Jersey 10";
+	font-family: "Jersey 10", sans-serif;
 	position: absolute;
 	top: 0;
 	bottom: 0;
