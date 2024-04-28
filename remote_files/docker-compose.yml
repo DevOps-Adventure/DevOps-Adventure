@@ -39,7 +39,8 @@ services:
     volumes:
       - ./proxy/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./proxy/static/:/usr/share/nginx/html:ro
-      - ./proxy/certbot/www/:/var/www/certbot/:ro
+      - ./proxy/certbot/www/:/var/www/certbot:ro
+      - ./proxy/certbot/conf/:/etc/nginx/ssl:ro
     networks:
       - itu-minitwit-network
 
