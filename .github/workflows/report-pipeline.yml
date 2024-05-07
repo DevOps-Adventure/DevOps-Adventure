@@ -19,12 +19,6 @@ jobs:
         with:
           name: PDF
           path: main.pdf
-      - name: Download PDF file
-        uses: actions/download-artifact@v4
-        with:
-          name: PDF
-          path: report/
-          repository:
       - name: Move Artifact to Repository
         run: |
           cp ${{ github.workspace }}/PDF .
