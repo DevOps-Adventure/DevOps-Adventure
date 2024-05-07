@@ -19,4 +19,11 @@ jobs:
         with:
           name: PDF
           path: main.pdf
+      - name: Download PDF file
+        uses: actions/download-artifact@v4
+        with:
+          name: PDF.zip
+          path: report/
+      - name: Display structure of downloaded files
+        run: ls -R report/
             
