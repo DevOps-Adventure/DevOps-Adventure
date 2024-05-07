@@ -24,6 +24,7 @@ jobs:
         with:
           name: PDF
           path: report/
+          repository: DevOps-Adventure/DevOps-Adventure
       - name: Display structure of downloaded files
         run: ls -R report/
             
