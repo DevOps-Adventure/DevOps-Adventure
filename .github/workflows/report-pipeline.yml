@@ -24,7 +24,11 @@ jobs:
         with:
           name: PDF
           path: report/
-          repository: DevOps-Adventure/DevOps-Adventure
-      - name: Display structure of downloaded files
-        run: ls -R report/
+          repository:
+      - name: Move Artifact to Repository
+        run: |
+          cp ${{ github.workspace }}/PDF .
+          git add PDF
+          git commit -m "feat: add rendered latex"
+          git push origin report
             
