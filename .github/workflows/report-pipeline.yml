@@ -22,6 +22,8 @@ jobs:
           path: main.pdf
       - name: Move Artifact to Repository
         run: |
+          git config --global user.email "babkinedicapriotomas@gmail.com"
+          git config --global user.name "Tomas Babkine-Di Caprio"
           cp ${{ github.workspace }}/main.pdf report/
           cd report
           git add main.pdf
