@@ -22,7 +22,7 @@ jobs:
       - name: Download PDF file
         uses: actions/download-artifact@v4
         with:
-          name: PDF.zip
+          name: main.pdf
           path: report/
       - name: Display structure of downloaded files
         run: ls -R report/
