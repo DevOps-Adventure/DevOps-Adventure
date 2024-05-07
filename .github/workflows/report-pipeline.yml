@@ -1,4 +1,5 @@
 name: Compile LATEX Report Pipeline
+
 on:
   push:
     paths:
@@ -21,8 +22,8 @@ jobs:
           path: main.pdf
       - name: Move Artifact to Repository
         run: |
-          cp ${{ github.workspace }}/PDF .
-          git add PDF
+          cp ${{ github.workspace }}/main.pdf report/
+          cd report
+          git add main.pdf
           git commit -m "feat: add rendered latex"
-          git push origin report
-            
+          git push origin ${{ github.ref }}
