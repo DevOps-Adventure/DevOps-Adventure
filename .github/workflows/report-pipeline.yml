@@ -36,6 +36,9 @@ jobs:
       
       - name: Status
         run: git status
+      
+      - name: Move file to report folder
+        run: git mv main.pdf report/main.pdf -f
 
       - name: Push compiled report to repo
         run: |
