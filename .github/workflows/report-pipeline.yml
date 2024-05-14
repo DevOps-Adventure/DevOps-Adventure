@@ -6,10 +6,9 @@ on:
       - report/**
 
 jobs: 
-  job-name: build_latex
+  build_latex:
     permissions:
       contents: write
-  build_latex:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Git repository
