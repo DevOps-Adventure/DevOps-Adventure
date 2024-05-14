@@ -3,7 +3,7 @@ name: Compile LATEX Report Pipeline
 on:
   push:
     paths:
-      - report/**
+      - report/main.tex
 
 jobs: 
   build_latex:
@@ -13,26 +13,30 @@ jobs:
     steps:
       - name: Set up Git repository
         uses: actions/checkout@v4
-      - name: List files
-        run: ls
+
+      - name: Checkout report branch
+        run: git checkout report
+
       - name: Compile LaTeX document
         uses: xu-cheng/latex-action@v3
         with:
           root_file: report/main.tex
+
       - name: Upload PDF file
         uses: actions/upload-artifact@v4
         with:
           name: PDF
-          path: main.pdf
+          path: report/main.pdf
+
       - name: Download PDF file
         uses: actions/download-artifact@v4
         with:
           name: PDF
           path: report/
-      - name: Display structure of downloaded files
-        run: ls -R
-      - name: Display structure of downloaded files
-        run: ls -R report/
+      
+      - name: Status
+        run: git status
+
       - name: Push compiled report to repo
         run: |
           git config --global user.email "babkinedicapriotomas@gmail.com"
@@ -40,3 +44,9 @@ jobs:
           git add main.pdf
           git commit -m "feat: add rendered latex"
           git push origin ${{ github.ref }}
+
+      # - name: Create pull request
+      #   uses: peter-evans/create-pull-request@v6
+      #   with:
+      #     commit-message: Update report
+      #     delete-branch: false
