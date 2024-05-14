@@ -33,6 +33,8 @@ jobs:
         run: ls -R report/
       - name: Push compiled report to repo
         run: |
+          git config --global user.email "babkinedicapriotomas@gmail.com"
+          git config --global user.name "Tomas Babkine-Di Caprio"
           git add main.pdf
           git commit -m "feat: add rendered latex"
           git push origin ${{ github.ref }}
