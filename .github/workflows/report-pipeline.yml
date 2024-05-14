@@ -30,6 +30,8 @@ jobs:
           name: PDF
           path: report/
       - name: Display structure of downloaded files
+        run: ls -R
+      - name: Display structure of downloaded files
         run: ls -R report/
       - name: Push compiled report to repo
         run: |
