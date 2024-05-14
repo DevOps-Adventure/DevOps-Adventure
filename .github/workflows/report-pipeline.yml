@@ -6,6 +6,9 @@ on:
       - report/**
 
 jobs: 
+  job-name: build_latex
+    permissions:
+      contents: write
   build_latex:
     runs-on: ubuntu-latest
     steps:
@@ -31,10 +34,6 @@ jobs:
         run: ls -R report/
       - name: Push compiled report to repo
         run: |
-          git config --global user.email "babkinedicapriotomas@gmail.com"
-          git config --global user.name "Tomas Babkine-Di Caprio"
-          cp ${{ github.workspace }}/main.pdf report/
-          cd report
           git add main.pdf
           git commit -m "feat: add rendered latex"
           git push origin ${{ github.ref }}

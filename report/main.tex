@@ -9,7 +9,10 @@
 
 \maketitle
 
-\section{Tasks --}
+\section{I'm a section}
+\subsection{I'm a subsection}
+
+\section{Tasks}
 
 \begin{itemize}
   \item Miha, Simon: security analysis
@@ -20,8 +23,10 @@
   \item Eduardo: can you figure out if CodeClimate is installed on repo? if not, install it and give me logins. See session 07 for instructions
 \end{itemize}
 
-\section{Instructions for the report}
-\subsection{System's Perspective}
+\section{Introduction}
+The following report described the work done during the Spring 2024 DevOps, Software Evolution and Software Maintenance taught at the IT University of Copenhagen. Our report includes the description of the final state of our system, the process we followed to develop and deploy it, lessons we learned, and reflections on technologies used and high and low level decisions we made throughout the semester.
+
+\section{System's Perspective}
 
 A description and illustration of the:
 
@@ -33,7 +38,14 @@ Similarly, another illustrative sequence diagram that shows how requests from th
 Describe the current state of your systems, for example using results of static analysis and quality assessments.
 MSc should argue for the choice of technologies and decisions for at least all cases for which we asked you to do so in the tasks at the end of each session.
 
-\subsection{Process' perspective}
+\subsection{How we refactored our app and why we chose GoLang}
+\subsection{How a request is processed when it comes from the front-end/simulator}
+\subsection{Architecture graphs of the system}
+\subsection{List of dependencies (tools and techs) (add some quick description of why we chose a specific dependency if we're not going to write a paragraph about it later in the text)}
+\subsection{Db design and cloud db?}
+\subsection{Static analysis tool results}
+
+\section{Process' Perspective}
 
 This perspective should clarify how code or other artifacts come from idea into the running system and everything that happens on the way.
 
@@ -46,16 +58,33 @@ Brief results of the security assessment and brief description of how did you ha
 Applied strategy for scaling and upgrades
 Also, in case you have used AI-assistants during your project briefly explain which system(s) you used during the project and reflect how it supported/hindered your process.
 
-\subsection{Lessons Learned Perspective}
+\subsection{Diagram showing our CI/CD chains, how we release and deploy}
+\subsection{How we monitor our systems and what we monitor/how we use this information to improve our system (give the example of indexing the db)}
+\subsection{Logging and all that witchcraft crap. What we log and why we used those technologies, how we make sure that we're not logging too little but also not logging too much}
+\subsection{Security assessment}
+\subsection{Strategy for scaling and upgrading our system (talk about moving to a cloud db, and buying more droplets when moving to swarm}
+\subsection{Our use of AI assistants}
 
-Describe the biggest issues, how you solved them, and which are major lessons learned with regards to:
+\section{Lessons Learned Perspective}
 
-evolution and refactoring
-operation, and
-maintenance
-of your ITU-MiniTwit systems. Link back to respective commit messages, issues, tickets, etc. to illustrate these.
+Describe the biggest issues, how you solved them, and which are major lessons learned with regards to: evolution and refactoring operation, and maintenance of your ITU-MiniTwit systems. Link back to respective commit messages, issues, tickets, etc. to illustrate these.
 
 Also reflect and describe what was the "DevOps" style of your work. For example, what did you do differently to previous development projects and how did it work?
+
+\subsection{Issues we ran into:}
+
+\begin{itemize}
+  \item Container being killed by the OS on the cloud
+  \item Database cleared for some reason every now and then?
+  \item Slow db querying
+  \item Swarm setup issues
+\end{itemize}
+
+\subsection{Maybe talk about how nice it was to have a CD pipeline to work on a project together}
+
+\subsection{What tools we used during the semester, how we divided work, how we shared knowledge?}
+
+\subsection{The three DevOps ways and what we used?}
 
 
 
