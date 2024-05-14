@@ -36,6 +36,9 @@ jobs:
       
       - name: Status
         run: git status
+
+      - name: Add pdf file to version control
+        run: git add .
       
       - name: Move file to report folder
         run: git mv main.pdf report/main.pdf -f
@@ -44,7 +47,7 @@ jobs:
         run: |
           git config --global user.email "babkinedicapriotomas@gmail.com"
           git config --global user.name "Tomas Babkine-Di Caprio"
-          git add main.pdf
+          git add .
           git commit -m "feat: add rendered latex"
           git push origin ${{ github.ref }}
 
