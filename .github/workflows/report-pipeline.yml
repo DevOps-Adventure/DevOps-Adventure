@@ -22,6 +22,13 @@ jobs:
         with:
           name: PDF
           path: main.pdf
+      - name: Download PDF file
+        uses: actions/download-artifact@v4
+        with:
+          name: PDF
+          path: report/
+      - name: Display structure of downloaded files
+        run: ls -R report/
       - name: Push compiled report to repo
         run: |
           git config --global user.email "babkinedicapriotomas@gmail.com"
