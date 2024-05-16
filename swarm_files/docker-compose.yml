@@ -2,15 +2,9 @@ services:
   minitwit:
     image: mihr/minitwitimage
     command:
-      # - "dockerize"
-      # - "-wait"
-      # - "tcp://fluentd:24224"
-      # - "-timeout"
-      # - "60s"
       - "/minitwit_service"
     env_file:
       - .env
-    restart: always
     ports:
       - "8081:8081"
     deploy:
@@ -20,108 +14,108 @@ services:
           memory: 1g
         reservations:
           memory: 512m
-#     depends_on:
-#       - fluentd
-#       - grafana
-#       - prometheus
+    depends_on:
+      - fluentd
+      - grafana
+      - prometheus
 
-#   prometheus:
-#     image: prom/prometheus
-#     container_name: prometheus
-#     volumes:
-#       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-#     ports:
-#       - "9090:9090"
-#     deploy:
-#       mode: global
-#       resources:
-#         limits:
-#           memory: 1g
-#         reservations:
-#           memory: 512m
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    deploy:
+      mode: global
+      resources:
+        limits:
+          memory: 1g
+        reservations:
+          memory: 512m
 
-#   grafana:
-#     image: grafana/grafana:10.2.4
-#     container_name: grafana
-#     ports:
-#       - "3000:3000"
-#     volumes:
-#       - grafana_data:/var/lib/grafana
-#     deploy:
-#       mode: global
-#       resources:
-#         limits:
-#           memory: 1g
-#         reservations:
-#           memory: 512m
+  grafana:
+    image: grafana/grafana:10.2.4
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    deploy:
+      mode: global
+      resources:
+        limits:
+          memory: 1g
+        reservations:
+          memory: 512m
 
-#   node_exporter:
-#     image: prom/node-exporter
-#     container_name: node-exporter
-#     ports:
-#       - "9100:9100"
-#     deploy:
-#       mode: global
+  node_exporter:
+    image: prom/node-exporter
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    deploy:
+      mode: global
 
-#   fluentd:
-#     image: fluent/fluentd-kubernetes-daemonset:v1.16.2-debian-elasticsearch7-1.1
-#     container_name: fluentd
-#     volumes:
-#       - ./fluentd/conf:/fluentd/etc
-#       - /var/log/fluentd/buffer:/fluentd/buffer
-#       - fluentd-log:/fluentd/log
-#     ports:
-#       - "24224:24224"
-#       - "24224:24224/udp"
-#     depends_on:
-#       - elasticsearch
-#     deploy:
-#       mode: global
+  fluentd:
+    image: fluent/fluentd-kubernetes-daemonset:v1.16.2-debian-elasticsearch7-1.1
+    container_name: fluentd
+    volumes:
+      - ./fluentd/conf:/fluentd/etc
+      - /var/log/fluentd/buffer:/fluentd/buffer
+      - fluentd-log:/fluentd/log
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    depends_on:
+      - elasticsearch
+    deploy:
+      mode: global
 
-#   elasticsearch:
-#     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.17
-#     container_name: elasticsearch
-#     environment:
-#       - discovery.type=single-node
-#     volumes:
-#       - elasticsearch-data:/usr/share/elasticsearch/data
-#     ports:
-#       - "9200:9200"
-#     deploy:
-#       mode: global
-#     healthcheck:
-#       test:
-#         [
-#           "CMD-SHELL",
-#           "curl --silent --fail localhost:9200/_cluster/health || exit 1",
-#         ]
-#       interval: 10s
-#       retries: 5
-#       start_period: 30s
-#       timeout: 10s
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.17
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    deploy:
+      mode: global
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --silent --fail localhost:9200/_cluster/health || exit 1",
+        ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
 
-#   kibana:
-#     image: kibana:7.17.17
-#     container_name: kibana
-#     depends_on:
-#       - elasticsearch
-#     ports:
-#       - "5601:5601"
-#     deploy:
-#       mode: global
-#       resources:
-#         limits:
-#           memory: 1g
-#         reservations:
-#           memory: 512m
+  kibana:
+    image: kibana:7.17.17
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5601:5601"
+    deploy:
+      mode: global
+      resources:
+        limits:
+          memory: 1g
+        reservations:
+          memory: 512m
 
-# networks:
-#   itu-minitwit-network:
-#     external: false
+networks:
+  itu-minitwit-network:
+    external: false
 
-# volumes:
-#   elasticsearch-data:
-#     driver: local
-#   fluentd-log:
-#     driver: local
-#   grafana_data:
+volumes:
+  elasticsearch-data:
+    driver: local
+  fluentd-log:
+    driver: local
+  grafana_data:
