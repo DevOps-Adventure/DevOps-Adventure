@@ -86,6 +86,61 @@ Also reflect and describe what was the "DevOps" style of your work. For example,
 
 \subsection{The three DevOps ways and what we used?}
 
+**The Principles of *Flow***
+
+- Make Work Visible (1)
+- Limit Work in Progress (2)
+- Reduce Batch Sizes (3)
+- Reduce the Number of Handoffs (4)
+- Continually Identify and Evaluate Constraints (5)
+- Eliminate Hardships and Waste in the Value Stream (6)
+
+(1)Visibility:  In our group we apply the requirement of visibility in our work by defining and sharing our tasks in a common task board in Notion, bellow (by 03-03-2024). This helps us to keep track of the work that needs to be done and be informed what is each team member occupied with.
+(2)Limit WIP:
+
+(to be implemented)
+
+We have set a limit of the tasks  that can  be in each column in the Notion board) This means that we can only add a task when one is being finished. In case we are waiting on somebody’s task to be completed and we are free to start new task we will rather see what is causing the delay for our team member to finish his task and help him instead. 
+
+here we could also implement a rule that new week cannot be started without completion of the task for the previous week OR having max three tasks that can be “carried” over.
+
+(3) Reduce batch sizes:
+
+in our case where we develop itu-minitwit application we could look at the different features for example post a message as a single unit operation that is being refactored, tested and deployed with the next *push* to main branch. The idea is instead of  trying to implement all features at once (post messages, follow user, register etc) we develop and test one at a time. This shortens the lead time significantly and most importantly help us to detect and act on bugs much faster.
+
+(4) Reduce hand-offs
+
+Since we are a small organization that consist of 5 members we do not have a risk of wasting time on this principle. However we have implemented CI/CD flow that makes deployment to the cloud automated just with push to main branch. In out deployment process we use configured .yaml file “continuous deployment” that creates VM in Linus server, sets up a docker and tests out application in it (to be implemented), created a docker image of our application that sends to the server provider.
+
+(5)Identify and constrain
+
+improve work capacity by following the steps environment creation → code deployment → test setup and run → overly tight architecture
+
+We have detached the dependency from local device by working with VM and Docker where we make sure that all needed requirements to run our application are present. Our deployment process is automated, that is consisted of automated testing of our application on Docker (to be implemented, Postman testing to be mentioned here perhaps? )
+
+We have designed our app architecture with loose couples to achieve independency and safety when implementing changes.
+
+(6) Eliminate waste 
+
+/using any material or resource beyond customer requirement is a waste/. Categories of waste: 
+
+-partially done work: all team members are responsible for completion of the task assigned. Even they happen to need help in completion, the initially assigned person has to keep track of the status of the task.
+
+-extra processes: we follow the mandatory assignments that are release each week without trying to develop unrequested features or any other way of deviating of project course work
+
+-extra features: look above
+
+-task switching: we try to keep one person for a task, in case the task is more difficult we might assign more than one person. We do not assign a person to multiple task in case he is unable to complete at least one of them.
+
+-waiting: in case we need to wait for a member to complete his task we always offer help and accelerate the process.
+
+-motion: we meet regularly in person for our lectures and we make sure to have at least one meeting in person per week. When we are not co-located we are distributing our tasks accordingly. Person that is not present gets rather independent task and vise versa. 
+
+-defects: we make sure to be completely informed for a task before we take over.
+
+-nonstandard or manual work: we make sure that nobody is using non-rebuilding servers, test environments and configuration. All our dependencies and operations are aimed to be automatic, self-services and available on demand.
+
+-heroics: unfortunately we cannot ensure that all of our work is happening smoothly and often we depend on each other. This is a common scenario when we have to implement operation or a feature that we are all unexperienced in and we might need another member to give us a green light - for example we have enabled revision/review of the code in our gitHub that requires at least one more member to accept review of the code before we are able to merge. We work on a separate branch each week that is being merged before submission. In case of debug on the main ( for example when implementing CI/CD frow) that required multiple PR and therefore someone else on a stand by to accept the review request (in the middle of the night).
 
 
 \end{document}
