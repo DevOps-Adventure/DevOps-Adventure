@@ -44,15 +44,39 @@ In this section, we describe the architecture of our ITU-MiniTwit system, the te
 
 \subsection{How we refactored our app and why we chose GoLang. Tomas}
 
+(note:include if you like it)
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{pdfs/refactoring.pdf} 
+    \caption{MiniTwit refactoring}
+    \label{fig:MiniTwit refactoring}
+\end{figure}
+I was thinking we can skip this paragraph. It's not that interesting in terms of DevOps to talk about translating an app into a new language and I already included "why we chose GO" in another paragraph :)
+ -Go has numerous advantages related prone for code debugging
+ -simplicity of the code =less typing compared to C
+ -good applications with cubanitas and docker
+ -golang is open source which means continuous improvement and development.
+ -Golang is compiled and not interpreted language, which makes it very fast so we can see that it has better performance than Python
+ -Golang is designed to incorporate well concurrency (e.g. goroutine) unlike Python which can easily become a bottleneck for in concurrent tasks
+ -Python is consumes more memory compared to Golang which is more lightweight
+ -To run Python we are required to have python interpreter and related dependencies whereas Golang compiles to single binary without external
+ dependencies
+ -benchmark comparison: Golang ~2-3ms vs Python ~21 ms
 \subsection{How a request is processed when it comes from the front-end/simulator}
-The following diagram shows how our system handles a request coming from the front-end or the API. We generally follow a model-view-controller architecture where the main function acts as the entry point of our application. Depending on the request type, the main function then forwards the request to handlers which redirect, handle logic, pass data to HTML templates or pass data to be written/read to/from the database. We chose this architecture as it would allow us to reuse code as much as possible and seamlessly to extend our code base. For example, since we separated the methods that communicate with the database, we were able to add an abstraction layer without modifying the core logic of the application. Similarly, we were able to migrate our database from SQLite to a managed MySQL database on DigitalOcean very easily since our logic for connecting to the database was contained in one method which was invoked by several other methods when they needed to connect to the database.
+The following diagram shows how our system handles a request coming from the front-end or the API. We generally follow a model-view-controller architecture where the main function acts as the entry point of our application. Depending on the request type, the main function then forwards the request to handlers which redirect, handle logic, pass data to HTML templates or pass data to be written/read to/from the database. We chose this architecture as it would allow us to reuse code as much as possible and to seamlessly extend our code base. 
+\\\\
+For example, since we separated the methods that communicate with the database, we were able to add an abstraction layer without modifying the core logic of the application. Similarly, we were able to migrate our database from SQLite to a managed MySQL database on DigitalOcean very easily since our logic for connecting to the database was contained in one method which was invoked by several other methods when they needed to connect to the database.
+\\\\
+(Note: add D4 here)
 
 \subsection{Architecture graphs of the system}
 
 \subsection{Technologies used}
 In this subsection we describe some of the key technologies we used on our system and justify them. The complete list of dependencies can be found in the appendix.
 
-\subsubsection{Programming Languages}We chose to refactor our application using GoLang (Go). Go is a high level compiled programming language developed at Google in 2009. We chose to use it to refactor our app due to its simple syntax, automatic garbage collection and very high performance. Because of its easy to approach syntax, GoLang is generally regarded as a simple language to learn compared to others such as C++. For this reason, this made it a clear choice when we all saw the refactor of ITU-MiniTwit as an opportunity for our group members to learn a new language.
+\subsubsection{Programming Languages}We chose to refactor our application using GoLang (Go). Go is a high level compiled programming language developed at Google in 2009. We chose to use it to refactor our app due to its simple syntax, automatic garbage collection and very high performance. Because of its easy to approach syntax, GoLang is generally regarded as a simple language to learn compared to others such as C++. For this reason, this made it a clear choice when we all saw the refactor of ITU-MiniTwit as an opportunity for our group members to learn a new language
+
+note: shall we include the results from our benchmark?
 \\\\
 The automated tests that we used to monitor development on our app and make sure that no buggy code made it to our deployed application were written in Python. These were provided to us in the course repo and we chose not to refactor them to GoLang as we were able to use them to test our application.
 \\\\
@@ -63,17 +87,40 @@ In order to ensure that our system had a high rate of availability (i.e. low dow
 
 \subsubsection{Database Technologies}
 We were first provided with a lightweight SQLite database for ITU-MiniTwit. While this worked well for some time, we eventually realized that we needed a more persistent form of storage. We chose to purchase DigitalOcean's managed MySQL database solution. This was an easy choice for us as we were already using DigitalOcean to deploy our app online and using one of their database solutions allowed us to automatically refuse any incoming connection, except if it originated from our online application, which increased the security of our systems greatly. We also chose their MySQL solution as it was very easy to duplicate the schema used in the SQLite database that was provided to us and because we would be storing very structured data, eliminating the need for a document based database.
-
+\\\\
 In addition to this, we implemented a database-abstraction-layer via \textit{GORM}. This was done for several reasons:
-
+\\\\
 1) Since GORM supports multiple databases like SQLite, MySQL and PostgreSQL this added flexibility to our system since we were not tied to one single database for the entire cycle of our system.
-
+\\\\
 2) GORM provides auto-migration, which 
-in short, makes it much easier to import an SQL table and perform operations on it.
+in short, makes it much easier to import an SQL table and perform operations on it. 
 
 
 \subsection{Static Analysis Tool Results}
-We gave two static analysis tools access to our GitHub repository: SonarCloud and CodeClimate. Both found some minor issues such as code smells, and mainta
+We gave two static analysis tools access to our GitHub repository: SonarCloud and CodeClimate. Both found some minor issues such as code smells, and maintainability issues, but did not raise any major problems such as bad code practices or security vulnerabilities. 
+\\\\
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{./images/SonarCloud_Analysis.png}
+    \caption{SonarCloud's dashboard after running an analysis on our repository.}
+    \label{fig:notion-dashboard}
+\end{figure}
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{./images/CodeClimate_analysis.png}
+    \caption{Code Climate's dashboard after running an analysis on our repository.}
+    \label{fig:notion-dashboard}
+\end{figure}
+\\\\
+Furthermore, installing SonarCloud also gave us access to its bot which reviewed our code quality before we merged features into our main branch.
+\\\\
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{./images/SonarCloud_bot.png}
+    \caption{SonarCloud's bot adding comments on our pull requests.}
+    \label{fig:notion-dashboard}
+\end{figure}
+\\\\
 
 \section{Process' Perspective}
 
@@ -89,21 +136,48 @@ Applied strategy for scaling and upgrades
 Also, in case you have used AI-assistants during your project briefly explain which system(s) you used during the project and reflect how it supported/hindered your process.
 
 \subsection{Diagram showing our CI/CD chains, how we release and deploy MHR}
+
+A complete description of stages and tools included in the CI/CD chains, including deployment and release of your systems.
+How do you monitor your systems and what precisely do you monitor?
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{pdfs/CD-CI-flow.pdf} 
+    \caption{CI/CD flow.}
+    \label{fig:CD/CI flow}
+\end{figure}
+
 \subsection{How we used GIT}
 Eduardo write this please
 \subsection{How we monitor our systems and what we monitor/how we use this information to improve our system (give the example of indexing the db) MHR}
+
+How do you monitor your systems and what precisely do you monitor?
+
+Indexing:
+
 \subsection{Logging and all that witchcraft crap. What we log and why we used those technologies, how we make sure that we're not logging too little but also not logging too much SIMON}
 \subsection{Security assessment SIMON}
 \subsection{Strategy for scaling and upgrading our system (talk about moving to a cloud db, and buying more droplets when moving to swarm}
 \subsection{Our use of AI assistants MHR}
 
-\section{Lessons Learned Perspective ALL}
+Chat GPT: for clarification of general knowledge
+-useful when uploading error messages and suggestion for trying out different ways to solve the problem
 
-Describe the biggest issues, how you solved them, and which are major lessons learned with regards to: evolution and refactoring operation, and maintenance of your ITU-MiniTwit systems. Link back to respective commit messages, issues, tickets, etc. to illustrate these.
+ -useful to give simple examples that demonstrate the idea you want to implement
 
-Also reflect and describe what was the "DevOps" style of your work. For example, what did you do differently to previous development projects and how did it work?
+ -useful for getting quickly overview of how one function could work in different languages
 
-\subsection{Issues we ran into:}
+ -not useful when asking for direct translation of one function to another
+
+ -not useful when asking to provide direct answer
+
+ Considerations for refactoring strategy:
+
+
+\section{Lessons Learned Perspective}
+In this section, we describe some of the technical and managerial difficulties we ran into during the semester, the lessons we learned from them and reflect on how we these difficulties could have been avoided or how we could have recovered more gracefully.
+
+\subsection{Technical Issues}
 
 \begin{itemize}
   \item Container being killed by the OS on the cloud
@@ -112,7 +186,12 @@ Also reflect and describe what was the "DevOps" style of your work. For example,
   \item Swarm setup issues
 \end{itemize}
 
-\subsection{Maybe talk about how nice it was to have a CD pipeline to work on a project together}
+\subsubsection{Resource Starvation}
+During the 4th session of the course, we were tasked with deploying our ITU-MiniTwit system to the cloud so that the simulator could eventually interact with it through our API. We partitioned a droplet on DigitalOcean and deployed our app through a Docker container. We had a few additional services running on other containers but on the same droplet. Once the simulator started, our Docker container would seemingly randomly be shut down every few hours or every few days. After a few weeks of debugging, we eventually realized that there was a direct correlation between our container being shut off and when there was a spike in traffic on our ITU-MiniTwit. We quickly realized that the sum of the resources that we had allocated to each container running on the virtual machine installed on our droplet was higher than the resources we had purchased from Digital Ocean. More specifically, our containers were allowed to consume up to 6GB of RAM, but our droplet only provided us with 4. Thus, when the traffic spiked, the container consumed more RAM than it physically had access to and the OS would kill it.
+\\\\
+While it's easy for us to look back and recognize that this was a simple oversight, we had seen many tutorials that recommended capping the resources each Docker container could consume and had simply glanced over the information.
+
+\subsection{Implementation of a CI/CD Pipeline, Automated Tests, and Good Git Practices}
 
 \subsection{What tools we used during the semester, how we divided work, how we shared knowledge? MHR}
 
@@ -125,12 +204,12 @@ The Principles of Flow
 \item Make Work Visible
   \item Visibility:  In our group we apply the requirement of visibility in our work by defining and sharing our tasks in a common task board in Notion, bellow (by 03-03-2024). This helps us to keep track of the work that needs to be done and be informed what is each team member occupied with.
 
-  \begin{figure}[ht]
+\begin{figure}[ht]
     \centering
     \includegraphics[width=0.8\textwidth]{./images/notion-dashboard-visibility-three-ways.png}
     \caption{Notion dashboard where we keep track of our tasks.}
     \label{fig:notion-dashboard}
-    \end{figure}
+\end{figure}
     
 \item Limit Work in Progres
 (to be implemented)
@@ -176,6 +255,15 @@ We have designed our app architecture with loose couples to achieve independency
 -nonstandard or manual work: we make sure that nobody is using non-rebuilding servers, test environments and configuration. All our dependencies and operations are aimed to be automatic, self-services and available on demand.
 
 -heroics: unfortunately we cannot ensure that all of our work is happening smoothly and often we depend on each other. This is a common scenario when we have to implement operation or a feature that we are all unexperienced in and we might need another member to give us a green light - for example we have enabled revision/review of the code in our gitHub that requires at least one more member to accept review of the code before we are able to merge. We work on a separate branch each week that is being merged before submission. In case of debug on the main ( for example when implementing CI/CD frow) that required multiple PR and therefore someone else on a stand by to accept the review request (in the middle of the night).
+
+\item REFERENCES
+
+1. Official website of Go https://go.dev/
+-for installation and tutorials
+
+2. LinkedIn learning “Learning Go” by David Gassner
+https://www.linkedin.com/learning/learning-go-8399317/explore-go-s-variable-types?u=55937129
+
 
 \end{itemize}
 
