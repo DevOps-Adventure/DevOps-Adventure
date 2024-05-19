@@ -17,7 +17,7 @@
 \begin{itemize}
   \item Miha, Simon: security analysis — open
   \item Simon add a nice intro page
-  \item Simon: find \& install template for latex file — more or less done 
+  \item Simon: find \& install template for latex file — more or less done — nice template, lol
   \item Simon: look at Mircea's slides and make us a template for graphs — open for later
   \item finish Docker swarm — SH: fix fluendt 
     \item EDU: Implement Terrafrom
@@ -47,21 +47,21 @@ In this section, we describe the architecture of our ITU-MiniTwit system, the te
 (note:include if you like it)
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{pdfs/refactoring.pdf} 
+    \includegraphics[width=0.8\textwidth]{./pdfs/refactoring.pdf} 
     \caption{MiniTwit refactoring}
     \label{fig:MiniTwit refactoring}
 \end{figure}
 I was thinking we can skip this paragraph. It's not that interesting in terms of DevOps to talk about translating an app into a new language and I already included "why we chose GO" in another paragraph :)
- -Go has numerous advantages related prone for code debugging
- -simplicity of the code =less typing compared to C
- -good applications with cubanitas and docker
- -golang is open source which means continuous improvement and development.
- -Golang is compiled and not interpreted language, which makes it very fast so we can see that it has better performance than Python
- -Golang is designed to incorporate well concurrency (e.g. goroutine) unlike Python which can easily become a bottleneck for in concurrent tasks
- -Python is consumes more memory compared to Golang which is more lightweight
- -To run Python we are required to have python interpreter and related dependencies whereas Golang compiles to single binary without external
+\\ -Go has numerous advantages related prone for code debugging
+\\ -simplicity of the code =less typing compared to C
+\\-good applications with cubanitas and docker
+\\ -golang is open source which means continuous improvement and development.
+\\-Golang is compiled and not interpreted language, which makes it very fast so we can see that it has better performance than Python
+\\-Golang is designed to incorporate well concurrency (e.g. goroutine) unlike Python which can easily become a bottleneck for in concurrent tasks
+\\-Python is consumes more memory compared to Golang which is more lightweight
+\\-To run Python we are required to have python interpreter and related dependencies whereas Golang compiles to single binary without external
  dependencies
- -benchmark comparison: Golang ~2-3ms vs Python ~21 ms
+\\-benchmark comparison: Golang ~2-3ms vs Python ~21 ms
 \subsection{How a request is processed when it comes from the front-end/simulator}
 The following diagram shows how our system handles a request coming from the front-end or the API. We generally follow a model-view-controller architecture where the main function acts as the entry point of our application. Depending on the request type, the main function then forwards the request to handlers which redirect, handle logic, pass data to HTML templates or pass data to be written/read to/from the database. We chose this architecture as it would allow us to reuse code as much as possible and to seamlessly extend our code base. 
 \\\\
@@ -137,12 +137,13 @@ Also, in case you have used AI-assistants during your project briefly explain wh
 
 \subsection{Diagram showing our CI/CD chains, how we release and deploy MHR}
 
-A complete description of stages and tools included in the CI/CD chains, including deployment and release of your systems.
-How do you monitor your systems and what precisely do you monitor?
+Stages and tools included in the CI/CD chains, including deployment and release;
+
+
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{pdfs/CD-CI-flow.pdf} 
+    \includegraphics[width=0.8\textwidth]{./pdfs/CD-CI-flow.pdf} 
     \caption{CI/CD flow.}
     \label{fig:CD/CI flow}
 \end{figure}
@@ -192,6 +193,7 @@ During the 4th session of the course, we were tasked with deploying our ITU-Mini
 While it's easy for us to look back and recognize that this was a simple oversight, we had seen many tutorials that recommended capping the resources each Docker container could consume and had simply glanced over the information.
 
 \subsection{Implementation of a CI/CD Pipeline, Automated Tests, and Good Git Practices}
+
 
 \subsection{What tools we used during the semester, how we divided work, how we shared knowledge? MHR}
 
