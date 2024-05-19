@@ -143,7 +143,7 @@ func getPublicMessages(numMsgs int) ([]MessageUser, error) {
 		logMessage(dbNew.Error.Error())
 		return nil, dbNew.Error
 	}
-
+	fmt.Println("test")
 	return messages, nil
 }
 
