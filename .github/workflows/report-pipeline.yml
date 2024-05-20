@@ -52,6 +52,7 @@ jobs:
         run: |
           git config --global user.email "babkinedicapriotomas@gmail.com"
           git config --global user.name "Tomas Babkine-Di Caprio"
+          git checkout report
           git add .
           git commit -m "feat: add rendered latex"
           git push origin ${{ github.ref }}
