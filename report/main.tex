@@ -112,7 +112,7 @@ Resource setups  are made manually, only once - in the beginning.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=1.0\textwidth]{./pdfs/resourse setup.pdf} 
+    \includegraphics[width=1.0\textwidth]{./pdfs/resourse_setup.pdf} 
     \caption{Resources setup.}
     \label{fig:Resourse setup}
 \end{figure}
@@ -132,7 +132,7 @@ The purpose of the CI (Continuous Integration) flow is to integrate changes, cre
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{./images/CI-CD stages.png}
+    \includegraphics[width=0.8\textwidth]{./images/CI-CD_stages.png}
     \caption{CI-CD stages.}
     \label{fig:CI-CD stages}
 \end{figure}
@@ -201,18 +201,27 @@ Active monitoring, where we monitor interactions with our application, tracking 
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=1.0\textwidth]{./pdfs/prometheus configuration.pdf} 
-    \caption{prometheus configuration.}
+    \includegraphics[width=1.0\textwidth]{./pdfs/prometheus_configuration.pdf} 
+    \caption{Prometheus configuration.}
     \label{fig:Prometheus configuration}
 \end{figure}
 
-On fig. 8 is shown the hierarchical order of Prometheus configuration and what exactly reports and later is visualised with Grafana. 
+On fig. 8 is shown the hierarchical order of Prometheus configuration. 
 
 1/CPU load on application level:
-\\On the Grafana dashboard, we monitor the CPU load of our application. We discovered a correlation between CPU spikes and application crashes. This was due to differing load permissions between Docker (6GB) and the server size (4GB). The dashboard confirmed our hypothesis, and once we increased the RAM in our droplet, the application started working fine.
+\\We monitor the CPU load of our application. We discovered a correlation between CPU spikes and application crashes. This was due to differing load permissions between Docker (6GB) and the server size (4GB). The dashboard confirmed our hypothesis, and once we increased the RAM in our droplet, the application started working fine.
 
 2/Linux server 
 \\Monitoring CPU, Memory, and Network metrics at the system level helps us determine whether issues originate locally within the application or at the server level. This distinction is crucial to solve the issue.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{./pdfs/visualization_flow.pdf} 
+    \caption{Visualization flow.}
+    \label{fig:visualization flow}
+\end{figure}
+
+Figure 9 shows how information is reported to Grafana and the final user.
 
 \subsection{Logging and all that witchcraft crap. What we log and why we used those technologies, how we make sure that we're not logging too little but also not logging too much SIMON}
 
