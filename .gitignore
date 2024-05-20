@@ -9,3 +9,5 @@ go-minitwit/tests/__pycache__/
 .vagrant
 .env
 venv/*
+cloud_provisioning/main.tfvars
+cloud_provisioning/secrets

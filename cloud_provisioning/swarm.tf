@@ -1,3 +1,4 @@
+# TODO: Figure out how to create a VM to place the Proxy!
 
 #  _                _
 # | | ___  __ _  __| | ___ _ __
@@ -10,7 +11,7 @@ resource "digitalocean_droplet" "minitwit-swarm-leader" {
   image = "docker-20-04" // ubuntu-22-04-x64
   name = "minitwit-swarm-leader"
   region = var.region
-  size = "s-1vcpu-1gb"
+  size = "s-2vcpu-4gb"
   # add public ssh key so we can access the machine
   ssh_keys = [digitalocean_ssh_key.minitwit.fingerprint]
 
@@ -77,12 +78,12 @@ resource "digitalocean_droplet" "minitwit-swarm-manager" {
   depends_on = [null_resource.swarm-manager-token]
 
   # number of vms to create
-  count = 2
+  count = 1
 
   image = "docker-20-04"
   name = "minitwit-swarm-manager-${count.index}"
   region = var.region
-  size = "s-1vcpu-1gb"
+  size = "s-2vcpu-4gb"
   # add public ssh key so we can access the machine
   ssh_keys = [digitalocean_ssh_key.minitwit.fingerprint]
 
@@ -109,7 +110,14 @@ resource "digitalocean_droplet" "minitwit-swarm-manager" {
       # ports for apps
       "ufw allow 80",
       "ufw allow 8080",
-      "ufw allow 8888",
+      "ufw allow 8881",
+      "ufw allow 9090",
+      "ufw allow 3000",
+      "ufw allow 9100",
+      "ufw allow 24244",
+      "ufw allow 24244/udp",
+      "ufw allow 9200",
+      "ufw allow 5601",
       # SSH
       "ufw allow 22",
 
@@ -137,7 +145,7 @@ resource "digitalocean_droplet" "minitwit-swarm-worker" {
   image = "docker-20-04"
   name = "minitwit-swarm-worker-${count.index}"
   region = var.region
-  size = "s-1vcpu-1gb"
+  size = "s-2vcpu-4gb"
   # add public ssh key so we can access the machine
   ssh_keys = [digitalocean_ssh_key.minitwit.fingerprint]
 
