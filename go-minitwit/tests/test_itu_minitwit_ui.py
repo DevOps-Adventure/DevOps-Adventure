@@ -26,6 +26,7 @@ Now, the test itself can be executed via: `pytest test_itu_minitwit_ui.py`.
 import pymongo
 import sqlite3
 import pytest
+import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -37,7 +38,12 @@ from selenium.webdriver.firefox.options import Options
 
 GUI_URL = "http://localhost:8081/register"
 #DB_URL = "mongodb://localhost:27017/test"
-DB_URL = "../tmp/minitwit_empty.db"
+
+if os.getenv('EXECUTION_ENVIRONMENT') == 'CI':
+    DB_URL = "../tmp/minitwit_empty.db"
+else:
+    DB_URL = "./tmp/minitwit_empty.db"
+
 
 def _register_user_via_gui(driver, data):
     import time    

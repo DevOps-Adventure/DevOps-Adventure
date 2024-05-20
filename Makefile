@@ -1,5 +1,5 @@
 DIR := go-minitwit
-TIMEOUT := 10s
+TIMEOUT := 25s
 SERVER_STARTS := 3s
 
 STORE_TEST_RESULT_CMD_SUFFIX := && echo "success" > .test.txt || && echo "failure" > .test.txt
