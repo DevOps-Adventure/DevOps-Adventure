@@ -1,11 +1,6 @@
 # TODO: Figure out how to create a VM to place the Proxy!
 
-#  _                _
-# | | ___  __ _  __| | ___ _ __
-# | |/ _ \/ _` |/ _` |/ _ \ '__|
-# | |  __/ (_| | (_| |  __/ |
-# |_|\___|\__,_|\__,_|\___|_|
-
+# Leader
 # create cloud vm
 resource "digitalocean_droplet" "minitwit-swarm-leader" {
   image = "docker-20-04" // ubuntu-22-04-x64
@@ -24,10 +19,10 @@ resource "digitalocean_droplet" "minitwit-swarm-leader" {
     timeout = "2m"
   }
 
-  provisioner "file" {
-    source = "stack/minitwit_stack.yml"
-    destination = "/root/minitwit_stack.yml"
-  }
+  # provisioner "file" {
+  #   source = "stack/minitwit_stack.yml"
+  #   destination = "/root/minitwit_stack.yml"
+  # }
 
   provisioner "remote-exec" {
     inline = [
@@ -38,7 +33,14 @@ resource "digitalocean_droplet" "minitwit-swarm-leader" {
       # ports for apps
       "ufw allow 80",
       "ufw allow 8080",
-      "ufw allow 8888",
+      "ufw allow 8881",
+      "ufw allow 9090",
+      "ufw allow 3000",
+      "ufw allow 9100",
+      "ufw allow 24244",
+      "ufw allow 24244/udp",
+      "ufw allow 9200",
+      "ufw allow 5601",
       # SSH
       "ufw allow 22",
 
@@ -53,7 +55,7 @@ resource "null_resource" "swarm-worker-token" {
 
   # save the worker join token
   provisioner "local-exec" {
-    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform 'docker swarm join-token worker -q' > temp/worker_token"
+    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform 'docker swarm join-token worker -q' > worker_token"
   }
 }
 
@@ -61,17 +63,11 @@ resource "null_resource" "swarm-manager-token" {
   depends_on = [digitalocean_droplet.minitwit-swarm-leader]
   # save the manager join token
   provisioner "local-exec" {
-    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform 'docker swarm join-token manager -q' > temp/manager_token"
+    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform 'docker swarm join-token manager -q' > manager_token"
   }
 }
 
-
-#  _ __ ___   __ _ _ __   __ _  __ _  ___ _ __
-# | '_ ` _ \ / _` | '_ \ / _` |/ _` |/ _ \ '__|
-# | | | | | | (_| | | | | (_| | (_| |  __/ |
-# |_| |_| |_|\__,_|_| |_|\__,_|\__, |\___|_|
-#                              |___/
-
+# Managers
 # create cloud vm
 resource "digitalocean_droplet" "minitwit-swarm-manager" {
   # create managers after the leader
@@ -97,7 +93,7 @@ resource "digitalocean_droplet" "minitwit-swarm-manager" {
   }
 
   provisioner "file" {
-    source = "temp/manager_token"
+    source = "manager_token"
     destination = "/root/manager_token"
   }
 
@@ -128,12 +124,7 @@ resource "digitalocean_droplet" "minitwit-swarm-manager" {
 }
 
 
-#                     _
-# __      _____  _ __| | _____ _ __
-# \ \ /\ / / _ \| '__| |/ / _ \ '__|
-#  \ V  V / (_) | |  |   <  __/ |
-#   \_/\_/ \___/|_|  |_|\_\___|_|
-#
+# Workers
 # create cloud vm
 resource "digitalocean_droplet" "minitwit-swarm-worker" {
   # create workers after the leader
@@ -159,7 +150,7 @@ resource "digitalocean_droplet" "minitwit-swarm-worker" {
   }
 
   provisioner "file" {
-    source = "temp/worker_token"
+    source = "worker_token"
     destination = "/root/worker_token"
   }
 
@@ -172,7 +163,14 @@ resource "digitalocean_droplet" "minitwit-swarm-worker" {
       # ports for apps
       "ufw allow 80",
       "ufw allow 8080",
-      "ufw allow 8888",
+      "ufw allow 8881",
+      "ufw allow 9090",
+      "ufw allow 3000",
+      "ufw allow 9100",
+      "ufw allow 24244",
+      "ufw allow 24244/udp",
+      "ufw allow 9200",
+      "ufw allow 5601",
       # SSH
       "ufw allow 22",
 
