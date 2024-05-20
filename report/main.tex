@@ -36,7 +36,7 @@
     \item D2: Detailed overview CI/CD (pre commit: yaml file)
     \item D3: Detailed: Code architecture 
     \item D4: Detailed: Request diagrams for different stacks:
-        \\ - -Grafana/Prometeus Stack: Quantitative 
+        \\ - -Grafana/Prometheus Stack: Quantitative 
         \\ - -EFK - Kibana/Elastic/Fluented: Qualitative
 
  \end{itemize}
@@ -262,9 +262,9 @@ Active monitoring, where we monitor interactions with our application, tracking 
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=1.0\textwidth]{./pdfs/prometheus configuration.pdf} 
-    \caption{prometheus configuration.}
-    \label{fig:prometheus configuration}
+    \includegraphics[width=1.0\textwidth]{./pdfs/prometheus_configuration.pdf} 
+    \caption{Prometheus configuration.}
+    \label{fig:Prometheus configuration}
 \end{figure}
 
 On fig. 8 is shown the hierarchy of the orders that Prometheus is executing, how and from where it collects information. We have chosen to monitor metrics on two levels: application and system level.
@@ -288,6 +288,8 @@ Figure 9 shows that after scraped data is stored in Prometheus server it reaches
 \subsection{Logging and all that witchcraft crap. What we log and why we used those technologies, how we make sure that we're not logging too little but also not logging too much SIMON}
 
 \subsection{Security Assessment}
+
+\subsubsection{Risk Identification}
 The following assets have been identified and considered in the context of the security assessment:
 
 \begin{enumerate}
@@ -302,7 +304,7 @@ These five assets of our system have been identified and could be at risk. Based
 
 \begin{multicols}{2}
 
-
+\subsubsection{Risk Scenarios}
 \textit{\textbf{Risk Scenario 1}}: \textit{Data Breach via SQL Injection} \\
 \textbf{Description}: An attacker exploits a SQL injection vulnerability in the MiniTwit application to gain unauthorized access to the database.database.\\
 \textbf{Impact:} Exposure of sensitive user data (emails, passwords, blog posts).\\
@@ -345,33 +347,55 @@ These five assets of our system have been identified and could be at risk. Based
 
 \end{multicols}
 
+
+\subsubsection{Risk Analysis and Mitigation}
+
 Following we have determined the severity of each threat and placed them in a risk matrix to prioritize appropriate mitigation strategies. The severity categories are defined as follows:
+
+\definecolor{lowrisk}{HTML}{AACB50} % LightGreen
+\definecolor{mediumrisk}{HTML}{FFDE83} % LightYellow
+\definecolor{highrisk}{HTML}{FE5E59} % LightCoral
 
 \begin{table}[h!]
 \centering
+\small
+\arrayrulecolor{black} 
+\renewcommand{\arraystretch}{1.5} 
+\newcolumntype{a}{>{\columncolor{gray!5}}c}
 \begin{tabular}{|c|c|c|c|}
 \hline
 \rowcolor{white}
 & \textbf{Insignificant} & \textbf{Marginal} & \textbf{Critical} \\
 \hline
-\textbf{Likely} & \cellcolor{yellow} & \cellcolor{yellow} 6 & \cellcolor{red} \\
+\textbf{Likely} & \cellcolor{mediumrisk} & \cellcolor{highrisk} & \cellcolor{highrisk} \\
 \hline
-\textbf{Possible} & \cellcolor{green} & \cellcolor{yellow} 5 & \cellcolor{red} 1, 4 \\
+\textbf{Possible} & \cellcolor{lowrisk} & \cellcolor{mediumrisk} 4 & \cellcolor{highrisk} 1, 6 \\
 \hline
-\textbf{Unlikely} & \cellcolor{green} 3 & \cellcolor{green} & \cellcolor{yellow} 2, 7 \\
+\textbf{Unlikely} & \cellcolor{lowrisk} 8 & \cellcolor{lowrisk} 5, 7  & \cellcolor{mediumrisk} 2, 3 \\
 \hline
 \end{tabular}
 \end{table}
 
+Furthermore, the outcomes are discussed and potential solutions are presented. 
+
+
+
+
+
+
 \begin{table}[h!]
 \centering
+\small
+\arrayrulecolor{black} 
+\renewcommand{\arraystretch}{1.5} 
+\newcolumntype{a}{>{\columncolor{gray!5}}c}
 \begin{tabular}{|c|c|c|}
 \hline
-\cellcolor{green} & Low risk \\
+\cellcolor{lowrisk} & Low risk \\
 \hline
-\cellcolor{yellow} & Medium risk \\
+\cellcolor{mediumrisk} & Medium risk \\
 \hline
-\cellcolor{red} & High risk \\
+\cellcolor{highrisk} & High risk \\
 \hline
 \end{tabular}
 \end{table}
