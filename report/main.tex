@@ -9,12 +9,15 @@
 
 \maketitle
 
+\section{I'm a section -}
+\subsection{I'm a subsection}
+
 \section{Tasks}
 
 \begin{itemize}
   \item Miha, Simon: security analysis — open
   \item Simon add a nice intro page
-  \item Simon: find \& install template for latex file — more or less done — nice template lol
+  \item Simon: find \& install template for latex file — more or less done — nice template, lol
   \item Simon: look at Mircea's slides and make us a template for graphs — open for later
   \item finish Docker swarm — SH: fix fluendt 
     \item EDU: Implement Terrafrom
@@ -41,24 +44,8 @@ In this section, we describe the architecture of our ITU-MiniTwit system, the te
 
 \subsection{How we refactored our app and why we chose GoLang. Tomas}
 
-(note:include if you like it)
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.8\textwidth]{./pdfs/refactoring.pdf} 
-    \caption{MiniTwit refactoring}
-    \label{fig:MiniTwit refactoring}
-\end{figure}
 I was thinking we can skip this paragraph. It's not that interesting in terms of DevOps to talk about translating an app into a new language and I already included "why we chose GO" in another paragraph :)
-\\ -Go has numerous advantages related prone for code debugging
-\\ -simplicity of the code =less typing compared to C
-\\-good applications with cubanitas and docker
-\\ -golang is open source which means continuous improvement and development.
-\\-Golang is compiled and not interpreted language, which makes it very fast so we can see that it has better performance than Python
-\\-Golang is designed to incorporate well concurrency (e.g. goroutine) unlike Python which can easily become a bottleneck for in concurrent tasks
-\\-Python is consumes more memory compared to Golang which is more lightweight
-\\-To run Python we are required to have python interpreter and related dependencies whereas Golang compiles to single binary without external
- dependencies
-\\-benchmark comparison: Golang ~2-3ms vs Python ~21 ms
+
 \subsection{How a request is processed when it comes from the front-end/simulator}
 The following diagram shows how our system handles a request coming from the front-end or the API. We generally follow a model-view-controller architecture where the main function acts as the entry point of our application. Depending on the request type, the main function then forwards the request to handlers which redirect, handle logic, pass data to HTML templates or pass data to be written/read to/from the database. We chose this architecture as it would allow us to reuse code as much as possible and to seamlessly extend our code base. 
 \\\\
@@ -71,9 +58,7 @@ For example, since we separated the methods that communicate with the database, 
 \subsection{Technologies used}
 In this subsection we describe some of the key technologies we used on our system and justify them. The complete list of dependencies can be found in the appendix.
 
-\subsubsection{Programming Languages}We chose to refactor our application using GoLang (Go). Go is a high level compiled programming language developed at Google in 2009. We chose to use it to refactor our app due to its simple syntax, automatic garbage collection and very high performance. Because of its easy to approach syntax, GoLang is generally regarded as a simple language to learn compared to others such as C++. For this reason, this made it a clear choice when we all saw the refactor of ITU-MiniTwit as an opportunity for our group members to learn a new language
-
-note: shall we include the results from our benchmark?
+\subsubsection{Programming Languages}We chose to refactor our application using GoLang (Go). Go is a high level compiled programming language developed at Google in 2009. We chose to use it to refactor our app due to its simple syntax, automatic garbage collection and very high performance. Because of its easy to approach syntax, GoLang is generally regarded as a simple language to learn compared to others such as C++. For this reason, this made it a clear choice when we all saw the refactor of ITU-MiniTwit as an opportunity for our group members to learn a new language.
 \\\\
 The automated tests that we used to monitor development on our app and make sure that no buggy code made it to our deployed application were written in Python. These were provided to us in the course repo and we chose not to refactor them to GoLang as we were able to use them to test our application.
 \\\\
@@ -121,56 +106,132 @@ Furthermore, installing SonarCloud also gave us access to its bot which reviewed
 
 \section{Process' Perspective}
 
-This perspective should clarify how code or other artifacts come from idea into the running system and everything that happens on the way.
+\subsection{Description of stages and tools included in the CI/CD chains: Resources setup [mhr]}
 
-In particular, the following descriptions should be included:
-
-A complete description of stages and tools included in the CI/CD chains, including deployment and release of your systems.
-How do you monitor your systems and what precisely do you monitor?
-What do you log in your systems and how do you aggregate logs?
-Brief results of the security assessment and brief description of how did you harden the security of your system based on the analysis
-Applied strategy for scaling and upgrades
-Also, in case you have used AI-assistants during your project briefly explain which system(s) you used during the project and reflect how it supported/hindered your process.
-
-\subsection{Diagram showing our CI/CD chains, how we release and deploy MHR}
-
-Stages and tools included in the CI/CD chains, including deployment and release;
-
-
+\\Resource setups  are made manually, only once - in the beginning.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{./pdfs/CD-CI-flow.pdf} 
-    \caption{CI/CD flow.}
-    \label{fig:CD/CI flow}
+    \includegraphics[width=1.0\textwidth]{./pdfs/resourse setup.pdf} 
+    \caption{Resources setup.}
+    \label{fig:Resourse setup}
 \end{figure}
+
+
+\subsubsection{Step 1: Creation of Virtual Machine and server set up on Digital Ocean}
+In our vagrant file we start the VM (creating a droplet) (argumentation for size and location), connect to the created droplet (on the server), installing docker container and test docker is working correctly. It also contains a deploy scrips that updates the latest Minitwit docker image from DockerHub and starts the containerized application via docker-compose.
+
+\subsubsection{Step 2: Setting up artifacts store}
+This step includes registration in DockerHub to keep our Minitwit image up to date. We chose Digital Ocean instead of local setup of a private server, to minimise maintenance and risk failure, ease of use and access, and multiple possibilities for integration for our system like docker Swarm and hosting our database on cloud. (why exactly Digital Ocean), student voucher etc
+
+\subsubsection{Step 3: Configuring secrets on GitHub repository}
+We are using GitHub workflow to store our CI/CD jobs, and they are defined via high-level actions in .yaml files. This stage includes generating access token from DockerHub, setting up SSH key from local device and generating access token from could provider which are added to GitHub actions as secrets. The secrets are accessible to the GitHub workflow. The purpose is to provide access to GitHub workflow to the latest Docker mini twit image, and connect to the server to call the deploy script.
+
+\subsection{Description of stages and tools included in the CI/CD chains:CI/CD flow [mhr]}
+The purpose of the CI (Continuous Integration) flow is to integrate changes, create artifacts, and run tests. The CD (Continuous Deployment) flow automates the deployment process from a local device to the server. Both CI and CD flows are defined in a single YAML file and can be triggered manually from GitHub Actions or automatically by committing changes to the main branch.  
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{./images/CI-CD stages.png}
+    \caption{CI-CD stages.}
+    \label{fig:CI-CD stages}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1.0\textwidth]{./images/CommitToDeploy.png} 
+    \caption{Our commit to deploy pipeline.}
+    \label{fig:Our commit to deploy pipeline.}
+\end{figure}
+
+
+\subsubsection{CI stage 1: Tests and Linters}
+\noindent \textbf{\underline{Tests}} 
+
+CI acts as a gatekeeper for our code, it includes: 
+Setting up the Go environment and install all GO dependencies and starts the minitwit application. The workflow check that the server is running before it runs the tests.
+Then is does the same for Python environment, where it install the dependencies for testing. After that checks the ports before running the tests.
+Runs the following types of tests:
+\begin{itemize}
+    \item test itu minitwit ui.py
+\end{itemize}
+User interface tests that check whether user exists in the database before registration, then performs the registration and verifies with success message. For this tests purposes it installs Firefox, Selenium and Geckodriver;
+
+\begin{itemize}
+    \item test minitwit sim api.py
+\end{itemize}
+These tests check that the functionalities of minitiwt work as expected: user registration, message posting, following/unfollowing, fetching messages and database cleanup; with focus on the latest filed updates
+    
+\begin{itemize}
+    \item test refactored minitwit.py
+\end{itemize}
+Also standard test to check the application functionalities, focussing on the user registration, login/logout and message post and retriecal, follow/unfollow and correct timeline.
+
+\noindent \textbf{\underline{Linters}} 
+
+More detailed explanation for linters on this complicated diagram
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1.0\textwidth]{./pdfs/linter.pdf} 
+    \caption{Linters.}
+    \label{fig:Linter}
+\end{figure}
+
+
+\subsubsection{CI stage 2: Deployment [mhr]}
+In the deployment stage, after the tests and linters complete, in the the workflow first fetches the code from the repository, then logs to Docker Hub using the secrets in GH actions. It sets up Docker Buildx and builds and pushes the Docker image of our application to Docker Hub. To optimise the process it is using stored cache.
+
+Next, SSH access is configured by setting up the necessary keys. The workflow then deploys the application to the server by copying required files and executing the deployment script via SSH, passing in the database credentials securely.
+
+\subsubsection{CI stage 3: Release new version [mhr]}
+In this final stage, after the deployment is successfully completed, the workflow includes fetching the code from the repository and setting up the Git user identity (needed for tag creation). A new tag is created for each version by incrementing the latest tag number. Finally, a new GitHub release is created based on the new tag (e.g., v35.0). This release generates release notes that include bug fixes and other changes based on the commits since the last release.
 
 \subsection{How we used GIT}
 Eduardo write this please
-\subsection{How we monitor our systems and what we monitor/how we use this information to improve our system (give the example of indexing the db) MHR}
 
-How do you monitor your systems and what precisely do you monitor?
+\subsection{How we monitor our systems and what we monitor/how we use this information to improve our system [mhr]]}
 
-Indexing:
+\noindent \textbf{\underline{Types of monitoring}} 
+\\White box monitoring, where we focus on the processes within our application, providing insights for the internal state and performance of our application\\
+Active monitoring, where we monitor interactions with our application, tracking metrics for active logged users (note: without tracking their location)
+\\
+\\
+\noindent \textbf{\underline{Use of monitoring}} 
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1.0\textwidth]{./pdfs/prometheus configuration.pdf} 
+    \caption{prometheus configuration.}
+    \label{fig:Prometheus configuration}
+\end{figure}
+
+On fig. 8 is shown the hierarchical order of Prometheus configuration and what exactly reports and later is visualised with Grafana. 
+
+1/CPU load on application level:
+\\On the Grafana dashboard, we monitor the CPU load of our application. We discovered a correlation between CPU spikes and application crashes. This was due to differing load permissions between Docker (6GB) and the server size (4GB). The dashboard confirmed our hypothesis, and once we increased the RAM in our droplet, the application started working fine.
+
+2/Linux server 
+\\Monitoring CPU, Memory, and Network metrics at the system level helps us determine whether issues originate locally within the application or at the server level. This distinction is crucial to solve the issue.
 
 \subsection{Logging and all that witchcraft crap. What we log and why we used those technologies, how we make sure that we're not logging too little but also not logging too much SIMON}
+
 \subsection{Security assessment SIMON}
+
 \subsection{Strategy for scaling and upgrading our system (talk about moving to a cloud db, and buying more droplets when moving to swarm}
-\subsection{Our use of AI assistants MHR}
 
-Chat GPT: for clarification of general knowledge
--useful when uploading error messages and suggestion for trying out different ways to solve the problem
+\subsection{Our use of AI assistants [mhr]}
+\noindent \textbf{\underline{Chat GPT can be an invaluable tool for various purposes:}} \\
+- \text{It's helpful when we needed suggestions for different ways to solve a problem, especially when uploading error messages.}\\
+- \text{To provide simple examples that clearly demonstrate the concept that we were trying to implement.}\\
+- \text{Can show different language implementation of how a particular function can be implemented in different programming languages.}
+\\
 
- -useful to give simple examples that demonstrate the idea you want to implement
+\nonindent \textbf{\underline{and not very useful with:}}\\
+- \text {It is not particularly useful for direct translations of a function from one programming language to another.}\\
+- \text {it cannot provide direct (correct) answers, especially for complex or highly specific questions.}\\
 
- -useful for getting quickly overview of how one function could work in different languages
-
- -not useful when asking for direct translation of one function to another
-
- -not useful when asking to provide direct answer
-
- Considerations for refactoring strategy:
-
+Considerations for refactoring strategy:
 
 \section{Lessons Learned Perspective}
 In this section, we describe some of the technical and managerial difficulties we ran into during the semester, the lessons we learned from them and reflect on how we these difficulties could have been avoided or how we could have recovered more gracefully.
@@ -178,10 +239,33 @@ In this section, we describe some of the technical and managerial difficulties w
 \subsection{Technical Issues}
 
 \begin{itemize}
-  \item Container being killed by the OS on the cloud
-  \item Database cleared for some reason every now and then?
-  \item Slow db querying (MHR)
-  \item Swarm setup issues
+    \item Container being killed by the OS on the cloud
+    \item Database cleared for some reason every now and then?
+  
+    \item Slow db querying [mhr]    →      Solution: indexing
+    
+After the simulator had been running on our database for some time, we noticed a significant increase in the dataset size, which resulted in longer query times. To address this issue, we implemented indexes directly in the database using SQL queries. To determine which indexes to create, we focused on the processes that were performing the slowest: accessing the public timeline, retrieving messages, and managing followers. For these, we implemented B-tree indices and we managed to optimize the performance of our database queries and ensuring efficient data retrieval.
+
+\\For user table (unique):
+\begin{verbatim}
+CREATE INDEX idx_username ON user(username(255));
+CREATE INDEX idx_email ON user(email(255));
+\end{verbatim}
+
+\\For message table (non-unique):
+\begin{verbatim}
+CREATE INDEX idx_author_id ON message(author_id(255));
+CREATE INDEX idx_pub_date ON message(pub_date(255));
+\end{verbatim}
+
+\\For follower table:
+\begin{verbatim}
+CREATE INDEX idx_who_id ON follower(who_id(255));
+CREATE INDEX idx_whom_id ON follower(whom_id(255));
+\end{verbatim}
+
+
+    \item Swarm setup issues
 \end{itemize}
 
 \subsubsection{Resource Starvation}
@@ -189,12 +273,14 @@ During the 4th session of the course, we were tasked with deploying our ITU-Mini
 \\\\
 While it's easy for us to look back and recognize that this was a simple oversight, we had seen many tutorials that recommended capping the resources each Docker container could consume and had simply glanced over the information.
 
-\subsection{Implementation of a CI/CD Pipeline, Automated Tests, and Good Git Practices}
+\subsection{Implementation of a CI/CD Pipeline, Automated Tests, and Good Git Practices} [mhr note: I have added description for pre-setup of the CI-CD in 5.1 and tests in 5.2.1 ]
 
+\subsection{What tools we used during the semester, how we divided work, how we shared knowledge?}
 
-\subsection{What tools we used during the semester, how we divided work, how we shared knowledge? MHR}
+\subsubsection{Good Git practices (moved) [mhr]}
+We have established a routine where we worked on a new branch every week and tested our code locally before we push it to main. In order to be able to merge we need to have at least one reviewer to approve the code. Apart of this, also tests run on the code before it is pushed which significantly reduces the risk.
 
-\subsection{The three DevOps ways and what we used?}
+\subsubsection{The three DevOps ways and what we used? [mhr]} 
 
 The Principles of Flow
 
@@ -210,7 +296,7 @@ The Principles of Flow
     \label{fig:notion-dashboard}
 \end{figure}
     
-\item Limit Work in Progres
+\item Limit Work in Progress
 (to be implemented)
 
 We have set a limit of the tasks  that can  be in each column in the Notion board) This means that we can only add a task when one is being finished. In case we are waiting on somebody’s task to be completed and we are free to start new task we will rather see what is causing the delay for our team member to finish his task and help him instead. 
@@ -255,13 +341,16 @@ We have designed our app architecture with loose couples to achieve independency
 
 -heroics: unfortunately we cannot ensure that all of our work is happening smoothly and often we depend on each other. This is a common scenario when we have to implement operation or a feature that we are all unexperienced in and we might need another member to give us a green light - for example we have enabled revision/review of the code in our gitHub that requires at least one more member to accept review of the code before we are able to merge. We work on a separate branch each week that is being merged before submission. In case of debug on the main ( for example when implementing CI/CD frow) that required multiple PR and therefore someone else on a stand by to accept the review request (in the middle of the night).
 
-\item REFERENCES
+\section{References}
 
 1. Official website of Go https://go.dev/
 -for installation and tutorials
 
 2. LinkedIn learning “Learning Go” by David Gassner
 https://www.linkedin.com/learning/learning-go-8399317/explore-go-s-variable-types?u=55937129
+
+3.reference for indexing the database
+https://github.com/dbeaver/dbeaver/wiki/Creating-Indexes
 
 
 \end{itemize}
