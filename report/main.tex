@@ -1,5 +1,12 @@
 \documentclass{article}
 \usepackage{graphicx} % Required for inserting images
+\usepackage{multicol}
+\usepackage[table]{xcolor}
+\usepackage{colortbl}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+
+
 
 \title{DevOps - LLAMA GEMST}
 \author{tbab, harw, gusm, edtr, mihr}
@@ -8,9 +15,6 @@
 \begin{document}
 
 \maketitle
-
-\section{I'm a section -}
-\subsection{I'm a subsection}
 
 \section{Tasks}
 
@@ -42,16 +46,17 @@ The following report described the work done during the Spring 2024 DevOps, Soft
 \section{System's Perspective}
 In this section, we describe the architecture of our ITU-MiniTwit system, the technologies that we used to support it, and we provide a rationale for the technologies we chose. This section also shows how a front-end or API request is processed by our system and what is eventually outputted. Finally, we show the results we obtained from using static analysis tools.
 
-\subsection{How we refactored our app and why we chose GoLang. Tomas}
-
-I was thinking we can skip this paragraph. It's not that interesting in terms of DevOps to talk about translating an app into a new language and I already included "why we chose GO" in another paragraph :)
-
 \subsection{How a request is processed when it comes from the front-end/simulator}
-The following diagram shows how our system handles a request coming from the front-end or the API. We generally follow a model-view-controller architecture where the main function acts as the entry point of our application. Depending on the request type, the main function then forwards the request to handlers which redirect, handle logic, pass data to HTML templates or pass data to be written/read to/from the database. We chose this architecture as it would allow us to reuse code as much as possible and to seamlessly extend our code base. 
+The diagram in figure (note: todo) shows how our system handles a request coming from the front-end or the API. We generally follow a model-view-controller architecture where the main function acts as the entry point of our application. Depending on the request type, the main function then forwards the request to handlers which redirect, handle logic, pass data to HTML templates or pass data to be written/read to/from the database. We chose this architecture as it would allow us to reuse code as much as possible and to seamlessly extend our code base. 
 \\\\
 For example, since we separated the methods that communicate with the database, we were able to add an abstraction layer without modifying the core logic of the application. Similarly, we were able to migrate our database from SQLite to a managed MySQL database on DigitalOcean very easily since our logic for connecting to the database was contained in one method which was invoked by several other methods when they needed to connect to the database.
 \\\\
-(Note: add D4 here)
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1.0\textwidth]{./images/request_pipeline.png}
+    \caption{How our system handles a request.}
+    \label{fig:notion-dashboard}
+\end{figure}
 
 \subsection{Architecture graphs of the system}
 
@@ -106,17 +111,15 @@ Furthermore, installing SonarCloud also gave us access to its bot which reviewed
 
 \section{Process' Perspective}
 
-\subsection{Description of stages and tools included in the CI/CD chains: Resources setup [mhr]}
-
+\subsection{Initial Resource Partitioning}
 Resource setups  are made manually, only once - in the beginning.
-
+\clearpage
 \begin{figure}[ht]
     \centering
     \includegraphics[width=1.0\textwidth]{./pdfs/resourse_setup.pdf} 
     \caption{Resources setup.}
     \label{fig:Resourse setup}
 \end{figure}
-
 
 \subsubsection{Step 1: Creation of Virtual Machine and server set up on Digital Ocean}
 In our vagrant file we start the VM (creating a droplet) (argumentation for size and location), connect to the created droplet (on the server), installing docker container and test docker is working correctly. It also contains a deploy scrips that updates the latest Minitwit docker image from DockerHub and starts the containerized application via docker-compose.
@@ -127,8 +130,10 @@ This step includes registration in DockerHub to keep our Minitwit image up to da
 \subsubsection{Step 3: Configuring secrets on GitHub repository}
 We are using GitHub workflow to store our CI/CD jobs, and they are defined via high-level actions in .yaml files. This stage includes generating access token from DockerHub, setting up SSH key from local device and generating access token from could provider which are added to GitHub actions as secrets. The secrets are accessible to the GitHub workflow. The purpose is to provide access to GitHub workflow to the latest Docker mini twit image, and connect to the server to call the deploy script.
 
-\subsection{Description of stages and tools included in the CI/CD chains:CI/CD flow [mhr]}
-The purpose of the CI (Continuous Integration) flow is to integrate changes, create artifacts, and run tests. The CD (Continuous Deployment) flow automates the deployment process from a local device to the server. Both CI and CD flows are defined in a single YAML file and can be triggered manually from GitHub Actions or automatically by committing changes to the main branch.  
+\subsection{Continuous Integration}
+We established a continuous integration (CI) pipeline to enable us to often test our code and new features automatically against the tests that were provided to us. We also created this pipeline to shield our main branch, where our ITU-MiniTwit was deployed, from having buggy or malicious code merged into it as any merge into main would automatically be deployed to our live system by our continuous deployment pipeline. Finally, we also setup our CI pipeline to run linters against code being added to the code base and to force a human developer to approve code before having it merged into our main branch and eventually deployed to our production environment. Figure 6 (note: todo) describes the steps in our CI pipeline and its main stages.
+
+(note: Gustave, if you want to talk about linters, here is a good place, I think :D)
 
 \begin{figure}[ht]
     \centering
@@ -137,58 +142,115 @@ The purpose of the CI (Continuous Integration) flow is to integrate changes, cre
     \label{fig:CI-CD stages}
 \end{figure}
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=1.0\textwidth]{./images/CommitToDeploy.png} 
-    \caption{Our commit to deploy pipeline.}
-    \label{fig:Our commit to deploy pipeline.}
-\end{figure}
 
+\noindent \underline{please keep this for discussion before you remove it [mhr], ok sorry :( }
+\\
+\\
+The purpose of the CI (Continuous Integration) flow is to integrate changes,
+create artifacts, and run tests. The CD (Continuous Deployment) flow automates
+the deployment process from a local device to the server. Both CI and
+CD flows are defined in a single YAML file and can be triggered manually from
+GitHub Actions or automatically by committing changes to the main branch.
+\\
+\\
+\noindent \textbf{CI stage 1: Testing [mhr]}\\
+\noindent \underline{Tests}\\
+CI acts as a gatekeeper for our code, it includes: Setting up the Go environment
+and install all GO dependencies and starts the minitwit application. The
+workflow check that the server is running before it runs the tests. Then is does
+the same for Python environment, where it install the dependencies for testing.
+After that checks the ports before running the tests. Runs the following types
+of tests:
 
-\subsubsection{CI stage 1: Tests and Linters}
-\noindent \textbf{\underline{Tests}} 
-
-CI acts as a gatekeeper for our code, it includes: 
-Setting up the Go environment and install all GO dependencies and starts the minitwit application. The workflow check that the server is running before it runs the tests.
-Then is does the same for Python environment, where it install the dependencies for testing. After that checks the ports before running the tests.
-Runs the following types of tests:
 \begin{itemize}
     \item test itu minitwit ui.py
 \end{itemize}
-User interface tests that check whether user exists in the database before registration, then performs the registration and verifies with success message. For this tests purposes it installs Firefox, Selenium and Geckodriver;
 
+User interface tests that check whether user exists in the database before registration,
+then performs the registration and verifies with success message. For
+this tests purposes it installs Firefox, Selenium and Geckodriver;
 \begin{itemize}
     \item test minitwit sim api.py
 \end{itemize}
-These tests check that the functionalities of minitiwt work as expected: user registration, message posting, following/unfollowing, fetching messages and database cleanup; with focus on the latest filed updates
-    
+
+These tests check that the functionalities of minitiwt work as expected: user registration,
+message posting, following/unfollowing, fetching messages and database
+cleanup; with focus on the latest filed updates
 \begin{itemize}
     \item test refactored minitwit.py
 \end{itemize}
-Also standard test to check the application functionalities, focussing on the user registration, login/logout and message post and retriecal, follow/unfollow and correct timeline.
 
-\noindent \textbf{\underline{Linters}} 
-
-More detailed explanation for linters on this complicated diagram
-
+Also standard test to check the application functionalities, focussing on the user
+registration, login/logout and message post and retriecal, follow/unfollow and
+correct timeline.
+\\
+\noindent \underline{Linters}
+\\
 \begin{figure}[ht]
     \centering
     \includegraphics[width=1.0\textwidth]{./pdfs/linter.pdf} 
     \caption{Linters.}
     \label{fig:Linter}
 \end{figure}
+\\
+\textbf{CI stage 2: Deployment [mhr]}
+In the deployment stage, after the tests and linters complete, in the the workflow
+first fetches the code from the repository, then logs to Docker Hub using the
+secrets in GH actions. It sets up Docker Buildx and builds and pushes the
+Docker image of our application to Docker Hub. To optimise the process it is
+using stored cache.
+Next, SSH access is configured by setting up the necessary keys. The workflow
+then deploys the application to the server by copying required files and
+executing the deployment script via SSH, passing in the database credentials
+securely.
+\\\\
+\textbf{CI stage 3: Release new version [mhr]}\\
+In this final stage, after the deployment is successfully completed, the workflow
+includes fetching the code from the repository and setting up the Git user
+identity (needed for tag creation). A new tag is created for each version by
+incrementing the latest tag number. Finally, a new GitHub release is created
+based on the new tag (e.g., v35.0). This release generates release notes that
+include bug fixes and other changes based on the commits since the last release.
 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1.0\textwidth]{./images/CICD_pipeline.png} 
+    \caption{Our CI/CD pipeline.}
+    \label{fig:Our commit to deploy pipeline.}
+\end{figure}
 
-\subsubsection{CI stage 2: Deployment [mhr]}
-In the deployment stage, after the tests and linters complete, in the the workflow first fetches the code from the repository, then logs to Docker Hub using the secrets in GH actions. It sets up Docker Buildx and builds and pushes the Docker image of our application to Docker Hub. To optimise the process it is using stored cache.
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1.0\textwidth]{./images/CI_pipeline.png} 
+    \caption{Our continuous integration pipeline.}
+    \label{fig:Our continuous integration pipeline.}
+\end{figure}
 
-Next, SSH access is configured by setting up the necessary keys. The workflow then deploys the application to the server by copying required files and executing the deployment script via SSH, passing in the database credentials securely.
+\subsection{Continuous Deployment}
+\clearpage
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1.0\textwidth]{./images/CD_pipeline.png} 
+    \caption{Our continuous deployment pipeline.}
+    \label{fig:Our continuous deployment pipeline.}
+\end{figure}
+We also established a continuous deployment (CD) pipeline to automatically deploy the updated version of our ITU-MiniTwit. Once a new feature was incorporated into the main branch of our repo after the successful merge of a pull request, our CD pipeline would automatically trigger and deploy the new version of our application. Our CD pipeline was executed with a GitHub action and had many responsibilities:
 
-\subsubsection{CI stage 3: Release new version [mhr]}
-In this final stage, after the deployment is successfully completed, the workflow includes fetching the code from the repository and setting up the Git user identity (needed for tag creation). A new tag is created for each version by incrementing the latest tag number. Finally, a new GitHub release is created based on the new tag (e.g., v35.0). This release generates release notes that include bug fixes and other changes based on the commits since the last release.
+\begin{enumerate}
+    \item Build the new version of ITU-MiniTwit and run tests against it.
+    \item Build a new Docker image of our app and push it to DockerHub.
+    \item Upload the deploy script from our repo to the DigitalOcean server
+    \item Stop current containers running on the server and download the new images from DockerHub.
+    \item Start the containers with the new images.
+    \item Release a new version of the ITU-MiniTwit on GitHub.
+\end{enumerate}
+
+Once the CD pipeline had terminated, the new feature was deployed to our live system. It is important to note that the containers were brought offline and back online using a rolling update scheme, to ensure that our system would always be available to access. The exact steps of the pipeline can be found in figure 10 (note: todo).
 
 \subsection{How we used GIT}
-Eduardo write this please
+Note: Eduardo write this please. Tomas: maybe we don't need a section for it in the end?
+
+\clearpage
 
 \subsection{How we monitor our systems and what we monitor/how we use this information to improve our system [mhr]]}
 
@@ -196,23 +258,22 @@ Eduardo write this please
 \\White box monitoring, where we focus on the processes within our application, providing insights for the internal state and performance of our application\\
 Active monitoring, where we monitor interactions with our application, tracking metrics for active logged users (note: without tracking their location)
 \\
-\\
 \noindent \textbf{\underline{Use of monitoring}} 
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=1.0\textwidth]{./pdfs/prometheus_configuration.pdf} 
-    \caption{Prometheus configuration.}
-    \label{fig:Prometheus configuration}
+    \includegraphics[width=1.0\textwidth]{./pdfs/prometheus configuration.pdf} 
+    \caption{prometheus configuration.}
+    \label{fig:prometheus configuration}
 \end{figure}
 
-On fig. 8 is shown the hierarchical order of Prometheus configuration. 
-
+On fig. 8 is shown the hierarchy of the orders that Prometheus is executing, how and from where it collects information. We have chosen to monitor metrics on two levels: application and system level.
+\\
 1/CPU load on application level:
 \\We monitor the CPU load of our application. We discovered a correlation between CPU spikes and application crashes. This was due to differing load permissions between Docker (6GB) and the server size (4GB). The dashboard confirmed our hypothesis, and once we increased the RAM in our droplet, the application started working fine.
 
 2/Linux server 
-\\Monitoring CPU, Memory, and Network metrics at the system level helps us determine whether issues originate locally within the application or at the server level. This distinction is crucial to solve the issue.
+\\Monitoring CPU, Memory, and Network metrics at the system level helps us determine whether issues originate locally within the application or at the server level. To be informed about overall health of the hosting environment is of a crucial importance as it could affect our application performance.
 
 \begin{figure}[ht]
     \centering
@@ -221,24 +282,114 @@ On fig. 8 is shown the hierarchical order of Prometheus configuration.
     \label{fig:visualization flow}
 \end{figure}
 
-Figure 9 shows how information is reported to Grafana and the final user.
+Figure 9 shows that after scraped data is stored in Prometheus server it reaches the final user via Grafana visualization dashboards. We chose Grafana and Prometheus stack because of numerous advantages: FOSS helps quick and low cost start and flexible scale up, without hidden costs. Tt is widely used as industry-standard way of monitoring, has good integration with cloud-origin environments and variety of plugins, provides detailed visualizations and it is very user-friendly. 
+
 
 \subsection{Logging and all that witchcraft crap. What we log and why we used those technologies, how we make sure that we're not logging too little but also not logging too much SIMON}
 
-\subsection{Security assessment SIMON}
+\subsection{Security Assessment}
+The following assets have been identified and considered in the context of the security assessment:
+
+\begin{enumerate}
+\item \textbf{User Data}: User data, includes any information directly connected to users, such as emails, passwords, and blog posts.
+\item \textbf{Production VMs}: Servers used to run the MiniTwit application.
+\item \textbf{Logging Data}: The system generates logs, especially qualitative logs that could expose behavior patterns and personal information.
+\item \textbf{Source code}: The source code of the MiniTwit application.
+\item \textbf{Private Keys and Access Credentials}: Private keys and credentials used to access various parts of the system.
+\end{enumerate}
+
+These five assets of our system have been identified and could be at risk. Based on these, eight risk scenarios have been constructed. For each scenario, a short description is given, the impact is described and they have been categorized in terms of three characteristics of security as defined in the CIA triad: confidentiality, integrity, and availability.
+
+\begin{multicols}{2}
+
+
+\textit{\textbf{Risk Scenario 1}}: \textit{Data Breach via SQL Injection} \\
+\textbf{Description}: An attacker exploits a SQL injection vulnerability in the MiniTwit application to gain unauthorized access to the database.database.\\
+\textbf{Impact:} Exposure of sensitive user data (emails, passwords, blog posts).\\
+\textbf{Category:} Confidentiality, Integrity\\
+
+\textit{\textbf{Risk Scenario 2}}: \textit{Compromised Production VM} \\
+\textbf{Description}: The production VM is compromised due to weak SSH credentials, allowing an attacker to gain control over the server.\\
+\textbf{Impact:} Unauthorized access to application and data.\\
+\textbf{Category:}  Integrity, Confidentiality, Availability \\
+
+\textit{\textbf{Risk Scenario 3}}: \textit{Distributed Denial of Service (DDoS) Attack} \\
+\textbf{Description}: The MiniTwit application is targeted by a DDoS attack, overwhelming the servers and causing service disruption.\\
+\textbf{Impact:} Unavailability of the MiniTwit application.\\
+\textbf{Category:} Availability \\
+
+\textit{\textbf{Risk Scenario 4}}: \textit{Theft of Private Keys and Credentials} \\
+\textbf{Description}: An attacker gains access to private keys and access credentials stored in a misconfigured server.\\
+\textbf{Impact:}  Unauthorized access to encrypted data and critical systems. Potential for man in middle attacks.\\
+\textbf{Category:} Integrity, Confidentiality, Availability \\
+
+\textit{\textbf{Risk Scenario 5}}: \textit{Source Code Leak via Public Repository} \\
+\textbf{Description}: The source code of MiniTwit is accidentally made public on a version control platform like GitHub.\\
+\textbf{Impact:} Impact: Exposure of application vulnerabilities and sensitive information (e.g., hardcoded credentials)\\
+\textbf{Category:}  Integrity, Confidentiality \\
+
+\textit{\textbf{Risk Scenario 6}}: \textit{Third-Party Software Breach} \\
+\textbf{Description}: A third-party software component used in the MiniTwit application is compromised, leading to security vulnerabilities or data breaches.\\
+\textbf{Impact:} Software vulnerabilities and data leaks\\
+\textbf{Category:}  Integrity \\
+
+\textit{\textbf{Risk Scenario 7}}: \textit{Exposure of Sensitive Information in Logs} \\
+\textbf{Description}: Qualitative logs containing sensitive user information and operational details are exposed due to misconfigured logging settings.\\
+\textbf{Impact:} Leakage of user behavior patterns eventually personal information.\\
+\textbf{Category:}  Confidentiality \\
+
+\textit{\textbf{Risk Scenario 8}}: \textit{Brut Force Attack} \\
+\textbf{Description}:  An attacker that uses trial and error to gain access to passwords, login credentials, and encryption keys.\\
+\textbf{Impact:} Unauthorized access to user accounts, data leaks, data manipulation.\\
+\textbf{Category:} Confidentiality  \\
+
+\end{multicols}
+
+Following we have determined the severity of each threat and placed them in a risk matrix to prioritize appropriate mitigation strategies. The severity categories are defined as follows:
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\rowcolor{white}
+& \textbf{Insignificant} & \textbf{Marginal} & \textbf{Critical} \\
+\hline
+\textbf{Likely} & \cellcolor{yellow} & \cellcolor{yellow} 6 & \cellcolor{red} \\
+\hline
+\textbf{Possible} & \cellcolor{green} & \cellcolor{yellow} 5 & \cellcolor{red} 1, 4 \\
+\hline
+\textbf{Unlikely} & \cellcolor{green} 3 & \cellcolor{green} & \cellcolor{yellow} 2, 7 \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+\cellcolor{green} & Low risk \\
+\hline
+\cellcolor{yellow} & Medium risk \\
+\hline
+\cellcolor{red} & High risk \\
+\hline
+\end{tabular}
+\end{table}
+
+
 
 \subsection{Strategy for scaling and upgrading our system (talk about moving to a cloud db, and buying more droplets when moving to swarm}
 
 \subsection{Our use of AI assistants [mhr]}
-\noindent \textbf{\underline{Chat GPT can be an invaluable tool for various purposes:}} \\
-- \text{It's helpful when we needed suggestions for different ways to solve a problem, especially when uploading error messages.}\\
-- \text{To provide simple examples that clearly demonstrate the concept that we were trying to implement.}\\
-- \text{Can show different language implementation of how a particular function can be implemented in different programming languages.}
+\noindent \underline{Chat GPT can be an invaluable tool for various purposes:} \\
+- It's helpful when we needed suggestions for different ways to solve a problem, especially when uploading error messages.\\
+- To provide simple examples that clearly demonstrate the concept that we were trying to implement.\\
+- Can show different language implementation of how a particular function can be implemented in different programming languages.
 \\
 
-\nonindent \textbf{\underline{and not very useful with:}}\\
-- \text {It is not particularly useful for direct translations of a function from one programming language to another.}\\
-- \text {it cannot provide direct (correct) answers, especially for complex or highly specific questions.}\\
+\noindent \underline{and not very useful with:}\\
+- It is not particularly useful for direct translations of a function from one programming language to another.\\
+- it cannot provide direct (correct) answers, especially for complex or highly specific questions.\\
 
 Considerations for refactoring strategy:
 
@@ -248,32 +399,7 @@ In this section, we describe some of the technical and managerial difficulties w
 \subsection{Technical Issues}
 
 \begin{itemize}
-    \item Container being killed by the OS on the cloud
     \item Database cleared for some reason every now and then?
-  
-    \item Slow db querying [mhr]    →      Solution: indexing
-    
-After the simulator had been running on our database for some time, we noticed a significant increase in the dataset size, which resulted in longer query times. To address this issue, we implemented indexes directly in the database using SQL queries. To determine which indexes to create, we focused on the processes that were performing the slowest: accessing the public timeline, retrieving messages, and managing followers. For these, we implemented B-tree indices and we managed to optimize the performance of our database queries and ensuring efficient data retrieval.
-
-\\For user table (unique):
-\begin{verbatim}
-CREATE INDEX idx_username ON user(username(255));
-CREATE INDEX idx_email ON user(email(255));
-\end{verbatim}
-
-\\For message table (non-unique):
-\begin{verbatim}
-CREATE INDEX idx_author_id ON message(author_id(255));
-CREATE INDEX idx_pub_date ON message(pub_date(255));
-\end{verbatim}
-
-\\For follower table:
-\begin{verbatim}
-CREATE INDEX idx_who_id ON follower(who_id(255));
-CREATE INDEX idx_whom_id ON follower(whom_id(255));
-\end{verbatim}
-
-
     \item Swarm setup issues
 \end{itemize}
 
@@ -282,7 +408,26 @@ During the 4th session of the course, we were tasked with deploying our ITU-Mini
 \\\\
 While it's easy for us to look back and recognize that this was a simple oversight, we had seen many tutorials that recommended capping the resources each Docker container could consume and had simply glanced over the information.
 
-\subsection{Implementation of a CI/CD Pipeline, Automated Tests, and Good Git Practices} [mhr note: I have added description for pre-setup of the CI-CD in 5.1 and tests in 5.2.1 ]
+\subsubsection{Slow ITU-MiniTwit}
+After the simulator had been running on our database for some time, we noticed a significant increase in the dataset size, which resulted in longer query times. To address this issue, we implemented indexes directly in the database using SQL queries. To determine which indexes to create, we focused on the processes that were performing the slowest: accessing the public timeline, retrieving messages, and managing followers. For these, we implemented B-tree indices and we managed to optimize the performance of our database queries and ensuring efficient data retrieval.
+\\
+For user table (unique):
+\begin{verbatim}
+CREATE INDEX idx_username ON user(username(255));
+CREATE INDEX idx_email ON user(email(255));
+\end{verbatim}
+
+For message table (non-unique):
+\begin{verbatim}
+CREATE INDEX idx_author_id ON message(author_id(255));
+CREATE INDEX idx_pub_date ON message(pub_date(255));
+\end{verbatim}
+
+For follower table:
+\begin{verbatim}
+CREATE INDEX idx_who_id ON follower(who_id(255));
+CREATE INDEX idx_whom_id ON follower(whom_id(255));
+\end{verbatim}
 
 \subsection{What tools we used during the semester, how we divided work, how we shared knowledge?}
 
