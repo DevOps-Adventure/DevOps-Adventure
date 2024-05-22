@@ -39,7 +39,7 @@ jobs:
         run: git status
       
       - name: Move pdf to build folder
-        run: git mv main.pdf build/Msc_group_g.pdf
+        run: git mv report/main.pdf report/build/Msc_group_g.pdf
 
       - name: Add pdf file to version control
         run: git add .
