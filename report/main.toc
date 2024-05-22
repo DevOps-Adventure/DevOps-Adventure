@@ -1,0 +1,37 @@
+\contentsline {section}{\numberline {1}Introduction}{2}{}%
+\contentsline {section}{\numberline {2}System's Perspective}{2}{}%
+\contentsline {subsection}{\numberline {2.1}Overall Architecture}{2}{}%
+\contentsline {subsection}{\numberline {2.2}Request Processing}{2}{}%
+\contentsline {subsection}{\numberline {2.3}Technologies used}{2}{}%
+\contentsline {subsubsection}{\numberline {2.3.1}Programming Languages}{2}{}%
+\contentsline {subsubsection}{\numberline {2.3.2}Containerization and Orchestration Tools}{4}{}%
+\contentsline {subsubsection}{\numberline {2.3.3}Database Technologies}{4}{}%
+\contentsline {subsection}{\numberline {2.4}Static Analysis Tool Results}{5}{}%
+\contentsline {section}{\numberline {3}Process' Perspective}{6}{}%
+\contentsline {subsection}{\numberline {3.1}Initial Resource Partitioning}{6}{}%
+\contentsline {subsubsection}{\numberline {3.1.1}Creation of the Virtual Machine and Server Setup on Digital Ocean}{6}{}%
+\contentsline {subsubsection}{\numberline {3.1.2}Setting Up Artifacts Store}{6}{}%
+\contentsline {subsubsection}{\numberline {3.1.3}Configuration of Secrets on our GitHub Repository}{7}{}%
+\contentsline {subsection}{\numberline {3.2}Development, Integration, Deployment {\&} Release}{7}{}%
+\contentsline {subsubsection}{\numberline {3.2.1}Development {\&} Pre-commit}{7}{}%
+\contentsline {subsubsection}{\numberline {3.2.2}Continous Integration}{7}{}%
+\contentsline {subsection}{\numberline {3.3}Continuous Deployment}{7}{}%
+\contentsline {subsection}{\numberline {3.4}Monitoring}{8}{}%
+\contentsline {subsubsection}{\numberline {3.4.1}White Box Monitoring}{8}{}%
+\contentsline {subsubsection}{\numberline {3.4.2}Active Monitoring}{9}{}%
+\contentsline {subsection}{\numberline {3.5}Security Assessment}{10}{}%
+\contentsline {subsubsection}{\numberline {3.5.1}Risk Identification}{10}{}%
+\contentsline {subsubsection}{\numberline {3.5.2}Risk Scenarios}{10}{}%
+\contentsline {subsubsection}{\numberline {3.5.3}Risk Analysis and Mitigation}{11}{}%
+\contentsline {subsubsection}{\numberline {3.5.4}Pen Testing}{12}{}%
+\contentsline {subsection}{\numberline {3.6}Scaling}{13}{}%
+\contentsline {subsection}{\numberline {3.7}Our use of AI assistants}{13}{}%
+\contentsline {section}{\numberline {4}Lessons Learned Perspective}{13}{}%
+\contentsline {subsubsection}{\numberline {4.0.1}Bad Database Management}{13}{}%
+\contentsline {subsubsection}{\numberline {4.0.2}Resource Starvation}{14}{}%
+\contentsline {subsubsection}{\numberline {4.0.3}Slow Llama-MiniTwit}{14}{}%
+\contentsline {subsection}{\numberline {4.1}DevOps Style}{14}{}%
+\contentsline {subsubsection}{\numberline {4.1.1}Good Git Practices}{14}{}%
+\contentsline {subsubsection}{\numberline {4.1.2}The three DevOps ways}{14}{}%
+\contentsline {section}{\numberline {5}Dependencies}{16}{}%
+\contentsline {section}{\numberline {6}References}{17}{}%
