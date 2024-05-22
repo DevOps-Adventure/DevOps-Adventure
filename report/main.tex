@@ -15,6 +15,11 @@
 \fancyhead[R]{\thepage}
 \renewcommand{\headrulewidth}{0.7pt}
 
+% for custom table of contents
+\usepackage{tocloft}
+\setlength{\cftbeforesecskip}{0.6cm} % Adjust the value as needed
+
+
 % Title spacing
 \titlespacing*{\section}
 {0pt}{3.5ex plus 1ex minus .2ex}{4.3ex plus .2ex}
@@ -82,6 +87,10 @@ Eduardo Sfreddo Trindade - edtr@itu.dk\\
 \end{center}
 \end{titlepage}
 
+\newpage
+\tableofcontents
+\newpage
+
 \section{Introduction}
 The following report describes the work done during the Spring 2024 DevOps, Software Evolution and Software Maintenance taught at the IT University of Copenhagen. Our report includes the description of the final state of our system, the process we followed to develop and deploy it, lessons we learned, and reflections on technologies used and high and low level decisions we made throughout the semester.
 
@@ -92,12 +101,12 @@ In this section, we describe the architecture of our Llama-MiniTwit system, the 
 Figure \ref{fig:high_arch} is a visual representation of our overall architecture. We highlight its hierarchical nature starting from the hardware level on Digital Ocean to our services level installed on Docker containers. 
 \begin{figure}
     \centering
-    \includegraphics[width=1\linewidth]{./pdfs/group_16.pdf}
-    \caption{Hierarchical Architecture Mapping}
+    \includegraphics[width=1\linewidth]{./images/hierarchy.png}
+    \caption{Hierarchical architecture mapping of our system.}
     \label{fig:high_arch}
 \end{figure}
 
-\subsection{How a request is processed when it comes from the front-end/simulator}
+\subsection{Request Processing}
 The diagram in figure \ref{fig:request_pipeline} shows how our system handles a request coming from the front-end or the API. We generally follow a model-view-controller architecture where the main function acts as the entry point of our application. Depending on the request type, the main function then forwards the request to handlers which redirect, handle logic, pass data to HTML templates or pass data to be written/read to/from the database. We chose this architecture as it would allow us to reuse code as much as possible and to seamlessly extend our code base. 
 \\\\
 For example, since we separated the methods that communicate with the database, we were able to add an abstraction layer without modifying the core logic of the application. Similarly, we were able to migrate our database from SQLite to a managed MySQL database on DigitalOcean very easily since our logic for connecting to the database was contained in one function which was invoked by several other function when they needed to connect to the database.
@@ -112,14 +121,14 @@ For example, since we separated the methods that communicate with the database, 
 \subsection{Technologies used}
 This section describes some of the key technologies used. The complete list of dependencies can be found in the appendix.
 
-\subsubsection{Programming Languages}We chose to refactor our application using GoLang (Go). We chose to use it to refactor our app due to its simple syntax, automatic garbage collection and very high performance. Because of its easy to approach syntax, GoLang is generally regarded as a simple language to learn compared to others such as C++. For this reason, this made it a clear choice when we all saw the refactor of ITU-MiniTwit as an opportunity for our group members to learn a new language.
+\subsubsection{Programming Languages}We chose to refactor our application using GoLang (Go). We chose to use it to refactor our app due to its simple syntax, automatic garbage collection and very high performance. Because of its easy to approach syntax, GoLang is generally regarded as a simple language to learn compared to others such as C++. For these reason, this made it a clear choice when we all saw the refactor of Llama-MiniTwit as an opportunity for us to learn a new language.
 \\\\
-The automated tests that were provided to us and that we used to monitor development on our app and make sure that no buggy code made it to our deployed application were written in Python. These were provided to us in the course repo and we chose not to refactor them to GoLang as we were able to use them to test our application as such.
+The automated tests that were provided to us and that we used to monitor development on our app and make sure that no buggy code made it to our deployed application were written in Python. These were provided to us in the course repo and we chose not to refactor them to GoLang as we were able to use them to test our application in we received them.
 \\\\
 Finally, we used templated HTML files for the front-end of our application.
 
 \subsubsection{Containerization and Orchestration Tools}
-In order to ensure that our system had a high rate of availability (i.e. low down-time), we scaled horizontally our system. Even though our cloud provider Digital Ocean allows increasing droplet size (vertical scaling), we decided to also scale horizontally and thereby increase availability with Docker Swarm. We chose this tool for three reasons: 
+In order to ensure that our system had a high rate of availability (i.e., low downtime), we implemented a horizontal scaling strategy. While our cloud provider, Digital Ocean, allows for increasing droplet size through vertical scaling, we opted to also scale horizontally, thereby increasing availability through Docker Swarm. We selected this tool for three reasons:
 
 \begin{enumerate}
     \item Ease of setup - since we already had experience with containerization Docker Swarm was easy to learn
@@ -128,17 +137,17 @@ In order to ensure that our system had a high rate of availability (i.e. low dow
 \end{enumerate}
 
 \subsubsection{Database Technologies}
-We were first provided with a lightweight SQLite database for ITU-MiniTwit. While this worked well for some time, we eventually realized that we needed a more persistent form of storage. We chose to purchase DigitalOcean's managed MySQL database solution. This was an easy choice for us as we were already using DigitalOcean to deploy our app online and using one of their database solutions allowed us to automatically refuse any incoming connection, except if it originated from our application, which increased the security of our system greatly. We also chose their MySQL solution as it was very easy to duplicate the schema used in the SQLite database that was provided to us and because we would be storing very structured data, eliminating the need for a document based database.
+We were first provided with a lightweight SQLite database for Llama-MiniTwit. While this worked well for some time, we eventually realized that we needed a more persistent form of storage. We chose to purchase DigitalOcean's managed MySQL database solution. This was an easy choice for us as we were already using DigitalOcean to deploy our app online. Furthermore, using one of their database solutions allowed us to automatically refuse any incoming connection, except if it originated from our application, which increased the security of our system greatly. We also chose their MySQL solution as it was very easy to duplicate the schema used in the SQLite database that was provided to us and because we would be storing very structured data, eliminating the need for a document based database.
 \\\\
 In addition to this, we implemented a database-abstraction-layer via GORM, an ORM library for GoLang. This was done for several reasons:
 
 \begin{enumerate}
-    \item Since GORM supports multiple databases like SQLite, MySQL and PostgreSQL this added flexibility to our system since we were not tied to one single database for the entire lifecycle of our system, and we could easily migrate need be.
+    \item Since GORM supports multiple databases like SQLite, MySQL and PostgreSQL this added flexibility to our system since we were not tied to one single database for the entire lifecycle of our system, and we could easily migrate if need be.
     \item GORM provides auto-migration, making it much easier to import an SQL table and perform operations on it. 
 \end{enumerate}
 
 \subsection{Static Analysis Tool Results}
-We gave two static analysis tools access to our GitHub repository: SonarCloud and CodeClimate. Their outputs can be found in figure \ref{fig:sc_dashboard} and \ref{fig:cc_dashboard}. Both found some minor issues such as code smells, and maintainability issues, but did not raise any major problems such as bad code practices or security vulnerabilities. Furthermore, installing SonarCloud also gave us access to its bot which reviewed our code quality before we merged features into our main branch.
+We gave two static analysis tools access to our GitHub repository: SonarCloud and CodeClimate. Their outputs can be found in figures \ref{fig:sc_dashboard} and \ref{fig:cc_dashboard}. Both found some minor issues such as code smells, and maintainability issues, but did not raise any major problems such as bad code practices or security vulnerabilities. Furthermore, installing SonarCloud also gave us access to its bot which reviewed our code quality before we merged features into our main branch.
 
 \begin{figure}[ht]
     \centering
@@ -158,7 +167,7 @@ We gave two static analysis tools access to our GitHub repository: SonarCloud an
     \caption{SonarCloud's bot adding comments on our pull requests.}
     \label{fig:sc_bot_dashboard}
 \end{figure}
-
+\pagebreak
 \section{Process' Perspective}
 
 \subsection{Initial Resource Partitioning}
@@ -167,7 +176,7 @@ Before deploying our system to DigitalOcean, we partitioned resources with the h
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.8\textwidth]{./images/resources_setup_v2.png} 
-    \caption{Resources Setup}
+    \caption{Resources setup for CI/CD pipeline.}
     \label{fig:Resourse setup}
 \end{figure}
 
@@ -175,7 +184,7 @@ Before deploying our system to DigitalOcean, we partitioned resources with the h
 We designed a Vagrant file to programatically create the droplet, start the virtual machine (VM), connect to the droplet, install Docker container and test that docker was functioning correctly.
 
 \subsubsection{Setting Up Artifacts Store}
-We registered in DockerHub to store our ITU-Minitwit image and be able to easily push and pull changes from it. We also DigitalOcean to deploy our app to a managed server, rather than manage a server ourselves to minimise maintenance and risk failure, ease of use and access, and multiple possibilities for integration for our system like Docker Swarm and hosting our database on cloud. We chose DigitalOcean over other providers as the GitHub student developer pack gave us credits to use on the platform.
+We registered in DockerHub to store our Llama-MiniTwit image and be able to easily push and pull changes from it. We also used DigitalOcean to deploy our app to a managed server, rather than manage a server ourselves to minimise maintenance and risk failure, ease of use and access, and multiple possibilities for integration for our system like Docker Swarm and hosting our database on the cloud. We chose DigitalOcean over other providers as the GitHub student developer pack gave us credits to use on the platform.
 
 \subsubsection{Configuration of Secrets on our GitHub Repository}
 We chose GitHub to store our codebase and to manage our CI/CD jobs. This required us to store secrets directly on the repository as environment variables so that they could be piped into our CI/CD actions. We also set up each member of our team with SSH key-pair access to the droplets to easily connect to the server.
@@ -186,7 +195,7 @@ We utilized Git heavily during the course of this project. We also set up a few 
 
 
 \subsubsection{Continous Integration}
-We created a continuous integration (CI) pipeline to enable us to test our code and new features frequently. We also created this pipeline to protect our main branch, where our ITU-MiniTwit was deployed, from having buggy or malicious code merged into it, as any merge into merge into main would automatically be deployed into our live system by our continuous deployment pipeline. Finally, we also set up our CI pipeline to run linters against code being added to the codebase require PR's to be reviewed and approved before it could be merged into our main branch and production environment. Figure \ref{fig:ci_pipeline} describes the steps in our CI pipeline and its main stages.
+We created a continuous integration (CI) pipeline to enable us to test our code and new features frequently. We also created this pipeline to protect our main branch, where our Llama-MiniTwit was deployed, from having buggy or malicious code merged into it, as any merge into merge into main would automatically be deployed into our live system by our continuous deployment pipeline. Finally, we also setup our CI pipeline to run linters against code being added to the codebase, require pull requests to be reviewed and approved before they could be merged into our main branch and production environment. Figure \ref{fig:ci_pipeline} describes the steps in our CI pipeline and its main stages.
 
 \begin{figure}[ht]
     \centering
@@ -196,15 +205,15 @@ We created a continuous integration (CI) pipeline to enable us to test our code 
 \end{figure}
 
 \subsection{Continuous Deployment}
-We also established a continuous deployment (CD) pipeline to automatically deploy the updated version of our ITU-MiniTwit. Once a new feature was incorporated into the main branch of our repo after the successful merge of a pull request, our CD pipeline would automatically trigger and deploy the new version of our application. Our CD pipeline was executed with a GitHub action and had many responsibilities:
+We also established a continuous deployment (CD) pipeline to automatically deploy the updated version of our Llama-MiniTwit. Once a new feature was incorporated into the main branch of our repo after the successful merge of a pull request, our CD pipeline would automatically trigger and deploy the new version of our application. Our CD pipeline was executed with a GitHub action and had many responsibilities:
 
 \begin{enumerate}
-    \item Build the new version of ITU-MiniTwit and run tests against it.
+    \item Build the new version of Llama-MiniTwit and run tests against it.
     \item Build a new Docker image of our app and push it to DockerHub.
     \item Upload the deploy script from our repo to the DigitalOcean server
     \item Stop current containers running on the servers and download the new images from DockerHub.
     \item Start the containers with the new images.
-    \item Release a new version of the ITU-MiniTwit on GitHub.
+    \item Release a new version of the Llama-MiniTwit on GitHub.
 \end{enumerate}
 
 If the CD pipeline successfully terminated, the new feature was deployed to our live system. It is important to note that the workers from the swarm were brought offline and back online using a rolling update scheme, to ensure that our system would always be available to access. This was easily implemented using Docker Swarm. The exact steps of the continuous deployment pipeline can be found in figure \ref{fig: cd_pipeline}.
@@ -232,8 +241,8 @@ We used white box monitoring, which focuses on the processes within our applicat
 Figure \ref{fig:prometheus_configuration} depicts the configurations we chose for Prometheus, and how and where it collects information. We chose to monitor metrics on two levels: application and system level.
 
 \begin{enumerate}
-    \item CPU load in the application. A Grafana dashboard helped us diagnose a bug where the operating system of our virtual machine would starve our containers randomly. This is further described under section (note: todo).
-    \item Monitoring CPU, Memory, and Network metrics in the hosting system helped us determine whether issues originate locally within the application or at the server level. To be informed about overall health of the hosting environment was of a crucial importance as it could affect our application performance.
+    \item CPU load in the application. A Grafana dashboard helped us diagnose a bug where the operating system of our virtual machine would starve our containers randomly.
+    \item Monitoring CPU, Memory, and Network metrics in the hosting system helped us determine whether issues originate locally within the application or at the server level. It was of crucial important to be informed about overall health of the hosting environment as it could affect our application performance.
 \end{enumerate}
 
 \begin{figure}[ht]
@@ -243,16 +252,17 @@ Figure \ref{fig:prometheus_configuration} depicts the configurations we chose fo
     \label{fig:visualization_flow}
 \end{figure}
 
-Figure \ref{fig:visualization_flow} shows that after data was scraped from our application, it was stored in Prometheus container and then displayed using Grafana's visualization dashboards. We chose a Grafana and Prometheus stack for multiple reasons:
+Figure \ref{fig:visualization_flow} shows that after data was scraped from our application, it was stored in a Prometheus container and then displayed using Grafana's visualization dashboards. We chose a Grafana and Prometheus stack for multiple reasons:
 
 \begin{enumerate}
     \item These free and open source software (FOSS) helped keep our costs for the overall project low.
-    \item It is widely used as industry-standard way of monitoring, has good integration with cloud-origin environments and variety of plugins, provides detailed visualizations and is very user-friendly.
+    \item They are widely used as industry-standard way of monitoring, have good integration with cloud-origin environments and variety of plugins, provide detailed visualizations and are very user-friendly.
 \end{enumerate}
 
 \subsubsection{Active Monitoring}
-Despite our existing use of Grafana, we selected the EFK (Elasticsearch, Fluentd, Kibana) stack over Promtail + Loki + Grafana (PLG) for qualitative logging (active monitoring). The EFK stack has a mature ecosystem, well-suited search capabilities, and flexible data processing, which makes it a good choice for our qualitative logging. Figure \ref{fig:efk_stack} presents an overview of our EFK stack architecture.
-
+Despite our existing use of Grafana, we selected the EFK (Elasticsearch, Fluentd, Kibana) stack over Promtail + Loki + Grafana (PLG) for qualitative logging. The EFK stack has a mature ecosystem, well-suited search capabilities, and flexible data processing, which makes it a good choice for our qualitative logging. Figure \ref{fig:efk_stack} presents an overview of our EFK stack architecture.
+\\\\
+Our Llama-MiniTwit application represents the source of the data we aim to analyze. We utilized Logrus for structured logs within our go application. Fluentd is the log aggregator in this stack. It collects logs from Minitwit, processes them, and forwards them to Elasticsearch. Elasticsearch serves as both a search and analytics engine. It indexes and stores log data forwarded by Fluentd, enabling flexible and fast search capabilities. Kibana is the user interface where we can view and interact with the log data stored in Elasticsearch. The logging stack was initially tested using local Docker containers with various logging scenarios. An example of the log output from the simulator is shown in Figure \ref{fig:kibana_screenshot}.
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.8\textwidth]{./images/EFK_stack.png} 
@@ -266,9 +276,6 @@ Despite our existing use of Grafana, we selected the EFK (Elasticsearch, Fluentd
     \caption{Logs Generated by the Simulator, Displayed in Kibana}
     \label{fig:kibana_screenshot}
 \end{figure}
-
-Our minitwit application represents the source of the data we aim to analyze. We utilized Logrus for structured logs within our go application. Fluentd is the log aggregator in this stack. It collects logs from Minitwit, processes them, and forwards them to Elasticsearch. Elasticsearch serves as both a search and analytics engine. It indexes and stores log data forwarded by Fluentd, enabling flexible and fast search capabilities. Kibana is the user interface where we can view and interact with the log data stored in Elasticsearch. The logging stack was initially tested using local Docker containers with various logging scenarios. An example of the log output from the simulator is shown in Figure \ref{fig:kibana_screenshot}:
-
 
 \subsection{Security Assessment}
 
@@ -316,7 +323,7 @@ The following assets have been identified and considered in the context of the s
 
 \subsubsection{Risk Analysis and Mitigation}
 
-Following we have determined the severity of each threat and placed them in a risk matrix to prioritize appropriate mitigation strategies. Furthermore, the outcomes are discussed and potential solutions are presented. The severity categories are defined as follows:
+Below we have determined the severity of each threat and placed them in a risk matrix to prioritize appropriate mitigation strategies. Furthermore, the outcomes are discussed and potential solutions are presented. The severity categories are defined as follows:
 
 \definecolor{lowrisk}{HTML}{88DEBA} 
 \definecolor{mediumrisk}{HTML}{FDFC9A} 
@@ -430,7 +437,7 @@ msf6 >
 
 
 \subsection{Scaling}
-Our strategy for scaling mainly relies on the services provided to us by DigitalOcean and our system architecture. Should we need it, we could scale vertically by purchasing droplets with more resources on DigitalOcean. We could also purchase more droplets and create additional swarms around the world. Finally, 
+Our strategy for scaling mainly relies on the services provided to us by DigitalOcean and our system architecture. Should we need it, we could scale vertically by purchasing droplets with more resources on DigitalOcean. We could also purchase more droplets and create additional swarms around the world. 
 
 \subsection{Our use of AI assistants}
 AI-tools such as ChatGPT proved to be very helpful for:
@@ -454,11 +461,10 @@ Initially, we had successfully running flow that was able to update the docker i
 After the script was fixed we were able to reboot our DockerHub and update the Minitwit image with the latest version.
 
 \subsubsection{Resource Starvation}
-During the 4th session of the course, we were tasked with deploying our ITU-MiniTwit system to the cloud so that the simulator could eventually interact with it through our API. We partitioned a droplet on DigitalOcean and deployed our app through a Docker container. We had some additional services running on other containers but on the same droplet. Once the simulator started, our Docker container would seemingly randomly be shut down every few hours. After a few weeks, we realized that there was a direct correlation between our container being shut off and a spike in traffic on our ITU-MiniTwit. We realized that the sum of resources we had allocated to each container running on the virtual machine installed on our droplet was higher than the resources we had purchased from Digital Ocean. More specifically, our containers were allowed to consume up to 6GB of RAM, but our droplet only provided us with 4 GB. Thus, when the traffic spiked, the container consumed more RAM than it physically had access to and the OS would kill it.
+During the 4th session of the course, we were tasked with deploying our Llama-MiniTwit system to the cloud so that the simulator could eventually interact with it through our API. We partitioned a droplet on DigitalOcean and deployed our app through a Docker container. We had some additional services running on other containers but on the same droplet. Once the simulator started, our Docker container would seemingly randomly be shut down every few hours. After a few weeks, we realized that there was a direct correlation between our container being shut off and a spike in traffic on our Llama-MiniTwit. We realized that the sum of resources we had allocated to each container running on the virtual machine installed on our droplet was higher than the resources we had purchased from Digital Ocean. More specifically, our containers were allowed to consume up to 6GB of RAM, but our droplet only provided us with 4 GB. Thus, when the traffic spiked, the container consumed more RAM than it physically had access to and the OS would kill it.
 \\\\
-While it's easy for us to look back and recognize that this was a simple oversight, we had seen many tutorials that recommended capping the resources each Docker container could consume and had simply glanced over the information.
 
-\subsubsection{Slow ITU-MiniTwit}
+\subsubsection{Slow Llama-MiniTwit}
 After the simulator had been running on our live system for a few weeks, we noticed a significant increase in the dataset size, which resulted in much longer query times. To address this issue, we implemented indices in the database using SQL queries. To determine which indices to create, we focused on the processes that were performing the slowest: accessing the public timeline, retrieving messages, and managing followers. For these, we implemented B-tree indices and we managed to optimize the performance of our database queries and ensuring efficient data retrieval.
 \\
 For user table (unique):
@@ -530,19 +536,10 @@ We established a routine where we worked separately on feature branches, testing
 
 \subsection*{Python Tests}
 \begin{itemize}
-    \item \textbf{certifi==2024.2.2}: Python package for providing Mozilla's CA Bundle.
-    \item \textbf{charset-normalizer==3.3.2}
-    \item \textbf{exceptiongroup==1.2.0}: Backport of PEP 654's ExceptionGroup and BaseExceptionGroup.
-    \item \textbf{idna==3.6}: Internationalized Domain Names in Applications (IDNA).
-    \item \textbf{iniconfig==2.0.0}: An utility package for parsing ini configuration files.
-    \item \textbf{packaging==23.2}: Core utilities for Python packages.
-    \item \textbf{pluggy==1.4.0}: The plugin manager.
+    \item \textbf{pymongo==4.7.2}: The Python driver for MongoDB.
     \item \textbf{pytest==8.0.2}: A framework for testing Python code.
-    \item \textbf{requests==2.31.0}: Python HTTP for Humans.
-    \item \textbf{tomli==2.0.1}: A lil' TOML parser.
-    \item \textbf{urllib3==2.2.1}: HTTP library with thread-safe connection pooling, file post support, user friendly, and more.
-    \item \textbf{selenium==4.8}: Python bindings for Selenium WebDriver.
-    \item \textbf{pymongo==4.6.3}: The Python driver for MongoDB.
+    \item \textbf{requests==2.32.2}: Python HTTP for Humans.
+    \item \textbf{selenium==4.21.0}: Python bindings for Selenium WebDriver.
 \end{itemize}
 
 \subsection*{Third Party Services}
