@@ -101,15 +101,13 @@ Figure \ref{fig:high_arch} is a visual representation of our overall architectur
 The diagram in figure \ref{fig:request_pipeline} shows how our system handles a request coming from the front-end or the API. We generally follow a model-view-controller architecture where the main function acts as the entry point of our application. Depending on the request type, the main function then forwards the request to handlers which redirect, handle logic, pass data to HTML templates or pass data to be written/read to/from the database. We chose this architecture as it would allow us to reuse code as much as possible and to seamlessly extend our code base. 
 \\\\
 For example, since we separated the methods that communicate with the database, we were able to add an abstraction layer without modifying the core logic of the application. Similarly, we were able to migrate our database from SQLite to a managed MySQL database on DigitalOcean very easily since our logic for connecting to the database was contained in one function which was invoked by several other function when they needed to connect to the database.
-\\\\
+
 \begin{figure}[ht]
     \centering
     \includegraphics[width=1.0\textwidth]{./images/request_pipeline_v2.png}
     \caption{How our system handles a request.}
     \label{fig:request_pipeline}
 \end{figure}
-
-\subsection{Architecture graphs of the system}
 
 \subsection{Technologies used}
 This section describes some of the key technologies used. The complete list of dependencies can be found in the appendix.
@@ -487,7 +485,7 @@ CREATE INDEX idx_whom_id ON follower(whom_id(255));
 We established a routine where we worked separately on feature branches, testing our code locally before creating a pull-request to the main branch. To merge into main another developer would then have to review. This greatly reduced the risk of bugs finding their way onto our deployed environment.
 
 \subsubsection{The three DevOps ways}
-1/ The Principles of Flow
+1) The Principles of Flow
 \begin{itemize}
     \item Visibility: We were sharing our work by defining tasks in a Notion board to help us to keep track of what we needed to do.
 
@@ -498,20 +496,68 @@ We established a routine where we worked separately on feature branches, testing
         \label{fig:notion-dashboard}
     \end{figure}
 
-    \item Limit Work in Progress:
-    We sat a limit on the tasks that could be in each column in the Notion board. In case we were waiting on a task to be completed, we asked the team member what was causing the delay and help him/her instead. We we meeting regularly in person for our lectures and we make sure to have at least one meeting in person per week. When we are not co-located we are distributing our tasks accordingly. 
+    \item Limit Work in Progress: We set a limit on the tasks that could be in each column in the Notion board. When we were waiting on a task to be completed, we asked the team member what was causing the delay and helped him/her instead. We made sure to have at least one meeting in person per week.
     
-    \item  Reduce batch sizes:
-    In our case we looked at each different feature as a single unit operation being refactored, tested and deployed. Instead of implementing all features at once (post messages, follow user, register etc) we develop and test one at a time. This shortens the lead time significantly and most importantly help us to detect and act on bugs much faster.
+    \item Reduce batch sizes: In our case we looked at each different feature as a single unit operation being refactored, tested and deployed. Instead of implementing all features at once (post messages, follow user, register, etc) we developed and tested one at a time. This shortened the development time significantly and most importantly help us to detect and act on bugs much faster.
 \end{itemize}
-2/The Principles of Feedback
+
+2) The Principles of Feedback
 \begin{itemize}
-    \item We were revising our code 
+    \item We tried giving feedback as fast as possible in order to achieve quality, reliability and safety in the technology value stream.
 \end{itemize}
-3/The Principles of Continual Learning and Experimentation
-we acknoledge that
+
+3) The Principles of Continual Learning and Experimentation: 
+\begin{itemize}
+    \item We acknowledged that failure was highly probable at any stage of our process. Thus, we adopted a "no blame culture", where we would discuss occurring problems in order to create a safe work environment.
+\end{itemize}
+
+\clearpage
 \section{Dependencies}
 
+\subsection*{Application Written in Go}
+\begin{itemize}
+    \item \textbf{github.com/evalphobia/logrus\_fluent v0.5.4}: a library for logging to Fluentd with Logrus.
+    \item \textbf{github.com/gin-gonic/gin v1.9.1}: a HTTP web framework written in Go (Golang).
+    \item \textbf{github.com/joho/godotenv v1.5.1}: a Go port of Ruby's dotenv library (loads environment variables from `.env`).
+    \item \textbf{github.com/prometheus/client\_golang v1.19.0}: the Prometheus monitoring system and time series database client.
+    \item \textbf{github.com/shirou/gopsutil v3.21.11+incompatible}: a library for retrieving system and process metrics (like ps, top).
+    \item \textbf{github.com/sirupsen/logrus v1.9.3}: a structured logger for Go (golang), completely API compatible with the standard library logger.
+    \item \textbf{gorm.io/driver/sqlite v1.5.5}: GORM SQLite driver.
+    \item \textbf{gorm.io/gorm v1.25.7}: The fantastic ORM library for Golang, aims to be developer friendly.
+    \item \textbf{github.com/gin-contrib/sessions v0.0.5}: Gin middleware for session management.
+    \item \textbf{gorm.io/driver/mysql v1.5.6}: GORM MySQL driver.
+\end{itemize}
+
+\subsection*{Python Tests}
+\begin{itemize}
+    \item \textbf{certifi==2024.2.2}: Python package for providing Mozilla's CA Bundle.
+    \item \textbf{charset-normalizer==3.3.2}
+    \item \textbf{exceptiongroup==1.2.0}: Backport of PEP 654's ExceptionGroup and BaseExceptionGroup.
+    \item \textbf{idna==3.6}: Internationalized Domain Names in Applications (IDNA).
+    \item \textbf{iniconfig==2.0.0}: An utility package for parsing ini configuration files.
+    \item \textbf{packaging==23.2}: Core utilities for Python packages.
+    \item \textbf{pluggy==1.4.0}: The plugin manager.
+    \item \textbf{pytest==8.0.2}: A framework for testing Python code.
+    \item \textbf{requests==2.31.0}: Python HTTP for Humans.
+    \item \textbf{tomli==2.0.1}: A lil' TOML parser.
+    \item \textbf{urllib3==2.2.1}: HTTP library with thread-safe connection pooling, file post support, user friendly, and more.
+    \item \textbf{selenium==4.8}: Python bindings for Selenium WebDriver.
+    \item \textbf{pymongo==4.6.3}: The Python driver for MongoDB.
+\end{itemize}
+
+\subsection*{Third Party Services}
+\begin{itemize}
+    \item \textbf{nginx}: a web server and reverse proxy server.
+    \item \textbf{certbot/certbot:latest}: the latest version of Certbot, a tool for obtaining SSL/TLS certificates from Let's Encrypt.
+    \item \textbf{prom/prometheus}: the Prometheus monitoring system and time series database.
+    \item \textbf{grafana/grafana:10.2.4}: the latest version of Grafana, an open source platform for monitoring and observability.
+    \item \textbf{prom/node-exporter}: Prometheus exporter for hardware and OS metrics exposed by *NIX kernels.
+    \item \textbf{fluent/fluentd-kubernetes-daemonset:v1.16.2-debian-elasticsearch7-1.1}: Fluentd Docker image for Kubernetes daemonset with Elasticsearch support.
+    \item \textbf{docker.elastic.co/elasticsearch/elasticsearch:7.17.17}: the latest version of Elasticsearch.
+    \item \textbf{kibana:7.17.17}: the latest version of Kibana.
+\end{itemize}
+
+\clearpage
 \section{References}
 
 1. Official website of Go https://go.dev/
