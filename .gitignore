@@ -9,3 +9,17 @@ go-minitwit/tests/__pycache__/
 .vagrant
 .env
 venv/*
+
+
+#TERRAFORM STUFF
+cloud_provisioning/secrets
+
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Dependency lock file
+.terraform.lock.hcl
