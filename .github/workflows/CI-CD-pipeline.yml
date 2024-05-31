@@ -189,12 +189,13 @@ jobs:
       - name: Deploy to server
         # Configure the ~./bash_profile and deploy.sh file on the Vagrantfile
         run: |
-          echo ${{ secrets.DBUSER }}
           scp -r -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no remote_files/* $SSH_USER@$SSH_HOST:/minitwit/
           ssh -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST '/minitwit/deploy.sh ${{ secrets.DBUSER }} ${{ secrets.DBPASS }}'
+          scp -r -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no swarm_files/* $SSH_USER@$SSH_SWARM_HOST:
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_SWARM_HOST: ${{ secrets.SSH_SWARM_HOST}}
 
   release:
     needs: [deployment]

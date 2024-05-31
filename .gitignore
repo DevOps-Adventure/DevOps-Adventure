@@ -9,3 +9,6 @@ go-minitwit/tests/__pycache__/
 .vagrant
 .env
 venv/*
+cloud_provisioning/.terraform/*
+cloud_provisioning/secrets
+cloud_provisioning/.terraform.lock.hcl

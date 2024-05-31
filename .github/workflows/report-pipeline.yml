@@ -1,11 +1,12 @@
 name: Compile LATEX Report Pipeline
 
 on:
-  push:
-    paths:
-      - report/main.tex
+  # push:
+  #   paths:
+  #     - report/main.tex
+  workflow_dispatch:
 
-jobs: 
+jobs:
   build_latex:
     permissions:
       contents: write
@@ -34,7 +35,7 @@ jobs:
       #   with:
       #     name: PDF
       #     path: report/
-      
+
       - name: Status
         run: git status
 
