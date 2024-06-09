@@ -45,6 +45,22 @@ jobs:
       - name: checkout action
         uses: actions/checkout@v4
 
+      - name: set python env
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install python dependencies
+        run: |
+          cd go-minitwit/tests/
+          pip install -r requirements.txt
+
+      #for the UI test, we need firefox and geckodriver
+      - name: Install Firefox
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y firefox
+
       - name: set go env
         uses: actions/setup-go@v5
         with:
@@ -58,15 +74,12 @@ jobs:
           go run *.go &
           sleep 60
 
-      - name: set python env
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: install python dependencies
+      - name: Install Geckodriver
         run: |
-          cd go-minitwit/tests/
-          pip install -r requirements_tests.txt
+          wget https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz
+          tar -xvzf geckodriver-v0.32.0-linux64.tar.gz
+          sudo mv geckodriver go-minitwit/tests/
+          rm geckodriver-v0.32.0-linux64.tar.
 
       - name: check listening ports
         run: |
@@ -90,19 +103,7 @@ jobs:
           fi
           $pytest_cmd ./test_refactored_minitwit.py
           $pytest_cmd ./test_minitwit_sim_api.py
-
-      #for the UI test, we need firefox and geckodriver
-      - name: Install Firefox
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y firefox
-
-      - name: Install Geckodriver
-        run: |
-          wget https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz
-          tar -xvzf geckodriver-v0.32.0-linux64.tar.gz
-          sudo mv geckodriver go-minitwit/tests/
-          rm geckodriver-v0.32.0-linux64.tar.gz
+          $pytest_cmd ./test_itu_minitwit_ui.py
 
       - name: run pipeline standard tests
         if: github.event_name != 'workflow_dispatch'
@@ -191,11 +192,12 @@ jobs:
         run: |
           scp -r -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no remote_files/* $SSH_USER@$SSH_HOST:/minitwit/
           ssh -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST '/minitwit/deploy.sh ${{ secrets.DBUSER }} ${{ secrets.DBPASS }}'
-          scp -r -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no swarm_files/* $SSH_USER@$SSH_SWARM_HOST:
+          scp -r -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no swarm_files/* $SSH_USER@$SSH_SWARM_MAN:
+          ssh -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_SWARM_MAN 'stack.sh ${{ secrets.DBUSER }} ${{ secrets.DBPASS }}'
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_SWARM_HOST: ${{ secrets.SSH_SWARM_HOST}}
+          SSH_SWARM_MAN: ${{ secrets.SSH_SWARM_MAN }}
 
   release:
     needs: [deployment]
