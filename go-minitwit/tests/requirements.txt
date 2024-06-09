@@ -1,0 +1,4 @@
+pymongo==4.7.2
+pytest==8.0.2
+Requests==2.32.2
+selenium==4.21.0

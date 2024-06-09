@@ -1,9 +1,12 @@
 name: Compile LATEX Report Pipeline
 
 on:
-  push:
+  # push:
+  #   paths:
+  #     - reWport/main.tex
+  workflow_dispatch:
 
-jobs: 
+jobs:
   build_latex:
     permissions:
       contents: write
@@ -32,7 +35,7 @@ jobs:
       #   with:
       #     name: PDF
       #     path: report/
-      
+
       - name: Status
         run: git status
 
@@ -43,7 +46,7 @@ jobs:
       #   run: |
       #     ls
       #     rm report/build/Msc_group_g.pdf
-      
+
       - name: Move pdf to build folder
         run: git mv report/main.pdf report/build/Msc_group_g.pdf
 
