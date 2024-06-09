@@ -45,6 +45,22 @@ jobs:
       - name: checkout action
         uses: actions/checkout@v4
 
+      - name: set python env
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install python dependencies
+        run: |
+          cd go-minitwit/tests/
+          pip install -r requirements.txt
+
+      #for the UI test, we need firefox and geckodriver
+      - name: Install Firefox
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y firefox
+
       - name: set go env
         uses: actions/setup-go@v5
         with:
@@ -58,15 +74,11 @@ jobs:
           go run *.go &
           sleep 60
 
-      - name: set python env
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: install python dependencies
+      - name: Install Geckodriver
         run: |
           cd go-minitwit/tests/
           pip install -r requirements.txt
+
 
       - name: check listening ports
         run: |
