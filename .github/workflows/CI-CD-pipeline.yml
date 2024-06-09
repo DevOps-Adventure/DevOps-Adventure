@@ -195,12 +195,11 @@ jobs:
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_SWARM_MAN: ${{ secrets.SSH_SWARM_MAN }}
 
       - name: Deploy to swarm
         run: |
           scp -r -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no swarm_files/* $SSH_USER@$SSH_SWARM_MAN:
-          ssh -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_SWARM_MAN 'stack.sh ${{ secrets.DBUSER }} ${{ secrets.DBPASS }}'
+          ssh -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_SWARM_MAN '/stack.sh ${{ secrets.DBUSER }} ${{ secrets.DBPASS }}'
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_SWARM_MAN: ${{ secrets.SSH_SWARM_MAN }}
