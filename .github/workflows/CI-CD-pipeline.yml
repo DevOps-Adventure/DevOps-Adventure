@@ -76,10 +76,9 @@ jobs:
 
       - name: Install Geckodriver
         run: |
-          wget https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz
-          tar -xvzf geckodriver-v0.32.0-linux64.tar.gz
-          sudo mv geckodriver go-minitwit/tests/
-          rm geckodriver-v0.32.0-linux64.tar.
+          cd go-minitwit/tests/
+          pip install -r requirements.txt
+
 
       - name: check listening ports
         run: |
@@ -103,7 +102,20 @@ jobs:
           fi
           $pytest_cmd ./test_refactored_minitwit.py
           $pytest_cmd ./test_minitwit_sim_api.py
-          $pytest_cmd ./test_itu_minitwit_ui.py
+
+      #for the UI test, we need firefox and geckodriver
+      - name: Install Firefox
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y firefox
+
+      - name: Install Geckodriver
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          wget https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz
+          tar -xvzf geckodriver-v0.32.0-linux64.tar.gz
+          sudo mv geckodriver go-minitwit/tests/
+          rm geckodriver-v0.32.0-linux64.tar.gz
 
       - name: run pipeline standard tests
         if: github.event_name != 'workflow_dispatch'
