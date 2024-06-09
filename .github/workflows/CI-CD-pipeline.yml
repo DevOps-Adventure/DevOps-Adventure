@@ -66,7 +66,7 @@ jobs:
       - name: install python dependencies
         run: |
           cd go-minitwit/tests/
-          pip install -r requirements_tests.txt
+          pip install -r requirements.txt
 
       - name: check listening ports
         run: |
@@ -98,6 +98,7 @@ jobs:
           sudo apt-get install -y firefox
 
       - name: Install Geckodriver
+        if: github.event_name != 'workflow_dispatch'
         run: |
           wget https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz
           tar -xvzf geckodriver-v0.32.0-linux64.tar.gz
@@ -191,11 +192,12 @@ jobs:
         run: |
           scp -r -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no remote_files/* $SSH_USER@$SSH_HOST:/minitwit/
           ssh -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST '/minitwit/deploy.sh ${{ secrets.DBUSER }} ${{ secrets.DBPASS }}'
-          scp -r -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no swarm_files/* $SSH_USER@$SSH_SWARM_HOST:
+          scp -r -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no swarm_files/* $SSH_USER@$SSH_SWARM_MAN:
+          ssh -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_SWARM_MAN 'stack.sh ${{ secrets.DBUSER }} ${{ secrets.DBPASS }}'
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_SWARM_HOST: ${{ secrets.SSH_SWARM_HOST}}
+          SSH_SWARM_MAN: ${{ secrets.SSH_SWARM_MAN }}
 
   release:
     needs: [deployment]
