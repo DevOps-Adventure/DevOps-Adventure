@@ -61,13 +61,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y firefox
 
-      - name: Install Geckodriver
-        run: |
-          wget https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz
-          tar -xvzf geckodriver-v0.32.0-linux64.tar.gz
-          sudo mv geckodriver go-minitwit/tests/
-          rm geckodriver-v0.32.0-linux64.tar.
-
       - name: set go env
         uses: actions/setup-go@v5
         with:
@@ -80,6 +73,13 @@ jobs:
           go mod tidy
           go run *.go &
           sleep 60
+
+      - name: Install Geckodriver
+        run: |
+          wget https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz
+          tar -xvzf geckodriver-v0.32.0-linux64.tar.gz
+          sudo mv geckodriver go-minitwit/tests/
+          rm geckodriver-v0.32.0-linux64.tar.
 
       - name: check listening ports
         run: |
