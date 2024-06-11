@@ -1,13 +1,17 @@
 name: Continuous Integration and Continuous Deployment Pipeline
 
+# We set the variable below to CI. This makes the workflow run with the local dev db
+# This is necessary because we want the tests below to run on our local db (NOT PROD!)
 env:
   EXECUTION_ENVIRONMENT: CI
 
+# We trigger the flow when something is pushed to main (PR)
 on:
   push:
     branches:
       - main
 
+  # If the workflow was triggered manually, set logging, verbosity and environment variables according to the given arguments
   workflow_dispatch:
     inputs:
       logLevel:
@@ -51,13 +55,17 @@ jobs:
           go-version: "1.21"
           cache: false
 
+        # We install the dependencies and run the app in the background
+        # We do this since we need to service running and run other commands while it is running
+        # We wait for 1 min to be sure that the service is actually running before we 
       - name: Install dependencies and start minitwit server
         run: |
           cd go-minitwit
           go mod tidy
           go run *.go &
           sleep 60
-
+       
+       # We setup the python env
       - name: set python env
         uses: actions/setup-python@v5
         with:
@@ -68,11 +76,18 @@ jobs:
           cd go-minitwit/tests/
           pip install -r requirements.txt
 
+        # Check if the app is running
+        # netstat to see whether 8081 is available
       - name: check listening ports
         run: |
           netstat -tuln
           curl http://localhost:8081
 
+        # If the workflow was triggered manually:
+          # Run the pipeline test with log and verbosity levels depending on the given arguments
+            # default log level = warning
+            # default verbosity level = normal
+          # This gives us the option to run the workflow manually with different parameters and settings
       - name: run pipeline manual tests
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -104,6 +119,7 @@ jobs:
           sudo mv geckodriver go-minitwit/tests/
           rm geckodriver-v0.32.0-linux64.tar.gz
 
+        # we run the pipeline tests
       - name: run pipeline standard tests
         if: github.event_name != 'workflow_dispatch'
         run: |
@@ -125,7 +141,7 @@ jobs:
           go-version: "1.21"
           cache: false
 
-      # Install gofumpt
+      # Install gofumpt (formatting)
       - name: Install gofumpt
         run: go install mvdan.cc/gofumpt@latest
 
@@ -133,6 +149,7 @@ jobs:
       - name: Run gofumpt
         run: gofumpt -l -w .
 
+      # Run golangci-lint (linting)
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v4
         with:
@@ -140,16 +157,20 @@ jobs:
           working-directory: ./go-minitwit
           args: --config=./.golangci.yml --verbose
 
+        # Bash script / shell checking
       - name: shellcheck
         run: |
           cd ./remote_files
           shellcheck deploy.sh
-
+      
+      # Linter for Docker files
       - name: Hadolint (linter for the dockerfile)
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: dockerfile.minitwit
 
+  # Deployment flow
+    # Tests and linters need to run successfully first
   deployment:
     needs: [tests, linters]
     runs-on: ubuntu-latest
@@ -157,15 +178,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+        # Log in to Docker with github secrets as credentials
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+        # Set up Dokcer Buildx (better)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+        # Build docker image using cache
       - name: Build and push minitwitimage
         uses: docker/build-push-action@v5
         with:
@@ -178,6 +202,7 @@ jobs:
 
         # TODO: Add build and push of the proxy image !!!
 
+        # Configure SSH, chmod 600 is read and write for owner only!
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh/
@@ -186,8 +211,10 @@ jobs:
         env:
           SSH_KEY: ${{ secrets.SSH_KEY }}
 
+        # Deploy to the server using deploy.sh and ssh-keys
       - name: Deploy to server
         # Configure the ~./bash_profile and deploy.sh file on the Vagrantfile
+        # 
         run: |
           scp -r -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no remote_files/* $SSH_USER@$SSH_HOST:/minitwit/
           ssh -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST '/minitwit/deploy.sh ${{ secrets.DBUSER }} ${{ secrets.DBPASS }}'
@@ -196,6 +223,7 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
 
+        # Deploy to swarm using the stack.sh and ssh-keys
       - name: Deploy to swarm
         run: |
           scp -r -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no swarm_files/* $SSH_USER@$SSH_SWARM_MAN:
@@ -219,6 +247,7 @@ jobs:
           git config user.email "eduardostrindade@gmail.com"
           git config user.name "dudustri"
 
+        # Finds the latest tag number, increment by 1 and assigns it to tag_number
       - name: Create and push new tag based on the last one
         id: tag_release
         run: |
@@ -229,10 +258,15 @@ jobs:
           git tag -a $tag_name -m "DevOps - ${tag_number} release"
           git push origin $tag_name
 
+
+        # Sets up env variables which are Github token and current tag
       - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
+          
+        # Retrieves the release number by parsing the latest tag and extracting its number.
+        # Creates a new release using the gh CLI tool, specifying the tag as the release version and generating release notes.
         run: |
           release_number=$(git tag --sort=-creatordate | grep -o '[0-9]\+' | head -n1)
           current_tag=$(git tag --sort=-creatordate | head -n1)
