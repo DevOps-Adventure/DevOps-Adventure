@@ -13,8 +13,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// todo: can we move these as well?
-
 // Set the path to the repodb
 const (
 	DATABASE string = "./tmp/minitwit_empty.db"
@@ -34,13 +32,13 @@ func main() {
 	env := os.Getenv("EXECUTION_ENVIRONMENT") // get the execution environment (CI, LOCAL or ..empty = PROD)
 	/**
 	* We create threagroup to setup the logger before our server starts
-	*/
+	 */
 	var threadGroup sync.WaitGroup
 	threadGroup.Add(1)
 
 	go func() {
 		defer threadGroup.Done() // We join the threads to finish
-		setupLogger(env) // We setup the logger
+		setupLogger(env)         // We setup the logger
 	}()
 	// Using db connection (1)
 	var err error

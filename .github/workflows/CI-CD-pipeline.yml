@@ -200,8 +200,6 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/minitwitimage:webbuildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/minitwitimage:webbuildcache,mode=max
 
-        # TODO: Add build and push of the proxy image !!!
-
         # Configure SSH, chmod 600 is read and write for owner only!
       - name: Configure SSH
         run: |
