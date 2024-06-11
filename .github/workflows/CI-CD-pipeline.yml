@@ -231,7 +231,7 @@ jobs:
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_SWARM_MAN: ${{ secrets.SSH_SWARM_MAN }}
-
+# Fetch depth is to get the whole history git (tags, branches, commits)
   release:
     needs: [deployment]
     name: Release new version
