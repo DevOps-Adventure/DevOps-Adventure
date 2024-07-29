@@ -52,7 +52,7 @@ var logger *logrus.Logger
 
 // connect lorus with tcp to fluent
 func setupLogger(environment string) {
-	logger = logrus.New()
+	logger = logrus.New() 
 	if environment != "CI" && environment != "LOCAL" {
 		var hook *logrusfluent.FluentHook
 		var err error

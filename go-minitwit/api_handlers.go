@@ -105,6 +105,7 @@ func apiRegisterHandler(c *gin.Context) {
 	userID, exists := c.Get("UserID")
 	if exists {
 
+		// Setting filters/fields for the logrus service
 		logger.WithFields(logrus.Fields{
 			"source":   "api",
 			"endpoint": "/api/register",
